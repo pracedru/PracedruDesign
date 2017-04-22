@@ -1,0 +1,158 @@
+from Data.Areas import Areas
+from Data.Components import Components
+from Data.Sketch import Sketch
+from Data.Events import ChangeEvent
+from Data.Geometry import Geometry
+from Data.Margins import Margins
+from Data.Materials import Materials
+from Data.Mesh import Mesh
+from Data.Objects import ObservableObject
+from Data.Parameters import Parameters
+from Data.Point3d import Point3d
+from Data.Sweeps import Sweeps
+
+__author__ = 'mamj'
+
+
+class Document(ObservableObject):
+    def __init__(self):
+        ObservableObject.__init__(self)
+        self._geometry = Geometry()
+        self._parameters = Parameters("Global Parameters")
+        self._edges = Sketch(self)
+        self._origo = Point3d()
+        self._origo_direction = Point3d(1.0, 0.0, 0.0)
+        self._margins = Margins(self)
+        self._areas = Areas()
+        self._materials = Materials(self)
+        self._components = Components(self)
+        self._mesh = Mesh(self)
+        self._sweeps = Sweeps(self)
+        self.path = ""
+        self.name = "New document.jadoc"
+        self.apdl_scale = 0.001
+        self.rotate_apdl = True
+        self.do_update = True
+        self.status_handler = None
+        self.apdl_path = ""
+        self.write_params = False
+        self.init_change_handlers()
+
+    def init_change_handlers(self):
+        self._parameters.add_change_handler(self.on_parameters_changed)
+        self._edges.add_change_handler(self.on_edges_changed)
+        self._areas.add_change_handler(self.on_areas_changed)
+        self._materials.add_change_handler(self.on_materials_changed)
+        self._components.add_change_handler(self.on_components_changed)
+        self._margins.add_change_handler(self.on_margins_changed)
+        self._mesh.add_change_handler(self.on_object_changed)
+        self._sweeps.add_change_handler(self.on_object_changed)
+
+    def get_materials_object(self):
+        return self._materials
+
+    def get_areas(self):
+        return self._areas
+
+    def get_geometry(self):
+        return self._geometry
+
+    def set_geometry(self, geom):
+        self._geometry = geom
+        self.changed(ChangeEvent(self, ChangeEvent.ValueChanged, self._geometry))
+
+    def get_materials(self):
+        return self._materials
+
+    def get_parameters(self):
+        return self._parameters
+
+    def get_edges(self):
+        return self._edges
+
+    def get_components(self):
+        return self._components
+
+    def get_margins(self):
+        return self._margins
+
+    def get_mesh(self):
+        return self._mesh
+
+    def get_sweeps(self):
+        return self._sweeps
+
+    def on_parameters_changed(self, event):
+        self.changed(event)
+
+    def on_edges_changed(self, event):
+        self.changed(event)
+
+    def on_areas_changed(self, event):
+        self.changed(event)
+
+    def on_materials_changed(self, event):
+        self.changed(event)
+
+    def on_components_changed(self, event):
+        self.changed(event)
+
+    def on_margins_changed(self, event):
+        self.changed(event)
+
+    def on_object_changed(self, event):
+        self.changed(event)
+
+    def set_status(self, message, progess=100):
+        if self.status_handler is not None:
+            self.status_handler(message, progess)
+
+    def add_status_handler(self, status_handler):
+        self.status_handler = status_handler
+
+    def serialize_json(self):
+        return \
+            {
+                'geom': self._geometry,
+                'params': self._parameters,
+                'edges': self._edges,
+                'areas': self._areas,
+                'origo': self._origo,
+                'name': self.name,
+                'materials': self._materials,
+                'components': self._components,
+                'margins': self._margins,
+                'mesh': self._mesh,
+                'sweeps': self._sweeps,
+                'apdlpath': self.apdl_path,
+                'rotateapdl': self.rotate_apdl,
+                'apdlscale': self.apdl_scale,
+                'write_params': self.write_params,
+                'path': self.path
+            }
+
+    @staticmethod
+    def deserialize(data):
+        doc = Document()
+        doc.deserialize_data(data)
+        return doc
+
+    def deserialize_data(self, data):
+        self._origo = Point3d.deserialize(data.get('origo', Point3d()))
+        self._geometry = Geometry.deserialize(data.get('geom', None))
+        self._parameters = Parameters.deserialize(data.get('params', None), None)
+        self._edges = Sketch.deserialize(data.get('edges', None), self)
+        self._areas = Areas.deserialize(data.get('areas'), self)
+        self._materials = Materials.deserialize(data.get('materials'), self)
+        self._components = Components.deserialize(data.get('components'), self)
+        self._margins = Margins.deserialize(data.get('margins'), self)
+        self._mesh = Mesh.deserialize(data.get('mesh'), self)
+        self._sweeps = Sweeps.deserialize(data.get('sweeps'), self)
+        self.apdl_scale = data.get('apdlscale', 0.001)
+        self.rotate_apdl = bool(data.get('rotateapdl', True))
+        self.name = data.get('name', "missing")
+        self.path = data.get('path', "missing")
+        self.apdl_path = data.get('apdlpath', '')
+        self.write_params = data.get('write_params', False)
+        self.init_change_handlers()
+
