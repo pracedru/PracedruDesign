@@ -13,4 +13,6 @@ class TreeViewDock(QDockWidget):
         self._doc = document
         self._treeView = QTreeView(self)
         self.setWidget(self._treeView)
-        self._treeView.setModel(DocumentItemModel(document))
+        self._model = DocumentItemModel(document)
+        self._treeView.setModel(self._model)
+        self._treeView.setRootIndex(self._model.index(0, 0))

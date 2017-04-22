@@ -1,5 +1,6 @@
 from Data.Areas import Areas
 from Data.Components import Components
+from Data.Geometries import Geometries
 from Data.Sketch import Sketch
 from Data.Events import ChangeEvent
 from Data.Geometry import Geometry
@@ -17,9 +18,8 @@ __author__ = 'mamj'
 class Document(ObservableObject):
     def __init__(self):
         ObservableObject.__init__(self)
-        self._geometry = Geometry()
         self._parameters = Parameters("Global Parameters")
-        self._edges = Sketch(self)
+        self._geometries = Geometries(self)
         self._origo = Point3d()
         self._origo_direction = Point3d(1.0, 0.0, 0.0)
         self._margins = Margins(self)
@@ -40,7 +40,7 @@ class Document(ObservableObject):
 
     def init_change_handlers(self):
         self._parameters.add_change_handler(self.on_parameters_changed)
-        self._edges.add_change_handler(self.on_edges_changed)
+        self._geometries.add_change_handler(self.on_edges_changed)
         self._areas.add_change_handler(self.on_areas_changed)
         self._materials.add_change_handler(self.on_materials_changed)
         self._components.add_change_handler(self.on_components_changed)
@@ -54,21 +54,14 @@ class Document(ObservableObject):
     def get_areas(self):
         return self._areas
 
-    def get_geometry(self):
-        return self._geometry
-
-    def set_geometry(self, geom):
-        self._geometry = geom
-        self.changed(ChangeEvent(self, ChangeEvent.ValueChanged, self._geometry))
+    def get_geometries(self):
+        return self._geometries
 
     def get_materials(self):
         return self._materials
 
     def get_parameters(self):
         return self._parameters
-
-    def get_edges(self):
-        return self._edges
 
     def get_components(self):
         return self._components

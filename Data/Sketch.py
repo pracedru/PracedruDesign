@@ -1,6 +1,7 @@
 from math import pi, sin, cos, tan
 #from Data import Document
 from Data.Events import ChangeEvent
+from Data.Geometry import Geometry
 from Data.Objects import IdObject, ObservableObject
 from Data.Point3d import KeyPoint
 from Data.Vertex import Vertex
@@ -8,10 +9,9 @@ from Data.Vertex import Vertex
 __author__ = 'mamj'
 
 
-class Sketch(ObservableObject):
-    def __init__(self, document):
-        ObservableObject.__init__(self)
-        self._doc = document
+class Sketch(Geometry):
+    def __init__(self, parent):
+        Geometry.__init__(self, parent)
         self._key_points = {}
         self._edges = {}
         self.threshold = 0.1
@@ -52,8 +52,8 @@ class Sketch(ObservableObject):
         else:
             return None
 
-    def get_document(self):
-        return self._doc
+    def get_parent(self):
+        return self._parent
 
     def get_next_edge_naming_index(self):
         self.edge_naming_index += 1
@@ -86,7 +86,7 @@ class Sketch(ObservableObject):
                 key_point = p
                 break
         if key_point is None:
-            key_point = KeyPoint(self._doc.get_parameters(), x, y, z)
+            key_point = KeyPoint(self._parent.get_parameters(), x, y, z)
             self.changed(ChangeEvent(self, ChangeEvent.BeforeObjectAdded, key_point))
             self._key_points[key_point.uid] = key_point
             self.changed(ChangeEvent(self, ChangeEvent.ObjectAdded, key_point))
@@ -149,6 +149,7 @@ class Sketch(ObservableObject):
 
     def serialize_json(self):
         return {
+            'uid': IdObject.serialize_json(self),
             'key_points': self._key_points,
             'edges': self._edges,
             'threshold': self.threshold,
@@ -156,13 +157,14 @@ class Sketch(ObservableObject):
         }
 
     @staticmethod
-    def deserialize(data, document):
-        edges = Sketch(document)
+    def deserialize(data, parent):
+        sketch = Sketch(parent)
         if data is not None:
-            edges.deserialize_data(data)
-        return edges
+            sketch.deserialize_data(data)
+        return sketch
 
     def deserialize_data(self, data):
+        IdObject.deserialize_data(self, data['uid'])
         self.threshold = data.get('threshold', 0.1)
         self.edge_naming_index = data.get('edge_naming_index', 0)
         for kp_data_tuple in data.get('key_points', {}).items():
