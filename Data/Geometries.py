@@ -46,6 +46,6 @@ class Geometries(ObservableObject):
             geometry_data = data['geoms'][geometry_uid]
             geometry = None
             if geometry_data['type'] == Geometry.Sketch:
-                geometry = Sketch.deserialize(geometry_data, document)
+                geometry = Sketch.deserialize(geometry_data, document.get_parameters())
             if geometry is not None:
                 self._geometries[geometry.uid] = geometry

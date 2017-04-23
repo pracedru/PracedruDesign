@@ -74,6 +74,14 @@ class SketchViewWidget(QWidget):
             self._selected_edges.clear()
             self._selected_areas.clear()
 
+    def set_selected_key_points(self, selected_key_points):
+        self._selected_key_points = selected_key_points
+        self.update()
+
+    def set_selected_edges(self, selected_edges):
+        self._selected_edges = selected_edges
+        self.update()
+
     def on_escape(self):
         self._states.set_similar_x = False
         self._states.set_similar_y = False

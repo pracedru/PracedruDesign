@@ -10,6 +10,7 @@ from PyQt5.QtWidgets import QDockWidget
 from PyQt5.QtWidgets import QFileDialog
 from PyQt5.QtWidgets import QMainWindow
 from PyQt5.QtWidgets import QMessageBox
+from PyQt5.QtWidgets import QProgressBar
 from PyQt5.QtWidgets import QToolBar
 
 import Business
@@ -44,7 +45,11 @@ class MainWindow(QMainWindow):
         self.save_action = self.add_action("Save", "save", "Save these data", True, self.on_save, QKeySequence.Save)
         self.save_as_action = self.add_action("Save\nas", "saveas", "Save these data as ...", True, self.on_save_as, QKeySequence.SaveAs)
         self._zoom_fit_action = self.add_action("Zoom\nfit", "zoomfit", "Zoom to fit contents", True, self.on_zoom_fit)
-        self.add_sketch_to_document_action = self.add_action("Add\nSketch", "addsketch", "Add Sketch to the document", True, self.on_add_sketch_to_document, QKeySequence.SaveAs)
+        self.add_sketch_to_document_action = self.add_action("Add\nSketch", "addsketch", "Add Sketch to the document", True, self.on_add_sketch_to_document)
+        self.add_drawing_action = self.add_action("Add\nDrawing", "adddrawing", "Add drawing to the document", True, self.on_add_drawing)
+        self.add_part_action = self.add_action("Add\nPart", "addpart", "Add part to the document", True, self.on_add_part)
+
+
         self._show_hidden_params_action = self.add_action("Show hidden\nparameters", "hideparams", "Show hidden parameters", True, self.on_show_hidden_parameters, checkable=True)
         self._set_sim_x_action = self.add_action("Set simil.\nx coords", "setsimx", "Set similar x coordinate values", True, self.on_set_sim_x, checkable=True)
         self._set_sim_y_action = self.add_action("Set simil.\ny coords", "setsimy", "Set similar y coordinate values", True, self.on_set_sim_y, checkable=True)
@@ -90,6 +95,12 @@ class MainWindow(QMainWindow):
         self.addDockWidget(Qt.LeftDockWidgetArea, self._geometry_dock)
 
         self.read_settings()
+        self.statusBar().showMessage("Ready")
+        self.progress_bar = QProgressBar()
+        self.progress_bar.setMaximumHeight(20)
+        self.progress_bar.setMaximumWidth(300)
+        self.progress_bar.setTextVisible(False)
+        self.statusBar().addPermanentWidget(self.progress_bar, 0)
 
     def get_states(self) -> ActionStates:
         return self._states
@@ -160,6 +171,12 @@ class MainWindow(QMainWindow):
             if isinstance(selection[0], Parameters):
                 self.parameters_widget.set_parameters(selection[0])
 
+    def on_kp_selection_changed_in_table(self, selected_key_points):
+        self._viewWidget.on_kp_selection_changed_in_table(selected_key_points)
+
+    def on_edge_selection_changed_in_table(self, selected_edges):
+        self._viewWidget.on_edge_selection_changed_in_table(selected_edges)
+
     def on_set_sim_x(self):
         self._viewWidget.on_set_similar_x_coordinates()
 
@@ -210,6 +227,8 @@ class MainWindow(QMainWindow):
         file_pane.add_ribbon_widget(RibbonButton(self, self.save_as_action, True))
         insert_pane = home_tab.add_ribbon_pane("Insert")
         insert_pane.add_ribbon_widget(RibbonButton(self, self.add_sketch_to_document_action, True))
+        insert_pane.add_ribbon_widget(RibbonButton(self, self.add_part_action, True))
+        insert_pane.add_ribbon_widget(RibbonButton(self, self.add_drawing_action, True))
 
     def init_sketch_tab(self):
         sketch_tab = self._ribbon_widget.add_ribbon_tab("Sketch")
@@ -247,6 +266,12 @@ class MainWindow(QMainWindow):
         pass
 
     def on_zoom_fit(self):
+        pass
+
+    def on_add_drawing(self):
+        pass
+
+    def on_add_part(self):
         pass
 
     def add_action(self, caption, icon_name, status_tip, icon_visible, connection, shortcut=None, checkable=False):

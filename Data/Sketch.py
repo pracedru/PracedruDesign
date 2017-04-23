@@ -11,8 +11,8 @@ __author__ = 'mamj'
 
 
 class Sketch(Geometry):
-    def __init__(self, parent):
-        Geometry.__init__(self, parent, "New Sketch", Geometry.Sketch)
+    def __init__(self, params_parent):
+        Geometry.__init__(self, params_parent, "New Sketch", Geometry.Sketch)
         self._key_points = {}
         self._edges = {}
         self.threshold = 0.1
@@ -45,7 +45,7 @@ class Sketch(Geometry):
         try:
             return self._key_points[uid]
         except KeyError:
-            return KeyPoint(self._doc.get_parameters())
+            return KeyPoint(self)
 
     def get_fillet(self, uid):
         if uid in self._fillets:
@@ -160,8 +160,8 @@ class Sketch(Geometry):
         }
 
     @staticmethod
-    def deserialize(data, parent):
-        sketch = Sketch(parent)
+    def deserialize(data, param_parent):
+        sketch = Sketch(param_parent)
         if data is not None:
             sketch.deserialize_data(data)
         return sketch

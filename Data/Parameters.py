@@ -245,6 +245,10 @@ class Parameters(ObservableObject):
 
         return param
 
+    def get_all_local_parameters(self):
+        params = list(self._params.items())
+        return params
+
     def get_all_parameters(self):
         params = list(self._params.items())
         if self._parent is not None:
@@ -285,8 +289,18 @@ class Parameters(ObservableObject):
     def length(self):
         return len(self._parameter_list)
 
+    @property
+    def length_all(self):
+        if self._parent is not None:
+            return self._parent.length_all + self.length
+        else:
+            return self.length
+
     def get_parameter_item(self, index):
-        uid = self._parameter_list[index]
+        if index >= self.length:
+            return self._parent.get_parameter_item(index - self.length)
+        else:
+            uid = self._parameter_list[index]
         param = self.get_parameter_by_uid(uid)
         return param
 

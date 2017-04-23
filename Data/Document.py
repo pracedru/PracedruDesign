@@ -1,5 +1,6 @@
 from Data.Areas import Areas
 from Data.Components import Components
+from Data.Drawings import Drawings
 from Data.Geometries import Geometries
 from Data.Sketch import Sketch
 from Data.Events import ChangeEvent
@@ -26,6 +27,7 @@ class Document(IdObject, ObservableObject):
         self._components = Components(self)
         self._mesh = Mesh(self)
         self._sweeps = Sweeps(self)
+        self._drawings = Drawings(self)
         self.path = ""
         self.name = "New document.jadoc"
         self.do_update = True
@@ -40,12 +42,6 @@ class Document(IdObject, ObservableObject):
         self._margins.add_change_handler(self.on_margins_changed)
         self._mesh.add_change_handler(self.on_object_changed)
         self._sweeps.add_change_handler(self.on_object_changed)
-
-    def get_all_parameters(self):
-        return self._parameters.get_all_parameters()
-
-    def get_parameter_by_uid(self, uid):
-        return self._parameters.get_parameter_by_uid(uid)
 
     def get_materials_object(self):
         return self._materials

@@ -22,7 +22,7 @@ class ParametersModel(QAbstractTableModel):
         self.layoutChanged.emit()
 
     def rowCount(self, model_index=None, *args, **kwargs):
-        return self._parameters.length
+        return self._parameters.length_all
 
     def columnCount(self, model_index=None, *args, **kwargs):
         return 4

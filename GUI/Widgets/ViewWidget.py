@@ -42,3 +42,9 @@ class ViewWidget(QStackedWidget):
     def on_find_all_similar(self):
         if self.currentIndex() == 0:
             self._sketchView.on_find_all_similar()
+
+    def on_kp_selection_changed_in_table(self, selected_key_points):
+        self._sketchView.set_selected_key_points(selected_key_points)
+
+    def on_edge_selection_changed_in_table(self, selected_edges):
+        self._sketchView.set_selected_edges(selected_edges)

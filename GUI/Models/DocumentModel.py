@@ -22,14 +22,27 @@ class DocumentItemModel(QAbstractItemModel):
             document.add_change_handler(self.on_document_changed)
 
     def populate(self):
-        DocumentModelItem(self._doc.get_parameters(), self, self._root_item)
+        glocal_params_item = DocumentModelItem(self._doc.get_parameters(), self, self._root_item)
+        for param_tuple in self._doc.get_parameters().get_all_parameters():
+            param_item = DocumentModelItem(param_tuple[1], self, glocal_params_item)
         geoms_item = DocumentModelItem(self._doc.get_geometries(), self, self._root_item)
         for geom_tuple in self._doc.get_geometries().items():
-            geom_item = DocumentModelItem(geom_tuple[1], self, geoms_item)
+            if type(geom_tuple[1]) is Sketch:
+                self.populate_sketch(geom_tuple[1], geoms_item)
+
 
         DocumentModelItem(None, self, self._root_item, "Analyses")
         DocumentModelItem(None, self, self._root_item, "Drawings")
         DocumentModelItem(None, self, self._root_item, "Reports")
+
+    def populate_sketch(self, sketch, geoms_item):
+        geom_item = self.create_model_item(geoms_item, sketch)
+        for param_tuple in sketch.get_all_local_parameters():
+            param_item = DocumentModelItem(param_tuple[1], self, geom_item.children()[0])
+        for kp_tuple in sketch.get_key_points():
+            param_item = DocumentModelItem(kp_tuple[1], self, geom_item.children()[1], "Key point")
+        for edge_tuple in sketch.get_edges():
+            param_item = DocumentModelItem(edge_tuple[1], self, geom_item.children()[2])
 
     def parent(self, index: QModelIndex=None):
         if not index.isValid():
@@ -123,14 +136,14 @@ class DocumentItemModel(QAbstractItemModel):
     def create_model_item(self, parent_item, object):
         if type(parent_item.data) is Sketch:
             if type(object) is Parameter:
-                paramaters_item = parent_item.children()[0]
-                DocumentModelItem(object, self, paramaters_item)
+                parameters_item = parent_item.children()[0]
+                new_item = DocumentModelItem(object, self, parameters_item)
             elif type(object) is KeyPoint:
-                paramaters_item = parent_item.children()[1]
-                DocumentModelItem(object, self, paramaters_item, "Key point")
+                kps_item = parent_item.children()[1]
+                new_item = DocumentModelItem(object, self, kps_item, "Key point")
             elif type(object) is Edge:
-                paramaters_item = parent_item.children()[2]
-                DocumentModelItem(object, self, paramaters_item)
+                edges_item = parent_item.children()[2]
+                new_item = DocumentModelItem(object, self, edges_item)
         else:
             new_item = DocumentModelItem(object, self, parent_item)
             if type(object) is Sketch:
@@ -138,6 +151,7 @@ class DocumentItemModel(QAbstractItemModel):
                 DocumentModelItem(None, self, new_item, "Key Points")
                 DocumentModelItem(None, self, new_item, "Edges")
             self.layoutChanged.emit()
+        return new_item
 
 class DocumentModelItem(QObject):
     def __init__(self, data, model, parent=None, name="No name"):
