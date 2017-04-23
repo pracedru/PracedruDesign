@@ -4,6 +4,7 @@ import os
 import Data
 import GUI
 from Data.Document import Document
+from Data.Paper import Sizes
 from Data.Parameters import Parameters
 from Data.Sketch import Sketch
 
@@ -41,3 +42,6 @@ def create_add_sketch_to_document(document):
     return sketch
 
 
+def add_drawing(document):
+    drawing = document.get_drawings().create_drawing(Sizes["A0"])
+    return drawing

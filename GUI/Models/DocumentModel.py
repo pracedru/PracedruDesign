@@ -4,6 +4,7 @@ from PyQt5.QtCore import QObject
 from PyQt5.QtCore import Qt
 
 from Data.Document import Document
+from Data.Drawings import Drawing
 from Data.Events import ChangeEvent
 from Data.Geometry import Geometry
 from Data.Parameters import Parameters, Parameter
@@ -24,15 +25,17 @@ class DocumentItemModel(QAbstractItemModel):
     def populate(self):
         glocal_params_item = DocumentModelItem(self._doc.get_parameters(), self, self._root_item)
         for param_tuple in self._doc.get_parameters().get_all_parameters():
-            param_item = DocumentModelItem(param_tuple[1], self, glocal_params_item)
+            DocumentModelItem(param_tuple[1], self, glocal_params_item)
         geoms_item = DocumentModelItem(self._doc.get_geometries(), self, self._root_item)
         for geom_tuple in self._doc.get_geometries().items():
             if type(geom_tuple[1]) is Sketch:
                 self.populate_sketch(geom_tuple[1], geoms_item)
 
-
         DocumentModelItem(None, self, self._root_item, "Analyses")
-        DocumentModelItem(None, self, self._root_item, "Drawings")
+        drawings_item = DocumentModelItem(self._doc.get_drawings(), self, self._root_item, "Drawings")
+        for dwg in self._doc.get_drawings().items:
+            DocumentModelItem(dwg, self, drawings_item)
+
         DocumentModelItem(None, self, self._root_item, "Reports")
 
     def populate_sketch(self, sketch, geoms_item):
@@ -96,6 +99,8 @@ class DocumentItemModel(QAbstractItemModel):
                 return get_icon("kp")
             elif type(model_item.data) is Edge:
                 return get_icon("edge")
+            elif type(model_item.data) is Drawing:
+                return get_icon("drawing")
             return get_icon("default")
         return None
 
@@ -121,6 +126,8 @@ class DocumentItemModel(QAbstractItemModel):
         if isinstance(model_item.data, Geometry):
             default_flags = default_flags | Qt.ItemIsEditable
         if isinstance(model_item.data, Parameter):
+            default_flags = default_flags | Qt.ItemIsEditable
+        if isinstance(model_item.data, Drawing):
             default_flags = default_flags | Qt.ItemIsEditable
         return default_flags
 

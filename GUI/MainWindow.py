@@ -269,7 +269,7 @@ class MainWindow(QMainWindow):
         pass
 
     def on_add_drawing(self):
-        pass
+        Business.add_drawing(self._document)
 
     def on_add_part(self):
         pass

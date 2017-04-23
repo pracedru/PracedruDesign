@@ -1,16 +1,13 @@
-from Data.Areas import Areas
 from Data.Components import Components
 from Data.Drawings import Drawings
 from Data.Geometries import Geometries
-from Data.Sketch import Sketch
 from Data.Events import ChangeEvent
-from Data.Geometry import Geometry
 from Data.Margins import Margins
 from Data.Materials import Materials
 from Data.Mesh import Mesh
 from Data.Objects import ObservableObject, IdObject
 from Data.Parameters import Parameters
-from Data.Point3d import Point3d
+
 from Data.Sweeps import Sweeps
 
 __author__ = 'mamj'
@@ -42,6 +39,7 @@ class Document(IdObject, ObservableObject):
         self._margins.add_change_handler(self.on_margins_changed)
         self._mesh.add_change_handler(self.on_object_changed)
         self._sweeps.add_change_handler(self.on_object_changed)
+        self._drawings.add_change_handler(self.on_object_changed)
 
     def get_materials_object(self):
         return self._materials
@@ -67,11 +65,14 @@ class Document(IdObject, ObservableObject):
     def get_sweeps(self):
         return self._sweeps
 
+    def get_drawings(self):
+        return self._drawings
+
     def on_parameters_changed(self, event):
-        self.changed(ChangeEvent(self, ChangeEvent.ValueChanged, event.sender))
+        self.changed(ChangeEvent(self, ChangeEvent.ObjectChanged, event.sender))
 
     def on_geometries_changed(self, event: ChangeEvent):
-        self.changed(ChangeEvent(self, ChangeEvent.ValueChanged, event.sender))
+        self.changed(ChangeEvent(self, ChangeEvent.ObjectChanged, event.sender))
 
     def on_areas_changed(self, event):
         self.changed(event)
@@ -86,7 +87,7 @@ class Document(IdObject, ObservableObject):
         self.changed(event)
 
     def on_object_changed(self, event):
-        self.changed(event)
+        self.changed(ChangeEvent(self, ChangeEvent.ObjectChanged, event.sender))
 
     def set_status(self, message, progess=100):
         if self.status_handler is not None:
@@ -107,6 +108,7 @@ class Document(IdObject, ObservableObject):
                 'margins': self._margins,
                 'mesh': self._mesh,
                 'sweeps': self._sweeps,
+                'drawings': self._drawings,
                 'path': self.path
             }
 
@@ -125,6 +127,7 @@ class Document(IdObject, ObservableObject):
         self._margins = Margins.deserialize(data.get('margins'), self)
         self._mesh = Mesh.deserialize(data.get('mesh'), self)
         self._sweeps = Sweeps.deserialize(data.get('sweeps'), self)
+        self._drawings = Drawings.deserialize(data.get('drawings', None), self)
         self.name = data.get('name', "missing")
         self.path = data.get('path', "missing")
         self.init_change_handlers()

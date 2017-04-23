@@ -1,6 +1,7 @@
-from Data import Paper
+from Data.Paper import *
 from Data.Events import ChangeEvent
 from Data.Objects import ObservableObject
+from Data.Sketch import Sketch
 
 
 class Drawings(ObservableObject):
@@ -14,6 +15,7 @@ class Drawings(ObservableObject):
         self.changed(ChangeEvent(self, ChangeEvent.BeforeObjectAdded, drawing))
         self._drawings.append(drawing)
         self.changed(ChangeEvent(self, ChangeEvent.ObjectAdded, drawing))
+        drawing.add_change_handler(self.drawing_changed)
         return drawing
 
     @property
@@ -32,19 +34,70 @@ class Drawings(ObservableObject):
     def item(self, index):
         return self._drawings[index]
 
+    def serialize_json(self):
+        return {
+            'drawings': self._drawings
+        }
 
-class Drawing(ObservableObject):
-    def __init__(self, document, size=Paper.Sizes["A0"]):
-        ObservableObject.__init__(self)
-        self._size = size
+    def drawing_changed(self, event):
+        self.changed(ChangeEvent(self, ChangeEvent.ObjectChanged, event.sender))
+
+    @staticmethod
+    def deserialize(data, document):
+        drawings = Drawings(document)
+        if data is not None:
+            drawings.deserialize_data(data)
+        return drawings
+
+    def deserialize_data(self, data):
+        for dwg_data in data['drawings']:
+            drawing = Drawing.deserialize(dwg_data, self._doc)
+            self._drawings.append(drawing)
+
+
+class Drawing(Paper):
+    def __init__(self, document, size=Sizes["A0"]):
+        Paper.__init__(self, size)
         self._doc = document
         self._views = []
+        self._border_sketch = Sketch(None)
+        self._header_sketch = Sketch(None)
+        self._name = "New Drawing"
 
     @property
-    def size(self):
-        return self._size
+    def name(self):
+        return self._name
 
-    @size.setter
-    def size(self, value):
-        self._size = value
+    @name.setter
+    def name(self, value):
+        old_value = self._name
+        self._name = value
+        self.changed(ChangeEvent(self, ChangeEvent.ValueChanged,
+                                 {
+                                     "name": "name",
+                                     'new value': value,
+                                     'old value': old_value
+                                 }))
+
+    def serialize_json(self):
+        return {
+            'paper': Paper.serialize_json(self),
+            'views': self._views,
+            'border_sketch': self._border_sketch,
+            'header_sketch': self._header_sketch
+        }
+
+    @staticmethod
+    def deserialize(data, document):
+        drawing = Drawing(document)
+        if data is not None:
+            drawing.deserialize_data(data)
+        return drawing
+
+    def deserialize_data(self, data):
+        Paper.deserialize_data(self, data['paper'])
+        self._views = data['views']
+        self._border_sketch = Sketch.deserialize(data['border_sketch'], None)
+        self._header_sketch = Sketch.deserialize(data['header_sketch'], None)
+
 

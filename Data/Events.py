@@ -15,6 +15,7 @@ class ChangeEvent(Event):
     Cleared = 6
     Deleted = 7
     HiddenChanged = 8
+    ObjectChanged = 9
 
     def __init__(self, sender, type, object):
         Event.__init__(self, sender)
