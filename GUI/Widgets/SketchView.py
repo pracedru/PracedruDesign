@@ -1,3 +1,5 @@
+from math import *
+
 from PyQt5 import QtGui
 from PyQt5.QtCore import QEvent
 from PyQt5.QtCore import QPoint
@@ -7,12 +9,13 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QColor
 from PyQt5.QtGui import QLinearGradient
 from PyQt5.QtGui import QPen
+from PyQt5.QtWidgets import QDialog
+from PyQt5.QtWidgets import QInputDialog
 from PyQt5.QtWidgets import QMessageBox
-
 from PyQt5.QtWidgets import QWidget
-from math import *
 
 import Business
+from Business.SketchActions import *
 from Data.Sketch import Edge
 from Data.Vertex import Vertex
 from GUI import is_dark_theme
@@ -22,23 +25,15 @@ class SketchViewWidget(QWidget):
     def __init__(self, parent, document, main_window):
         QWidget.__init__(self, parent)
         self._main_window = main_window
+        self._states = main_window.get_states()
+        self.setMouseTracking(True)
         self._doc = document
         self._is_dark_theme = is_dark_theme()
         self._sketch = None
         self._scale = 1.0
         self._offset = Vertex()
-        self._left_button_hold = False
-        self._right_button_hold = False
-        self._middle_button_hold = False
-        self._set_similar_x = False
-        self._set_similar_y = False
-        self._draw_line_edge = False
-        self._create_area = False
-        self._set_fillet_kp = False
-        self._select_kp = True
-        self._select_edge = True
-        self._select_area = True
         self._mouse_position = None
+        self._move_ref_pos = None
         self._pan_ref_pos = None
         self._selected_edges = []
         self._selected_key_points = []
@@ -53,12 +48,12 @@ class SketchViewWidget(QWidget):
                 self.on_delete()
                 return True
             if event.key() == Qt.Key_Control:
-                self._multi_select = True
+                self._states.multi_select = True
             if event.key() == Qt.Key_Escape:
                 self.on_escape()
         if event.type() == QEvent.KeyRelease:
             if event.key() == Qt.Key_Control:
-                self._multi_select = False
+                self._states.multi_select = False
         if event.type() == QEvent.GraphicsSceneMouseDoubleClick:
             print("double click")
         return False
@@ -76,21 +71,42 @@ class SketchViewWidget(QWidget):
             self._selected_areas.clear()
 
     def on_escape(self):
-        self._set_similar_x = False
-        self._set_similar_y = False
-        self._draw_line_edge = False
-        self._create_area = False
-        self._set_fillet_kp = False
+        self._states.set_similar_x = False
+        self._states.set_similar_y = False
+        self._states.draw_line_edge = False
+        self._states.create_area = False
+        self._states.set_fillet_kp = False
         self._main_window.update_ribbon_state()
 
     def on_add_line(self):
         self.on_escape()
-        self._select_kp = True
-        self._draw_line_edge = True
+        self._states.select_kp = True
+        self._states.draw_line_edge = True
+        self._main_window.update_ribbon_state()
 
     def set_sketch(self, sketch):
         self._sketch = sketch
         self.update()
+
+    def mousePressEvent(self, q_mouse_event):
+        self.setFocus()
+        position = q_mouse_event.pos()
+        if q_mouse_event.button() == 4:
+            self._states.middle_button_hold = True
+            self._pan_ref_pos = position
+            return
+        if q_mouse_event.button() == 1:
+            self._states.left_button_hold = True
+            self._move_ref_pos = position
+
+    def mouseReleaseEvent(self, q_mouse_event):
+        if q_mouse_event.button() == 4:
+            self._states.middle_button_hold = False
+            return
+        if q_mouse_event.button() == 1:
+            self._states.left_button_hold = False
+            self._kp_move = None
+            return
 
     def mouseMoveEvent(self, q_mouse_event):
         position = q_mouse_event.pos()
@@ -107,10 +123,10 @@ class SketchViewWidget(QWidget):
         if sketch is None:
             return
         key_points = sketch.get_key_points()
-        if self._middle_button_hold:
+        if self._states.middle_button_hold:
             self._offset.x -= mouse_move_x/scale
             self._offset.y += mouse_move_y/scale
-        if self._left_button_hold:
+        if self._states.left_button_hold:
             if self._kp_move is not None:
                 if self._kp_move.get_x_parameter() is None:
                     self._kp_move.x = x
@@ -118,7 +134,7 @@ class SketchViewWidget(QWidget):
                     self._kp_move.y = y
         self._kp_hover = None
         self._edge_hover = None
-        if self._select_kp:
+        if self._states.select_kp:
             for kp_tuple in key_points:
                 key_point = kp_tuple[1]
                 x1 = key_point.x
@@ -127,7 +143,7 @@ class SketchViewWidget(QWidget):
                     self._kp_hover = key_point
                     break
 
-        if self._select_edge and self._kp_hover is None:
+        if self._states.select_edge and self._kp_hover is None:
             smallest_dist = 10e10
             closest_edge = None
             for edge_tuple in sketch.get_edges():
@@ -139,7 +155,7 @@ class SketchViewWidget(QWidget):
             if smallest_dist * scale < 10:
                 self._edge_hover = closest_edge
 
-        if self._set_similar_x and self._kp_hover is not None:
+        if self._states.set_similar_x and self._kp_hover is not None:
             self._similar_coords.clear()
             for kp_tuple in key_points:
                 key_point = kp_tuple[1]
@@ -147,7 +163,7 @@ class SketchViewWidget(QWidget):
                 if abs(x1 - self._kp_hover.x) < self.similar_threshold:
                     self._similar_coords.add(key_point)
 
-        if self._set_similar_y and self._kp_hover is not None:
+        if self._states.set_similar_y and self._kp_hover is not None:
             self._similar_coords.clear()
             for kp_tuple in key_points:
                 key_point = kp_tuple[1]
@@ -155,8 +171,86 @@ class SketchViewWidget(QWidget):
                 if abs(y1 - self._kp_hover.y) < self.similar_threshold:
                     self._similar_coords.add(key_point)
 
-        if self._set_similar_x or self._select_kp or self._select_edge or self._set_similar_y:
+        if self._states.set_similar_x or self._states.select_kp or self._states.select_edge or self._states.set_similar_y:
             self.update()
+
+    def mousePressEvent(self, q_mouse_event):
+        self.setFocus()
+        position = q_mouse_event.pos()
+
+        width = self.width() / 2
+        height = self.height() / 2
+        scale = self._scale
+        x = (self._mouse_position.x() - width) / scale - self._offset.x
+        y = -((self._mouse_position.y() - height) / scale + self._offset.y)
+        if self._states.set_similar_x or self._states.set_similar_y:
+            params = []
+            for param_tuple in self._doc.get_parameters().get_all_parameters():
+                params.append(param_tuple[1].name)
+            value = QInputDialog.getItem(self, "Set parameter", "Parameter:", params, 0, True)
+        if self._states.set_similar_x and value[1] == QDialog.Accepted:
+            self._states.set_similar_x = False
+            Business.set_similar_x(self._doc, self._similar_coords, value[0])
+        else:
+            self._states.set_similar_x = False
+        if self._states.set_similar_y and value[1] == QDialog.Accepted:
+            self._states.set_similar_y = False
+            Business.set_similar_y(self._doc, self._similar_coords, value[0])
+        else:
+            self._states.set_similar_y = False
+
+        if self._states.left_button_hold and self._kp_hover is not None:
+            if self._kp_hover in self._selected_key_points:
+                self._kp_move = self._kp_hover
+        if self._states.select_edge and self._edge_hover is not None and self._kp_hover is None:
+            if self._states.multi_select:
+                if self._edge_hover in self._selected_edges:
+                    self._selected_edges.remove(self._edge_hover)
+                else:
+                    self._selected_edges.append(self._edge_hover)
+            else:
+                self._selected_edges = [self._edge_hover]
+            self.update()
+            # self.parent().on_edge_selection_changed_in_view(self._selected_edges)
+        elif self._states.select_edge and self._edge_hover is None:
+            self._selected_edges = []
+            self.update()
+            # self.parent().on_edge_selection_changed_in_view(self._selected_edges)
+
+        if self._kp_hover is not None and self._states.select_kp:
+            if self._states.multi_select or self._states.draw_line_edge:
+                self._selected_key_points.append(self._kp_hover)
+            else:
+                self._selected_key_points = [self._kp_hover]
+            self.update()
+            # self.parent().on_kp_selection_changed_in_view(self._selected_key_points)
+        elif self._kp_hover is None and self._states.select_kp and len(self._selected_edges) == 0 and not self._states.draw_line_edge:
+            self._selected_key_points = []
+            self.update()
+            # self.parent().on_kp_selection_changed_in_view(self._selected_key_points)
+
+        if self._states.draw_line_edge:
+            doc = self._doc
+            sketch = self._sketch
+            if self._kp_hover is None:
+                coincident_threshold = 5/scale
+                kp = create_key_point(doc, sketch, x, y, 0.0, coincident_threshold)
+                self._selected_key_points.append(kp)
+            if len(self._selected_key_points) == 2:
+                sketch.create_line_edge(self._selected_key_points[0], self._selected_key_points[1])
+                self._selected_key_points.clear()
+        if self._states.set_fillet_kp:
+            if self._kp_hover is not None:
+                doc = self._doc
+                edges = self._kp_hover.get_edges()
+                if len(edges) == 2:
+                    param_name = "New Fillet radius"
+                    param = self._doc.get_parameters().get_parameter_by_name(param_name)
+                    if param is None:
+                        param = self._doc.get_parameters().create_parameter(param_name, 1.0)
+                    create_fillet(self._doc, sketch, self._kp_hover, param)
+                else:
+                    pass
 
     def wheelEvent(self, event):
         if self._mouse_position is not None:
@@ -247,13 +341,13 @@ class SketchViewWidget(QWidget):
             key_point = kp_tuple[1]
             x1 = (key_point.x + self._offset.x) * scale + width
             y1 = -(key_point.y + self._offset.y) * scale + height
-            if self._set_similar_x or self._set_similar_y:
+            if self._states.set_similar_x or self._states.set_similar_y:
                 if key_point in self._similar_coords:
                     qp.setPen(kp_pen_hl)
-            if self._kp_hover is key_point and self._select_kp:
+            if self._kp_hover is key_point and self._states.select_kp:
                 qp.setPen(kp_pen_hover)
 
-            if self.show_key_points or self._kp_hover is key_point or self._set_similar_x or self._set_similar_y:
+            if self._states.show_key_points or self._kp_hover is key_point or self._states.set_similar_x or self._states.set_similar_y:
                 qp.drawEllipse(QPointF(x1, y1), 4, 4)
 
         qp.setPen(kp_pen_hl)

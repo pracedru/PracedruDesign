@@ -21,7 +21,7 @@ class Geometries(ObservableObject):
         geometry.add_change_handler(self.geometry_changed)
 
     def geometry_changed(self, event):
-        self.changed(ChangeEvent(self, event.type, event.object))
+        self.changed(ChangeEvent(self, ChangeEvent.ValueChanged, event.object))
         if event.type == ChangeEvent.Deleted:
             if type(event.object) is Geometry:
                 if event.object.uid in self._geometries:

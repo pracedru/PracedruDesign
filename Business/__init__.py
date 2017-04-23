@@ -39,3 +39,5 @@ def create_add_sketch_to_document(document):
     sketch = Sketch(document)
     document.get_geometries().add_geometry(sketch)
     return sketch
+
+

@@ -173,7 +173,7 @@ class Sketch(Geometry):
         self.edge_naming_index = data.get('edge_naming_index', 0)
         for kp_data_tuple in data.get('key_points', {}).items():
             kp_data = kp_data_tuple[1]
-            kp = KeyPoint.deserialize(kp_data, self._doc.get_parameters())
+            kp = KeyPoint.deserialize(kp_data, self)
             self._key_points[kp.uid] = kp
             kp.add_change_handler(self.on_kp_changed)
         for edge_data_tuple in data.get('edges', {}).items():
@@ -201,11 +201,11 @@ class Edge(IdObject, ObservableObject):
     PolyLineEdge = 4
     FilletLineEdge = 5
 
-    def __init__(self, edges, type=LineEdge):
+    def __init__(self, sketch, type=LineEdge):
         IdObject.__init__(self)
         ObservableObject.__init__(self)
         self._type = type
-        self._edges_object = edges
+        self._sketch = sketch
         self._key_points = []
         self._meta_data = {}
         self._meta_data_parameters = {}
@@ -225,7 +225,7 @@ class Edge(IdObject, ObservableObject):
         return self._meta_data[name]
 
     def get_meta_data_parameter(self, name):
-        doc = self._edges_object.get_document()
+        doc = self._sketch.get_document()
         for param_tuple in self._meta_data_parameters.items():
             if param_tuple[1] == name:
                 return doc.get_parameters().get_parameter_by_uid(param_tuple[0])
@@ -233,7 +233,7 @@ class Edge(IdObject, ObservableObject):
 
     def set_meta_data_parameter(self, name, parameter):
         self._meta_data_parameters[parameter.uid] = name
-        doc = self._edges_object.get_document()
+        doc = self._sketch.get_document()
         param = doc.get_parameters().get_parameter_by_uid(parameter.uid)
         self._meta_data[name] = param.value
         param.add_change_handler(self.on_parameter_change)
@@ -247,7 +247,7 @@ class Edge(IdObject, ObservableObject):
     def get_key_points(self):
         kps = []
         for uid in self._key_points:
-            kps.append(self._edges_object.get_key_point(uid))
+            kps.append(self._sketch.get_key_point(uid))
         return kps
 
     def get_key_point_uids(self):
@@ -260,21 +260,21 @@ class Edge(IdObject, ObservableObject):
         if self._type == Edge.LineEdge:
             return self.get_key_points()
         elif self._type == Edge.ArcEdge:
-            ckp = self._edges_object.get_key_point(self._key_points[0])
+            ckp = self._sketch.get_key_point(self._key_points[0])
             if 'start_kp' in self._meta_data:
-                start_kp = self._edges_object.get_key_point(self._meta_data['start_kp'])
+                start_kp = self._sketch.get_key_point(self._meta_data['start_kp'])
             else:
                 x = ckp.x + cos(self._meta_data['sa'])*self._meta_data['r']
                 y = ckp.y + sin(self._meta_data['sa'])*self._meta_data['r']
-                start_kp = self._edges_object.create_key_point(x, y, 0)
+                start_kp = self._sketch.create_key_point(x, y, 0)
                 start_kp.add_edge(self)
                 self._meta_data['start_kp'] = start_kp.uid
             if 'end_kp' in self._meta_data:
-                end_kp = self._edges_object.get_key_point(self._meta_data['end_kp'])
+                end_kp = self._sketch.get_key_point(self._meta_data['end_kp'])
             else:
                 x = ckp.x + cos(self._meta_data['ea'])*self._meta_data['r']
                 y = ckp.y + sin(self._meta_data['ea'])*self._meta_data['r']
-                end_kp = self._edges_object.create_key_point(x, y, 0)
+                end_kp = self._sketch.create_key_point(x, y, 0)
                 end_kp.add_edge(self)
                 self._meta_data['end_kp'] = end_kp.uid
             return [start_kp, end_kp]
@@ -512,7 +512,7 @@ class Edge(IdObject, ObservableObject):
     def coincident(self, key_point, coin_thress=None):
         kps = self.get_key_points()
         if coin_thress is None:
-            threshold = self._edges_object.threshold
+            threshold = self._sketch.threshold
         else:
             threshold = coin_thress
         if self.type == Edge.LineEdge:
@@ -538,7 +538,7 @@ class Edge(IdObject, ObservableObject):
         self._key_points.remove(second_key_point.uid)
         self._key_points.append(key_point.uid)
         key_point.add_change_handler(self.on_key_point_changed)
-        new_edge = self._edges_object.create_line_edge(key_point, second_key_point)
+        new_edge = self._sketch.create_line_edge(key_point, second_key_point)
         return new_edge
 
     @property
@@ -546,8 +546,8 @@ class Edge(IdObject, ObservableObject):
         return self._type
 
     @staticmethod
-    def deserialize(edges, data):
-        edge = Edge(edges)
+    def deserialize(sketch, data):
+        edge = Edge(sketch)
         if data is not None:
             edge.deserialize_data(data)
         return edge
@@ -568,14 +568,13 @@ class Edge(IdObject, ObservableObject):
         self._name = data.get('name', "Edge")
         self._key_points = data['key_points']
         for kp_uid in self._key_points:
-            kp = self._edges_object.get_key_point(kp_uid)
+            kp = self._sketch.get_key_point(kp_uid)
             kp.add_change_handler(self.on_key_point_changed)
             kp.add_edge(self)
         self._meta_data = data.get('meta_data')
         self._meta_data_parameters = data.get('meta_data_parameters')
-        doc = self._edges_object.get_document()
         for parameter_uid in self._meta_data_parameters:
-            param = doc.get_parameters().get_parameter_by_uid(parameter_uid)
+            param = self._sketch.get_parameter_by_uid(parameter_uid)
             if param is not None:
                 param.add_change_handler(self.on_parameter_change)
             else:

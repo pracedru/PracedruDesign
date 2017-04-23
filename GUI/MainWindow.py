@@ -15,6 +15,7 @@ from PyQt5.QtWidgets import QToolBar
 import Business
 from Data.Sketch import Sketch
 from GUI import *
+from GUI.ActionsStates import ActionStates
 from GUI.Icons import get_icon
 from GUI.Ribbon.RibbonButton import RibbonButton
 from GUI.Ribbon.RibbonWidget import RibbonWidget
@@ -33,6 +34,7 @@ class MainWindow(QMainWindow):
         self.setMinimumHeight(800)
         self.setMinimumWidth(1280)
         self._Title = "Pracedru Design"
+        self._states = ActionStates()
         # Action initialization
 
         self.new_action = self.add_action("New\nFile", "newicon", "New Document", True, self.on_new_document, QKeySequence.New)
@@ -84,6 +86,8 @@ class MainWindow(QMainWindow):
 
         self.read_settings()
 
+    def get_states(self) -> ActionStates:
+        return self._states
 
     def on_new_document(self):
         Business.new_document()
@@ -170,10 +174,15 @@ class MainWindow(QMainWindow):
         Business.find_all_similar(self._document)
 
     def on_show_key_points(self):
-        pass
+        self._states.show_key_points = self._show_key_points_action.isChecked()
 
     def update_ribbon_state(self):
-        pass
+        self._add_line_action.setChecked(self._states.draw_line_edge)
+        self._set_sim_x_action.setChecked(self._states.set_similar_x)
+        self._set_sim_y_action.setChecked(self._states.set_similar_y)
+        self._add_fillet_action.setChecked(self._states.add_fillet_edge)
+        self._add_arc_action.setEnabled(False)
+        self._add_divide_action.setEnabled(False)
 
     def init_ribbon(self):
         self.init_home_tab()
