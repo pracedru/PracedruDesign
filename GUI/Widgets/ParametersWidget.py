@@ -48,6 +48,10 @@ class ParametersWidget(QWidget):
         self.update_hide_parameters()
         self.parameters_table.selectionModel().selectionChanged.connect(self.on_param_selection_changed)
 
+    def set_parameters(self, params):
+        self._parameters = params
+        self.parameters_model.set_parameters(params)
+
     def on_add_parameter(self):
         # self.parent().parent().on_add_parameter()
         Business.add_parameter(self._parameters)

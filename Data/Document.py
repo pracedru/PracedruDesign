@@ -41,6 +41,12 @@ class Document(IdObject, ObservableObject):
         self._mesh.add_change_handler(self.on_object_changed)
         self._sweeps.add_change_handler(self.on_object_changed)
 
+    def get_all_parameters(self):
+        return self._parameters.get_all_parameters()
+
+    def get_parameter_by_uid(self, uid):
+        return self._parameters.get_parameter_by_uid(uid)
+
     def get_materials_object(self):
         return self._materials
 

@@ -14,6 +14,13 @@ class ParametersModel(QAbstractTableModel):
         parameters.add_change_handler(self.on_parameters_changed)
         self.old_row_count = 0
 
+    def set_parameters(self, params):
+        self.layoutAboutToBeChanged.emit()
+        self._parameters.remove_change_handler(self.on_parameters_changed)
+        self._parameters = params
+        self._parameters.add_change_handler(self.on_parameters_changed)
+        self.layoutChanged.emit()
+
     def rowCount(self, model_index=None, *args, **kwargs):
         return self._parameters.length
 
@@ -119,31 +126,32 @@ class ParametersModel(QAbstractTableModel):
         return False
 
     def on_parameters_changed(self, event):
-        if event.type == event.BeforeObjectAdded:
-            parent = QModelIndex()
-            row = self.rowCount()
-            self.beginInsertRows(parent, row, row)
-        if event.type == event.ObjectAdded:
-            self.endInsertRows()
-        if event.type == event.BeforeObjectRemoved:
-            row = self._parameters.get_index_of(event.object)
-            self.beginRemoveRows(QModelIndex(), row, row)
-        if event.type == event.ObjectRemoved:
-            self.endRemoveRows()
-        if event.type == event.ValueChanged:
-            param = event.sender
-            if type(param) is Parameter:
-                row = self._parameters.get_index_of(param)
-                left = self.createIndex(row, 0)
-                right = self.createIndex(row, 3)
-                self.dataChanged.emit(left, right)
-        if event.type == event.HiddenChanged:
-            param = event.sender
-            if type(param) is Parameter:
-                row = self._parameters.get_index_of(param)
-                left = self.createIndex(row, 3)
-                right = self.createIndex(row, 3)
-                self.dataChanged.emit(left, right)
+        if type(event.object) is Parameter:
+            if event.type == event.BeforeObjectAdded:
+                parent = QModelIndex()
+                row = self.rowCount()
+                self.beginInsertRows(parent, row, row)
+            if event.type == event.ObjectAdded:
+                self.endInsertRows()
+            if event.type == event.BeforeObjectRemoved:
+                row = self._parameters.get_index_of(event.object)
+                self.beginRemoveRows(QModelIndex(), row, row)
+            if event.type == event.ObjectRemoved:
+                self.endRemoveRows()
+            if event.type == event.ValueChanged:
+                param = event.sender
+                if type(param) is Parameter:
+                    row = self._parameters.get_index_of(param)
+                    left = self.createIndex(row, 0)
+                    right = self.createIndex(row, 3)
+                    self.dataChanged.emit(left, right)
+            if event.type == event.HiddenChanged:
+                param = event.sender
+                if type(param) is Parameter:
+                    row = self._parameters.get_index_of(param)
+                    left = self.createIndex(row, 3)
+                    right = self.createIndex(row, 3)
+                    self.dataChanged.emit(left, right)
 
     def flags(self, model_index: QModelIndex):
         default_flags = Qt.ItemIsSelectable | Qt.ItemIsEnabled | Qt.ItemIsEditable

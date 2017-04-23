@@ -246,7 +246,7 @@ class Parameters(ObservableObject):
         return param
 
     def get_all_parameters(self):
-        params = self._params.items()
+        params = list(self._params.items())
         if self._parent is not None:
             params.extend(self._parent.get_all_parameters())
         return params

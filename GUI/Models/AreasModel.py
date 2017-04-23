@@ -1,7 +1,7 @@
 from PyQt5.QtCore import *
 from PyQt5.QtWidgets import QMessageBox
 
-from Business import remove_areas
+from Business import *
 from Data import Areas
 from Data.Parameters import *
 

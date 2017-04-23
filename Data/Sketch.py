@@ -87,7 +87,7 @@ class Sketch(Geometry):
                 key_point = p
                 break
         if key_point is None:
-            key_point = KeyPoint(self._parent.get_parameters(), x, y, z)
+            key_point = KeyPoint(self, x, y, z)
             self.changed(ChangeEvent(self, ChangeEvent.BeforeObjectAdded, key_point))
             self._key_points[key_point.uid] = key_point
             self.changed(ChangeEvent(self, ChangeEvent.ObjectAdded, key_point))

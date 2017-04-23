@@ -13,12 +13,14 @@ from PyQt5.QtWidgets import QMessageBox
 from PyQt5.QtWidgets import QToolBar
 
 import Business
+from Data.Parameters import Parameters
 from Data.Sketch import Sketch
 from GUI import *
 from GUI.ActionsStates import ActionStates
 from GUI.Icons import get_icon
 from GUI.Ribbon.RibbonButton import RibbonButton
 from GUI.Ribbon.RibbonWidget import RibbonWidget
+from GUI.Widgets.GeometryView import GeometryDock
 from GUI.Widgets.ParametersWidget import ParametersWidget
 from GUI.Widgets.TreeView import TreeViewDock
 from GUI.Widgets.ViewWidget import ViewWidget
@@ -83,6 +85,9 @@ class MainWindow(QMainWindow):
         self._parameters_dock_widget.setWidget(self.parameters_widget)
         self._parameters_dock_widget.setWindowTitle("Parameters")
         self.addDockWidget(Qt.LeftDockWidgetArea, self._parameters_dock_widget)
+
+        self._geometry_dock = GeometryDock(self, self._document)
+        self.addDockWidget(Qt.LeftDockWidgetArea, self._geometry_dock)
 
         self.read_settings()
 
@@ -150,7 +155,10 @@ class MainWindow(QMainWindow):
         if len(selection) == 1:
             if type(selection[0]) is Sketch:
                 self._viewWidget.set_sketch_view(selection[0])
+                self._geometry_dock.set_sketch(selection[0])
                 self._ribbon_widget.setCurrentIndex(1)
+            if isinstance(selection[0], Parameters):
+                self.parameters_widget.set_parameters(selection[0])
 
     def on_set_sim_x(self):
         self._viewWidget.on_set_similar_x_coordinates()
@@ -171,10 +179,11 @@ class MainWindow(QMainWindow):
         pass
 
     def on_find_all_similar(self):
-        Business.find_all_similar(self._document)
+        self._viewWidget.on_find_all_similar()
 
     def on_show_key_points(self):
         self._states.show_key_points = self._show_key_points_action.isChecked()
+        self._viewWidget.update()
 
     def update_ribbon_state(self):
         self._add_line_action.setChecked(self._states.draw_line_edge)

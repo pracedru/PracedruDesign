@@ -7,7 +7,8 @@ from Data.Document import Document
 from Data.Events import ChangeEvent
 from Data.Geometry import Geometry
 from Data.Parameters import Parameters, Parameter
-from Data.Sketch import Sketch
+from Data.Point3d import KeyPoint
+from Data.Sketch import Sketch, Edge
 from GUI.Icons import get_icon
 
 
@@ -74,10 +75,14 @@ class DocumentItemModel(QAbstractItemModel):
         elif role == Qt.DecorationRole:
             if type(model_item.data) is Parameters:
                 return get_icon("params")
-            if type(model_item.data) is Parameter:
+            elif type(model_item.data) is Parameter:
                 return get_icon("param")
-            if type(model_item.data) is Sketch:
+            elif type(model_item.data) is Sketch:
                 return get_icon("sketch")
+            elif type(model_item.data) is KeyPoint:
+                return get_icon("kp")
+            elif type(model_item.data) is Edge:
+                return get_icon("edge")
             return get_icon("default")
         return None
 
@@ -113,9 +118,26 @@ class DocumentItemModel(QAbstractItemModel):
         self.layoutAboutToBeChanged.emit()
 
     def on_object_added(self, parent_item, object):
-        DocumentModelItem(object, self, parent_item)
-        self.layoutChanged.emit()
+        self.create_model_item(parent_item, object)
 
+    def create_model_item(self, parent_item, object):
+        if type(parent_item.data) is Sketch:
+            if type(object) is Parameter:
+                paramaters_item = parent_item.children()[0]
+                DocumentModelItem(object, self, paramaters_item)
+            elif type(object) is KeyPoint:
+                paramaters_item = parent_item.children()[1]
+                DocumentModelItem(object, self, paramaters_item, "Key point")
+            elif type(object) is Edge:
+                paramaters_item = parent_item.children()[2]
+                DocumentModelItem(object, self, paramaters_item)
+        else:
+            new_item = DocumentModelItem(object, self, parent_item)
+            if type(object) is Sketch:
+                DocumentModelItem(None, self, new_item, "Parameters")
+                DocumentModelItem(None, self, new_item, "Key Points")
+                DocumentModelItem(None, self, new_item, "Edges")
+            self.layoutChanged.emit()
 
 class DocumentModelItem(QObject):
     def __init__(self, data, model, parent=None, name="No name"):

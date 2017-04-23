@@ -11,13 +11,21 @@ col_header = ["Edges"]
 class EdgesModel(QAbstractTableModel):
     def __init__(self, doc):
         QAbstractItemModel.__init__(self)
-        self._edges = doc.get_edges()
+        self._sketch = None
         self._doc = doc
         self._rows = []
-        for edge_tuple in self._edges.get_edges():
-            self._rows.append(edge_tuple[1].uid)
-        self._edges.add_change_handler(self.on_edges_changed)
         self.old_row_count = 0
+
+    def set_sketch(self, sketch):
+        self.layoutAboutToBeChanged.emit()
+        if self._sketch is not None:
+            self._sketch.remove_change_handler(self.on_edges_changed)
+            self._rows.clear()
+        self._sketch = sketch
+        for edge_tuple in self._sketch.get_edges():
+            self._rows.append(edge_tuple[1].uid)
+        self._sketch.add_change_handler(self.on_edges_changed)
+        self.layoutChanged.emit()
 
     def rowCount(self, model_index=None, *args, **kwargs):
         return len(self._rows)
@@ -30,7 +38,7 @@ class EdgesModel(QAbstractTableModel):
         row = model_index.row()
         data = None
         if int_role == Qt.DisplayRole:
-            edge_item = self._edges.get_edge(self._rows[row])
+            edge_item = self._sketch.get_edge(self._rows[row])
             if edge_item is None:
                 self._rows.pop(row)
                 self.layoutChanged.emit()
@@ -38,7 +46,7 @@ class EdgesModel(QAbstractTableModel):
             if col == 0:
                 data = edge_item.name
         elif int_role == Qt.EditRole:
-            edge_item = self._edges.get_edge(self._rows[row])
+            edge_item = self._sketch.get_edge(self._rows[row])
             if col == 0:
                 data = edge_item.name
         return data
@@ -46,7 +54,7 @@ class EdgesModel(QAbstractTableModel):
     def setData(self, model_index: QModelIndex, value: QVariant, int_role=None):
         col = model_index.column()
         row = model_index.row()
-        edge_item = self._edges.get_edge(self._rows[row])
+        edge_item = self._sketch.get_edge(self._rows[row])
         if col == 0:
             edge_item.set_name(value)
             return True
@@ -54,14 +62,14 @@ class EdgesModel(QAbstractTableModel):
         return False
 
     def removeRow(self, row, QModelIndex_parent=None, *args, **kwargs):
-        edge = self._edges.get_edge(self._rows[row])
+        edge = self._sketch.get_edge(self._rows[row])
         remove_edge(self._doc, edge)
         #  self._edges.remove_edge(edge)
 
     def remove_rows(self, rows):
         edges = []
         for row in rows:
-            edges.append(self._edges.get_edge(self._rows[row]))
+            edges.append(self._sketch.get_edge(self._rows[row]))
         remove_edges(self._doc, edges)
 
     def on_edges_changed(self, event: ChangeEvent):
@@ -103,10 +111,10 @@ class EdgesModel(QAbstractTableModel):
             return
 
     def get_edge_object(self):
-        return self._edges
+        return self._sketch
 
     def get_edge(self, row):
-        return self._edges.get_edge(self._rows[row])
+        return self._sketch.get_edge(self._rows[row])
 
     def get_index_from_edge(self, edge):
         row = self._rows.index(edge.uid)

@@ -58,6 +58,10 @@ class SketchViewWidget(QWidget):
             print("double click")
         return False
 
+    def on_find_all_similar(self):
+        if self._sketch is not None:
+            find_all_similar(self._doc, self._sketch)
+
     def on_delete(self):
         txt = "Are you sure you want to delete these geometries?"
         ret = QMessageBox.warning(self, "Delete geometries?", txt, QMessageBox.Yes | QMessageBox.Cancel)
@@ -88,17 +92,6 @@ class SketchViewWidget(QWidget):
         self._sketch = sketch
         self.update()
 
-    def mousePressEvent(self, q_mouse_event):
-        self.setFocus()
-        position = q_mouse_event.pos()
-        if q_mouse_event.button() == 4:
-            self._states.middle_button_hold = True
-            self._pan_ref_pos = position
-            return
-        if q_mouse_event.button() == 1:
-            self._states.left_button_hold = True
-            self._move_ref_pos = position
-
     def mouseReleaseEvent(self, q_mouse_event):
         if q_mouse_event.button() == 4:
             self._states.middle_button_hold = False
@@ -113,6 +106,9 @@ class SketchViewWidget(QWidget):
         if self._mouse_position is not None:
             mouse_move_x = self._mouse_position.x() - position.x()
             mouse_move_y = self._mouse_position.y() - position.y()
+        else:
+            mouse_move_x = 0
+            mouse_move_y = 0
         self._mouse_position = position
         width = self.width() / 2
         height = self.height() / 2
@@ -176,6 +172,14 @@ class SketchViewWidget(QWidget):
 
     def mousePressEvent(self, q_mouse_event):
         self.setFocus()
+        position = q_mouse_event.pos()
+        if q_mouse_event.button() == 4:
+            self._states.middle_button_hold = True
+            self._pan_ref_pos = position
+            return
+        if q_mouse_event.button() == 1:
+            self._states.left_button_hold = True
+            self._move_ref_pos = position
         position = q_mouse_event.pos()
 
         width = self.width() / 2

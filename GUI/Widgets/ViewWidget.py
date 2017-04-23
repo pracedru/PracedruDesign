@@ -38,3 +38,7 @@ class ViewWidget(QStackedWidget):
     def on_add_line(self):
         if self.currentIndex() == 0:
             self._sketchView.on_add_line()
+
+    def on_find_all_similar(self):
+        if self.currentIndex() == 0:
+            self._sketchView.on_find_all_similar()
