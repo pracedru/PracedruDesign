@@ -3,6 +3,7 @@ from math import pi, sin, cos, tan
 from Data.Events import ChangeEvent
 from Data.Geometry import Geometry
 from Data.Objects import IdObject, ObservableObject
+from Data.Parameters import Parameters
 from Data.Point3d import KeyPoint
 from Data.Vertex import Vertex
 
@@ -11,7 +12,7 @@ __author__ = 'mamj'
 
 class Sketch(Geometry):
     def __init__(self, parent):
-        Geometry.__init__(self, parent)
+        Geometry.__init__(self, parent, "New Sketch", Geometry.Sketch)
         self._key_points = {}
         self._edges = {}
         self.threshold = 0.1
@@ -150,10 +151,12 @@ class Sketch(Geometry):
     def serialize_json(self):
         return {
             'uid': IdObject.serialize_json(self),
+            'parameters': Parameters.serialize_json(self),
             'key_points': self._key_points,
             'edges': self._edges,
             'threshold': self.threshold,
-            'edge_naming_index': self.edge_naming_index
+            'edge_naming_index': self.edge_naming_index,
+            'type': self._geometry_type
         }
 
     @staticmethod
@@ -165,6 +168,7 @@ class Sketch(Geometry):
 
     def deserialize_data(self, data):
         IdObject.deserialize_data(self, data['uid'])
+        Parameters.deserialize_data(self, data['parameters'])
         self.threshold = data.get('threshold', 0.1)
         self.edge_naming_index = data.get('edge_naming_index', 0)
         for kp_data_tuple in data.get('key_points', {}).items():

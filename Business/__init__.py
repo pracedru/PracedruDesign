@@ -5,6 +5,9 @@ import Data
 import GUI
 from Data.Document import Document
 from Data.Parameters import Parameters
+from Data.Sketch import Sketch
+
+undo_stacks = {}
 
 
 def load_document(file_path):
@@ -12,7 +15,6 @@ def load_document(file_path):
     doc = Data.Document.Document.deserialize(data)
     doc.path = os.path.dirname(file_path)
     doc.name = os.path.basename(file_path)
-
     return doc
 
 
@@ -31,3 +33,9 @@ def save_document(doc: Document):
 
 def add_parameter(parameters_object: Parameters):
     parameters_object.create_parameter()
+
+
+def create_add_sketch_to_document(document):
+    sketch = Sketch(document)
+    document.get_geometries().add_geometry(sketch)
+    return sketch

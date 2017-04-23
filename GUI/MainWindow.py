@@ -13,6 +13,7 @@ from PyQt5.QtWidgets import QMessageBox
 from PyQt5.QtWidgets import QToolBar
 
 import Business
+from Data.Sketch import Sketch
 from GUI import *
 from GUI.Icons import get_icon
 from GUI.Ribbon.RibbonButton import RibbonButton
@@ -21,10 +22,13 @@ from GUI.Widgets.ParametersWidget import ParametersWidget
 from GUI.Widgets.TreeView import TreeViewDock
 from GUI.Widgets.ViewWidget import ViewWidget
 
+main_windows = []
+
 
 class MainWindow(QMainWindow):
     def __init__(self, document):
         QMainWindow.__init__(self, None)
+        main_windows.append(self)
         self._document = document
         self.setMinimumHeight(800)
         self.setMinimumWidth(1280)
@@ -35,6 +39,17 @@ class MainWindow(QMainWindow):
         self.open_action = self.add_action("Open\nFile", "open", "Open file", True, self.on_open_file, QKeySequence.Open)
         self.save_action = self.add_action("Save", "save", "Save these data", True, self.on_save, QKeySequence.Save)
         self.save_as_action = self.add_action("Save\nas", "saveas", "Save these data as ...", True, self.on_save_as, QKeySequence.SaveAs)
+        self._zoom_fit_action = self.add_action("Zoom\nfit", "zoomfit", "Zoom to fit contents", True, self.on_zoom_fit)
+        self.add_sketch_to_document_action = self.add_action("Add\nSketch", "addsketch", "Add Sketch to the document", True, self.on_add_sketch_to_document, QKeySequence.SaveAs)
+        self._show_hidden_params_action = self.add_action("Show hidden\nparameters", "hideparams", "Show hidden parameters", True, self.on_show_hidden_parameters, checkable=True)
+        self._set_sim_x_action = self.add_action("Set simil.\nx coords", "setsimx", "Set similar x coordinate values", True, self.on_set_sim_x, checkable=True)
+        self._set_sim_y_action = self.add_action("Set simil.\ny coords", "setsimy", "Set similar y coordinate values", True, self.on_set_sim_y, checkable=True)
+        self._find_all_sim_action = self.add_action("Find all\nsimmilar", "allsim", "find all similar coordinate values and make parameters", True, self.on_find_all_similar)
+        self._add_line_action = self.add_action("Add\nline", "addline", "Add line edge to edges", True, self.on_add_line, checkable=True)
+        self._add_arc_action = self.add_action("Add\narc", "addarc", "Add arc edge to edges", True, self.on_add_arc)
+        self._add_fillet_action = self.add_action("Add\nfillet", "addfillet", "Add fillet edge to existing edges", True, self.on_add_fillet, checkable=True)
+        self._add_divide_action = self.add_action("Divide\nedge", "divideline", "Divide edge with keypoint", True, self.on_divide_edge, checkable=True)
+        self._show_key_points_action = self.add_action("Show key\npoints", "showkeypoints", "Show keypoints as circles", True, self.on_show_key_points, checkable=True)
 
         # Ribbon initialization
         self._ribbon = QToolBar(self)
@@ -124,6 +139,39 @@ class MainWindow(QMainWindow):
     def on_ribbon_changed(self):
         pass
 
+    def on_add_sketch_to_document(self):
+        Business.create_add_sketch_to_document(self._document)
+
+    def on_tree_selection_changed(self, selection):
+        if len(selection) == 1:
+            if type(selection[0]) is Sketch:
+                self._viewWidget.set_sketch_view(selection[0])
+                self._ribbon_widget.setCurrentIndex(1)
+
+    def on_set_sim_x(self):
+        self._viewWidget.on_set_similar_x_coordinates()
+
+    def on_set_sim_y(self):
+        self._viewWidget.on_set_similar_y_coordinates()
+
+    def on_add_line(self):
+        self._viewWidget.on_add_line()
+
+    def on_add_fillet(self):
+        self._viewWidget.on_add_fillet()
+
+    def on_add_arc(self):
+        pass
+
+    def on_divide_edge(self):
+        pass
+
+    def on_find_all_similar(self):
+        Business.find_all_similar(self._document)
+
+    def on_show_key_points(self):
+        pass
+
     def update_ribbon_state(self):
         pass
 
@@ -142,11 +190,27 @@ class MainWindow(QMainWindow):
         file_pane.add_ribbon_widget(RibbonButton(self, self.open_action, True))
         file_pane.add_ribbon_widget(RibbonButton(self, self.save_action, True))
         file_pane.add_ribbon_widget(RibbonButton(self, self.save_as_action, True))
+        insert_pane = home_tab.add_ribbon_pane("Insert")
+        insert_pane.add_ribbon_widget(RibbonButton(self, self.add_sketch_to_document_action, True))
 
     def init_sketch_tab(self):
         sketch_tab = self._ribbon_widget.add_ribbon_tab("Sketch")
         insert_pane = sketch_tab.add_ribbon_pane("Insert")
+        insert_pane.add_ribbon_widget(RibbonButton(self, self._add_line_action, True))
+        insert_pane.add_ribbon_widget(RibbonButton(self, self._add_arc_action, True))
+        insert_pane.add_ribbon_widget(RibbonButton(self, self._add_fillet_action, True))
+        insert_pane.add_ribbon_widget(RibbonButton(self, self._add_divide_action, True))
+        # insert_pane.add_ribbon_widget(RibbonButton(self, self._import_edges_from_original_action, True))
+
+        parametry_pane = sketch_tab.add_ribbon_pane("Parametry")
+        parametry_pane.add_ribbon_widget(RibbonButton(self, self._set_sim_x_action, True))
+        parametry_pane.add_ribbon_widget(RibbonButton(self, self._set_sim_y_action, True))
+        parametry_pane.add_ribbon_widget(RibbonButton(self, self._find_all_sim_action, True))
+
         view_pane = sketch_tab.add_ribbon_pane("View")
+        view_pane.add_ribbon_widget(RibbonButton(self, self._show_key_points_action, True))
+        view_pane.add_ribbon_widget(RibbonButton(self, self._show_hidden_params_action, True))
+        view_pane.add_ribbon_widget(RibbonButton(self, self._zoom_fit_action, True))
 
     def init_part_tab(self):
         part_tab = self._ribbon_widget.add_ribbon_tab("Part")
@@ -159,6 +223,12 @@ class MainWindow(QMainWindow):
         pass
 
     def init_analysis_tab(self):
+        pass
+
+    def on_show_hidden_parameters(self):
+        pass
+
+    def on_zoom_fit(self):
         pass
 
     def add_action(self, caption, icon_name, status_tip, icon_visible, connection, shortcut=None, checkable=False):

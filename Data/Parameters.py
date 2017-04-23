@@ -68,11 +68,20 @@ class Parameter(IdObject, ObservableObject):
         IdObject.__init__(self)
         ObservableObject.__init__(self)
         self._parent = parent
-        self.name = name
+        self._name = name
         self._value = value
         self._formula = str(value)
         self._change_senders = []
         self._hidden = False
+
+    @property
+    def name(self):
+        return self._name
+
+    @name.setter
+    def name(self, value):
+        self._name = value
+        self.changed(ChangeEvent(self, ChangeEvent.ValueChanged, self))
 
     def serialize_json(self):
         return {
@@ -200,7 +209,16 @@ class Parameters(ObservableObject):
         self._parameter_list = []
         self._params = {}
         self._parent = parent
-        self.name = name
+        self._name = name
+
+    @property
+    def name(self):
+        return self._name
+
+    @name.setter
+    def name(self, value):
+        self._name = value
+        self.changed(ChangeEvent(self, ChangeEvent.ValueChanged, self))
 
     def _add_parameter_object(self, param):
         self._params[param.uid] = param
@@ -274,7 +292,7 @@ class Parameters(ObservableObject):
 
     def serialize_json(self):
         return {
-            'name': self.name,
+            'name': self._name,
             'params': self._params,
             'parameter_list': self._parameter_list
         }
@@ -287,7 +305,7 @@ class Parameters(ObservableObject):
 
     def deserialize_data(self, data):
         self._parameter_list = data.get('parameter_list', [])
-        self.name = data.get('name', 'name missing')
+        self._name = data.get('name', 'name missing')
         for param_data in data.get('params', {}).items():
             param = Parameter.deserialize(param_data[1], self)
             self._params[param.uid] = param
