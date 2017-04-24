@@ -43,6 +43,6 @@ def create_add_sketch_to_document(document):
     return sketch
 
 
-def add_drawing(document):
-    drawing = document.get_drawings().create_drawing(Sizes["A0"])
+def add_drawing(document, size, name, header, orientation):
+    drawing = document.get_drawings().create_drawing(size, name, header, orientation)
     return drawing

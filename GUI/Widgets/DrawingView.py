@@ -9,12 +9,11 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QColor
 from PyQt5.QtGui import QLinearGradient
 from PyQt5.QtGui import QPen
-from PyQt5.QtWidgets import QGraphicsDropShadowEffect
-from PyQt5.QtWidgets import QGraphicsRectItem
 from PyQt5.QtWidgets import QWidget
 
 from Data.Vertex import Vertex
 from GUI import is_dark_theme
+from GUI.Widgets.Drawers import draw_sketch
 
 
 class DrawingViewWidget(QWidget):
@@ -130,23 +129,27 @@ class DrawingViewWidget(QWidget):
             annotation_pen = QPen(QtGui.QColor(0, 0, 0), 0.00033 * sc)
             half_width = self.width() / 2
             half_height = self.height() / 2
+            center = Vertex(half_width, half_height)
             cx = self._offset.x * sc + half_width
             cy = -self._offset.y * sc + half_height
             rect = QRectF(QPointF(cx, cy), QPointF(cx+self._drawing.size[0]*sc, cy - self._drawing.size[1]*sc))
             qp.fillRect(rect, QColor(255, 255, 255))
             self.draw_border(event, qp, cx, cy, contour_pen)
-            self.draw_header(event, qp, cx, cy, contour_pen, hatch_pen, annotation_pen)
+            self.draw_header(event, qp, cx, cy, center, contour_pen, hatch_pen, annotation_pen)
             self.draw_views(event, qp, cx, cy, contour_pen, hatch_pen, annotation_pen)
-
-
 
     def draw_views(self, event, qp, cx, cy, contour_pen, hatch_pen, annotation_pen):
         sc = self._scale
 
-
-    def draw_header(self, event, qp, cx, cy, contour_pen, hatch_pen, annotation_pen):
+    def draw_header(self, event, qp, cx, cy, center, contour_pen, hatch_pen, annotation_pen):
         sketch = self._drawing.header_sketch
-
+        limits = sketch.get_limits()
+        header_width = limits[2] - limits[0]
+        header_height = limits[3] - limits[1]
+        m = self._drawing.margins
+        sz = self._drawing.size
+        offset = Vertex(sz[0]-header_width-m[2]+self._offset.x, m[3]+self._offset.y)
+        draw_sketch(qp, sketch, self._scale, offset, center)
 
     def draw_sketch_view(self, event, qp, cx, cy, contour_pen, hatch_pen, annotation_pen, sketch_view):
         pass
@@ -154,9 +157,7 @@ class DrawingViewWidget(QWidget):
     def draw_border(self, event, qp, cx, cy, contour_pen):
         sc = self._scale
         sz = self._drawing.size
-
         shadow_pen = QPen(QtGui.QColor(150, 150, 150), 2)
-
         rect = QRectF(QPointF(cx, cy), QPointF(cx + sz[0] * sc, cy - sz[1] * sc))
         qp.setPen(shadow_pen)
         qp.drawRect(rect)

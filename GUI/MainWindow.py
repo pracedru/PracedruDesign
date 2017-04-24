@@ -6,6 +6,7 @@ from PyQt5.QtCore import QStandardPaths
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QKeySequence
 from PyQt5.QtWidgets import QAction
+from PyQt5.QtWidgets import QDialog
 from PyQt5.QtWidgets import QDockWidget
 from PyQt5.QtWidgets import QFileDialog
 from PyQt5.QtWidgets import QMainWindow
@@ -14,6 +15,7 @@ from PyQt5.QtWidgets import QProgressBar
 from PyQt5.QtWidgets import QToolBar
 
 import Business
+from Business.DrawingActions import create_empty_header
 from Data.Drawings import Drawing
 from Data.Parameters import Parameters
 from Data.Sketch import Sketch
@@ -51,7 +53,6 @@ class MainWindow(QMainWindow):
         self.add_drawing_action = self.add_action("Add\nDrawing", "adddrawing", "Add drawing to the document", True, self.on_add_drawing)
         self.add_part_action = self.add_action("Add\nPart", "addpart", "Add part to the document", True, self.on_add_part)
 
-
         self._show_hidden_params_action = self.add_action("Show hidden\nparameters", "hideparams", "Show hidden parameters", True, self.on_show_hidden_parameters, checkable=True)
         self._set_sim_x_action = self.add_action("Set simil.\nx coords", "setsimx", "Set similar x coordinate values", True, self.on_set_sim_x, checkable=True)
         self._set_sim_y_action = self.add_action("Set simil.\ny coords", "setsimy", "Set similar y coordinate values", True, self.on_set_sim_y, checkable=True)
@@ -60,7 +61,13 @@ class MainWindow(QMainWindow):
         self._add_arc_action = self.add_action("Add\narc", "addarc", "Add arc edge to edges", True, self.on_add_arc)
         self._add_fillet_action = self.add_action("Add\nfillet", "addfillet", "Add fillet edge to existing edges", True, self.on_add_fillet, checkable=True)
         self._add_divide_action = self.add_action("Divide\nedge", "divideline", "Divide edge with keypoint", True, self.on_divide_edge, checkable=True)
+
+        self._scale_selected_action = self.add_action("Scale", "scale", "Scale selected items", True, self.on_scale_selected)
+        self._pattern_selected_action = self.add_action("Pattern", "pattern", "Pattern selected items", True, self.on_pattern_selected)
         self._show_key_points_action = self.add_action("Show key\npoints", "showkeypoints", "Show keypoints as circles", True, self.on_show_key_points, checkable=True)
+
+        self._insert_sketch_action = self.add_action("Insert\nsketch", "addsketchview", "Insert sketch in drawing", True, self.on_insert_sketch_in_drawing)
+        self._insert_part_action = self.add_action("Insert\npart", "addpartview", "Insert part in drawing", True, self.on_insert_part_in_drawing)
 
         # Ribbon initialization
         self._ribbon = QToolBar(self)
@@ -103,6 +110,7 @@ class MainWindow(QMainWindow):
         self.progress_bar.setMaximumWidth(300)
         self.progress_bar.setTextVisible(False)
         self.statusBar().addPermanentWidget(self.progress_bar, 0)
+        self.setWindowTitle("{s[0]} - {s[1]}".format(s=[self._document.name, self._Title]))
 
     def get_states(self) -> ActionStates:
         return self._states
@@ -133,6 +141,12 @@ class MainWindow(QMainWindow):
             if (self._document.is_modified() is False) and self._document.path == "":
                 self.close()
         return
+
+    def on_insert_sketch_in_drawing(self):
+        pass
+
+    def on_insert_part_in_drawing(self):
+        pass
 
     def on_save(self):
         if self._document.path == "" or self._document.name == "":
@@ -200,6 +214,12 @@ class MainWindow(QMainWindow):
     def on_divide_edge(self):
         pass
 
+    def on_scale_selected(self):
+        pass
+
+    def on_pattern_selected(self):
+        pass
+
     def on_find_all_similar(self):
         self._viewWidget.on_find_all_similar()
 
@@ -244,6 +264,10 @@ class MainWindow(QMainWindow):
         insert_pane.add_ribbon_widget(RibbonButton(self, self._add_divide_action, True))
         # insert_pane.add_ribbon_widget(RibbonButton(self, self._import_edges_from_original_action, True))
 
+        operate_pane = sketch_tab.add_ribbon_pane("Operate")
+        operate_pane.add_ribbon_widget(RibbonButton(self, self._scale_selected_action, True))
+        operate_pane.add_ribbon_widget(RibbonButton(self, self._pattern_selected_action, True))
+
         parametry_pane = sketch_tab.add_ribbon_pane("Parametry")
         parametry_pane.add_ribbon_widget(RibbonButton(self, self._set_sim_x_action, True))
         parametry_pane.add_ribbon_widget(RibbonButton(self, self._set_sim_y_action, True))
@@ -263,6 +287,10 @@ class MainWindow(QMainWindow):
 
     def init_drawing_tab(self):
         drawing_tab = self._ribbon_widget.add_ribbon_tab("Drawing")
+        insert_pane = drawing_tab.add_ribbon_pane("Insert")
+        insert_pane.add_ribbon_widget(RibbonButton(self, self._insert_sketch_action, True))
+        insert_pane.add_ribbon_widget(RibbonButton(self, self._insert_part_action, True))
+        annotation_pane = drawing_tab.add_ribbon_pane("Annotation")
         edit_pane = drawing_tab.add_ribbon_pane("Edit")
 
     def init_analysis_tab(self):
@@ -275,9 +303,16 @@ class MainWindow(QMainWindow):
         pass
 
     def on_add_drawing(self):
+        if len(self._document.get_drawings().get_headers()) == 0:
+            create_empty_header(self._document)
         new_dwg_widget = NewDrawingViewWidget(self, self._document)
-        new_dwg_widget.exec_()
-        Business.add_drawing(self._document)
+        result = new_dwg_widget.exec_()
+        if result == QDialog.Accepted:
+            header = new_dwg_widget.header
+            size = new_dwg_widget.size
+            name = new_dwg_widget.name
+            orientation = new_dwg_widget.orientation
+            Business.add_drawing(self._document, size, name, header, orientation)
 
     def on_add_part(self):
         pass

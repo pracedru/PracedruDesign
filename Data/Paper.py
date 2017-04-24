@@ -2,25 +2,25 @@ from Data.Events import ChangeEvent
 from Data.Objects import ObservableObject
 
 Sizes = {
-    "A0": [1.189, .841],
-    "A1": [.841, .594],
-    "A2": [.594, .420],
-    "A3": [.420, .297],
-    "A4": [.297, .210],
-    "A5": [.210, .148],
-    "E": [1.1176, .8636],
-    "D": [.8636, .5588],
-    "C": [.5588, .4318],
-    "B": [.4318, .2794],
-    "A": [.2794, .2159]
+    "ISO A0": [1.189, .841],
+    "ISO A1": [.841, .594],
+    "ISO A2": [.594, .420],
+    "ISO A3": [.420, .297],
+    "ISO A4": [.297, .210],
+    "ISO A5": [.210, .148],
+    "ANSI E": [1.1176, .8636],
+    "ANSI D": [.8636, .5588],
+    "ANSI C": [.5588, .4318],
+    "ANSI B": [.4318, .2794],
+    "ANSI A": [.2794, .2159]
 }
 
 
 class Paper(ObservableObject):
-    Landscape = 1
-    Portrait = 2
+    Landscape = 0
+    Portrait = 1
 
-    def __init__(self, size=Sizes["A4"], orientation=Landscape):
+    def __init__(self, size=Sizes["ISO A4"], orientation=Landscape):
         ObservableObject.__init__(self)
         self._size = size
         self._margins = [0.01, 0.01, 0.01, 0.01]
@@ -28,7 +28,10 @@ class Paper(ObservableObject):
 
     @property
     def size(self):
-        return self._size
+        if self._orientation == Paper.Landscape:
+            return [max(self._size[0], self._size[1]), min(self._size[0], self._size[1])]
+        else:
+            return [min(self._size[0], self._size[1]), max(self._size[0], self._size[1])]
 
     @size.setter
     def size(self, value):

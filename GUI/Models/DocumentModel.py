@@ -4,7 +4,7 @@ from PyQt5.QtCore import QObject
 from PyQt5.QtCore import Qt
 
 from Data.Document import Document
-from Data.Drawings import Drawing
+from Data.Drawings import Drawing, Drawings
 from Data.Events import ChangeEvent
 from Data.Geometry import Geometry
 from Data.Parameters import Parameters, Parameter
@@ -32,7 +32,8 @@ class DocumentItemModel(QAbstractItemModel):
                 self.populate_sketch(geom, geoms_item)
 
         DocumentModelItem(None, self, self._root_item, "Analyses")
-        drawings_item = DocumentModelItem(self._doc.get_drawings(), self, self._root_item, "Drawings")
+
+        drawings_item = self.create_model_item(self._root_item, self._doc.get_drawings())
         for dwg in self._doc.get_drawings().items:
             dwg_item = DocumentModelItem(dwg, self, drawings_item)
             DocumentModelItem(dwg.header_sketch, self, dwg_item)
@@ -152,16 +153,24 @@ class DocumentItemModel(QAbstractItemModel):
             elif type(object) is Edge:
                 edges_item = parent_item.children()[2]
                 new_item = DocumentModelItem(object, self, edges_item)
+        elif type(parent_item.data) is Drawings:
+            if type(object) is Sketch:
+                headers_item = parent_item.children()[0]
+                new_item = self.create_model_item(headers_item, object)
+            elif type(object) is Drawing:
+                new_item = DocumentModelItem(object, self, parent_item)
+                self.create_model_item(new_item, object.header_sketch)
         else:
             new_item = DocumentModelItem(object, self, parent_item)
             if type(object) is Sketch:
                 DocumentModelItem(None, self, new_item, "Parameters")
                 DocumentModelItem(None, self, new_item, "Key Points")
                 DocumentModelItem(None, self, new_item, "Edges")
-            if type(object) is Drawing:
-                self.create_model_item(new_item, object.header_sketch)
+            if type(object) is Drawings:
+                DocumentModelItem(None, self, new_item, "Headers")
             self.layoutChanged.emit()
         return new_item
+
 
 class DocumentModelItem(QObject):
     def __init__(self, data, model, parent=None, name="No name"):

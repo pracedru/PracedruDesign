@@ -15,18 +15,23 @@ class Drawings(ObservableObject):
 
     def create_header(self):
         header = Sketch(self._doc.get_parameters())
+        header.name = "New Header"
         self.changed(ChangeEvent(self, ChangeEvent.BeforeObjectAdded, header))
         self._doc.get_geometries().add_geometry(header)
         self._headers.append(header)
         self.changed(ChangeEvent(self, ChangeEvent.ObjectAdded, header))
+        return header
 
-    def create_drawing(self, size):
-        drawing = Drawing(self._doc, size)
+    def create_drawing(self, size, name, header, orientation):
+        drawing = Drawing(self._doc, size, name, header, orientation)
         self.changed(ChangeEvent(self, ChangeEvent.BeforeObjectAdded, drawing))
         self._drawings.append(drawing)
         self.changed(ChangeEvent(self, ChangeEvent.ObjectAdded, drawing))
         drawing.add_change_handler(self.drawing_changed)
         return drawing
+
+    def get_headers(self):
+        return list(self._headers)
 
     @property
     def name(self):
@@ -66,9 +71,9 @@ class Drawings(ObservableObject):
 
 
 class Drawing(Paper, Parameters):
-    def __init__(self, document, size, header):
-        Paper.__init__(self, size)
-        Parameters.__init__(self, "New Drawing", document.get_parameters())
+    def __init__(self, document, size, name, header, orientation):
+        Paper.__init__(self, size, orientation)
+        Parameters.__init__(self, name, document.get_parameters())
         self._doc = document
         self._views = []
         self._border_sketch = None

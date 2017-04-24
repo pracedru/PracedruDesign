@@ -27,6 +27,15 @@ class Sketch(Geometry):
         self.edge_naming_index = 1
         self.changed(ChangeEvent(self, ChangeEvent.Cleared, self))
 
+    def get_limits(self):
+        limits = [1.0e16, 1.0e16, -1.0e16, -1.0e16]
+        for pnt in self._key_points.values():
+            limits[0] = min(pnt.x, limits[0])
+            limits[1] = min(pnt.y, limits[1])
+            limits[2] = max(pnt.x, limits[2])
+            limits[3] = max(pnt.y, limits[3])
+        return limits
+
     # def get_edges_from_key_point(self, kp):
     #     edges = []
     #     for edge_tuple in self._edges.items():
@@ -194,12 +203,93 @@ class Sketch(Geometry):
             self.edge_naming_index += 1
 
 
+class Text(IdObject, ObservableObject):
+    Bottom = 0
+    Top = 1
+    Center = 2
+    Left = 3
+    Right = 4
+
+    def __init__(self, sketch, key_point=None, value="", height=0.01, angle=0, vertical_orientation=Bottom, horizontal_orientation=Left):
+        IdObject.__init__(self)
+        ObservableObject.__init__(self)
+        self._sketch = sketch
+        self._vertical_orientation = vertical_orientation
+        self._horizontal_orientation = horizontal_orientation
+        self._value = value
+        self._height = height
+        self._angle = angle
+        self._key_point = key_point
+
+    def serialize_json(self):
+        return {
+            'uid': IdObject.serialize_json(self),
+            'kp': self._key_point.uid,
+            'value': self._value,
+            'height': self._height,
+            'angle': self._angle,
+            'vor': self._vertical_orientation,
+            'hor': self._horizontal_orientation
+        }
+
+    @staticmethod
+    def deserialize(data, param_parent):
+        text = Text(param_parent)
+        if data is not None:
+            text.deserialize_data(data)
+        return text
+
+    def deserialize_data(self, data):
+        IdObject.deserialize_data(self, data['uid'])
+        self._key_point = self._sketch.get_key_point(data['kp'])
+        self._value = data['value']
+        self._height = data['height']
+        self._angle = data['angle']
+        self._vertical_orientation = data['vor']
+        self._horizontal_orientation = data['hor']
+
+
+class Attribute(Text):
+    def __init__(self, name, default_value):
+        Text.__init__(default_value)
+        self._name = name
+
+    @property
+    def name(self):
+        return self._name
+
+    def set_name(self, name):
+        self._name = name
+
+    def serialize_json(self):
+        return {
+            'uid': IdObject.serialize_json(self),
+            'name': self._name,
+        }
+
+    @staticmethod
+    def deserialize(data, param_parent):
+        text = Text(param_parent)
+        if data is not None:
+            text.deserialize_data(data)
+        return text
+
+    def deserialize_data(self, data):
+        IdObject.deserialize_data(self, data['uid'])
+        self._value = data['value']
+        self._height = data['height']
+        self._angle = data['angle']
+        self._vertical_orientation = data['vor']
+        self._horizontal_orientation = data['hor']
+
+
 class Edge(IdObject, ObservableObject):
     LineEdge = 1
     ArcEdge = 2
     EllipseEdge = 3
     PolyLineEdge = 4
     FilletLineEdge = 5
+    CircleEdge = 3
 
     def __init__(self, sketch, type=LineEdge):
         IdObject.__init__(self)
