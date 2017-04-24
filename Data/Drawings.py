@@ -66,14 +66,13 @@ class Drawings(ObservableObject):
 
 
 class Drawing(Paper, Parameters):
-    def __init__(self, document, size=Sizes["A0"]):
+    def __init__(self, document, size, header):
         Paper.__init__(self, size)
         Parameters.__init__(self, "New Drawing", document.get_parameters())
         self._doc = document
         self._views = []
         self._border_sketch = None
-        self._header_sketch = None
-        self._name = "New Drawing"
+        self._header_sketch = header
         self._margins = [0.02, 0.02, 0.02, 0.02]
 
     @property

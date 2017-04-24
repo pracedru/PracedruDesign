@@ -23,6 +23,7 @@ from GUI.Icons import get_icon
 from GUI.Ribbon.RibbonButton import RibbonButton
 from GUI.Ribbon.RibbonWidget import RibbonWidget
 from GUI.Widgets.GeometryView import GeometryDock
+from GUI.Widgets.NewDrawingView import NewDrawingViewWidget
 from GUI.Widgets.ParametersWidget import ParametersWidget
 from GUI.Widgets.TreeView import TreeViewDock
 from GUI.Widgets.ViewWidget import ViewWidget
@@ -274,6 +275,8 @@ class MainWindow(QMainWindow):
         pass
 
     def on_add_drawing(self):
+        new_dwg_widget = NewDrawingViewWidget(self, self._document)
+        new_dwg_widget.exec_()
         Business.add_drawing(self._document)
 
     def on_add_part(self):

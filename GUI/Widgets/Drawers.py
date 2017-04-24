@@ -1,19 +1,14 @@
 from math import *
 
-from PyQt5 import QtGui
 from PyQt5.QtCore import QPointF
 from PyQt5.QtCore import QRectF
 from PyQt5.QtGui import QPainter
-
-from PyQt5.QtGui import QPen
 
 from Data.Sketch import Edge
 
 
 def draw_sketch(qp: QPainter, sketch, scale, offset, center):
-    normal_pen = QPen(QtGui.QColor(0, 0, 0), 2)
     edges = sketch.get_edges()
-    qp.setPen(normal_pen)
     for edge_tuple in edges:
         edge = edge_tuple[1]
         draw_edge(edge, qp, scale, offset, center)
@@ -129,3 +124,9 @@ def draw_edge(edge: Edge, qp: QPainter, scale, offset, center):
                         start_angle += pi * 180 * 16 / pi
                 span = end_angle-start_angle
                 qp.drawArc(rect, start_angle, span)
+
+
+def draw_kp(qp, key_point, scale, offset, center):
+    x1 = (key_point.x + offset.x) * scale + center.x
+    y1 = -(key_point.y + offset.y) * scale + center.y
+    qp.drawEllipse(QPointF(x1, y1), 4, 4)
