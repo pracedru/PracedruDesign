@@ -27,14 +27,15 @@ class DocumentItemModel(QAbstractItemModel):
         for param_tuple in self._doc.get_parameters().get_all_parameters():
             DocumentModelItem(param_tuple[1], self, glocal_params_item)
         geoms_item = DocumentModelItem(self._doc.get_geometries(), self, self._root_item)
-        for geom_tuple in self._doc.get_geometries().items():
-            if type(geom_tuple[1]) is Sketch:
-                self.populate_sketch(geom_tuple[1], geoms_item)
+        for geom in self._doc.get_geometries().items():
+            if type(geom) is Sketch:
+                self.populate_sketch(geom, geoms_item)
 
         DocumentModelItem(None, self, self._root_item, "Analyses")
         drawings_item = DocumentModelItem(self._doc.get_drawings(), self, self._root_item, "Drawings")
         for dwg in self._doc.get_drawings().items:
-            DocumentModelItem(dwg, self, drawings_item)
+            dwg_item = DocumentModelItem(dwg, self, drawings_item)
+            DocumentModelItem(dwg.header_sketch, self, dwg_item)
 
         DocumentModelItem(None, self, self._root_item, "Reports")
 
@@ -157,6 +158,8 @@ class DocumentItemModel(QAbstractItemModel):
                 DocumentModelItem(None, self, new_item, "Parameters")
                 DocumentModelItem(None, self, new_item, "Key Points")
                 DocumentModelItem(None, self, new_item, "Edges")
+            if type(object) is Drawing:
+                self.create_model_item(new_item, object.header_sketch)
             self.layoutChanged.emit()
         return new_item
 

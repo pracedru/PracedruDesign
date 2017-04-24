@@ -21,3 +21,10 @@ class ChangeEvent(Event):
         Event.__init__(self, sender)
         self.type = type
         self.object = object
+
+
+class ValueChangeEvent(ChangeEvent):
+    def __init__(self, sender, name, old_value, new_value):
+        ChangeEvent.__init__(self, sender, ChangeEvent.ValueChanged, name)
+        self.old_value = old_value
+        self.new_value = new_value

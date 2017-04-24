@@ -16,6 +16,7 @@ from Data.Mesh import MeshDefinition
 from Data.Sweeps import SweepDefinition
 from Data.Vertex import Vertex
 from GUI import is_dark_theme
+from GUI.Widgets.DrawingView import DrawingViewWidget
 from GUI.Widgets.PartView import PartViewWidget
 from GUI.Widgets.SketchView import SketchViewWidget
 
@@ -28,12 +29,18 @@ class ViewWidget(QStackedWidget):
         self._doc = document
         self._sketchView = SketchViewWidget(self, document, main_window)
         self._partView = PartViewWidget(self, document)
+        self._drawingView = DrawingViewWidget(self, document, main_window)
         self.addWidget(self._sketchView)
         self.addWidget(self._partView)
+        self.addWidget(self._drawingView)
 
     def set_sketch_view(self, sketch):
         self.setCurrentIndex(0)
         self._sketchView.set_sketch(sketch)
+
+    def set_drawing_view(self, drawing):
+        self.setCurrentIndex(2)
+        self._drawingView.set_drawing(drawing)
 
     def on_add_line(self):
         if self.currentIndex() == 0:

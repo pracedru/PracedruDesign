@@ -14,6 +14,7 @@ from PyQt5.QtWidgets import QProgressBar
 from PyQt5.QtWidgets import QToolBar
 
 import Business
+from Data.Drawings import Drawing
 from Data.Parameters import Parameters
 from Data.Sketch import Sketch
 from GUI import *
@@ -168,6 +169,9 @@ class MainWindow(QMainWindow):
                 self._viewWidget.set_sketch_view(selection[0])
                 self._geometry_dock.set_sketch(selection[0])
                 self._ribbon_widget.setCurrentIndex(1)
+            if type(selection[0]) is Drawing:
+                self._viewWidget.set_drawing_view(selection[0])
+                self._ribbon_widget.setCurrentIndex(3)
             if isinstance(selection[0], Parameters):
                 self.parameters_widget.set_parameters(selection[0])
 
@@ -257,7 +261,8 @@ class MainWindow(QMainWindow):
         pass
 
     def init_drawing_tab(self):
-        pass
+        drawing_tab = self._ribbon_widget.add_ribbon_tab("Drawing")
+        edit_pane = drawing_tab.add_ribbon_pane("Edit")
 
     def init_analysis_tab(self):
         pass

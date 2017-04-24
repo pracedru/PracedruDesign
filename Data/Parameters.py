@@ -1,6 +1,6 @@
 from math import sin
 from PyQt5.QtCore import QVariant
-from Data.Events import ChangeEvent
+from Data.Events import ChangeEvent, ValueChangeEvent
 from Data.Objects import IdObject, ObservableObject
 import ast
 import operator as op
@@ -217,8 +217,10 @@ class Parameters(ObservableObject):
 
     @name.setter
     def name(self, value):
-        self._name = value
-        self.changed(ChangeEvent(self, ChangeEvent.ValueChanged, self))
+        if value != self._name:
+            old_value = self._name
+            self._name = value
+            self.changed(ValueChangeEvent(self, 'name', old_value, value))
 
     def _add_parameter_object(self, param):
         self._params[param.uid] = param
