@@ -111,6 +111,15 @@ class SketchViewWidget(QWidget):
         self._selected_edges = selected_edges
         self.update()
 
+    def on_add_fillet(self):
+        self.on_escape()
+        if self._sketch is None:
+            return
+        self.setCursor(Qt.CrossCursor)
+        self._states.select_kp = True
+        self._states.set_fillet_kp = True
+        self._main_window.update_ribbon_state()
+
     def on_escape(self):
         self._states.set_similar_x = False
         self._states.set_similar_y = False
@@ -118,10 +127,14 @@ class SketchViewWidget(QWidget):
         self._states.create_area = False
         self._states.set_fillet_kp = False
         self._states.insert_text = False
+        self.setCursor(Qt.ArrowCursor)
         self._main_window.update_ribbon_state()
 
     def on_add_line(self):
         self.on_escape()
+        if self._sketch is None:
+            return
+        self.setCursor(Qt.CrossCursor)
         self._states.select_kp = True
         self._states.draw_line_edge = True
         self._main_window.update_ribbon_state()
@@ -281,6 +294,7 @@ class SketchViewWidget(QWidget):
             if len(self._selected_key_points) == 2:
                 sketch.create_line_edge(self._selected_key_points[0], self._selected_key_points[1])
                 self._selected_key_points.clear()
+                self.on_escape()
         if self._states.set_fillet_kp:
             if self._kp_hover is not None:
                 doc = self._doc
@@ -290,7 +304,7 @@ class SketchViewWidget(QWidget):
                     param = self._doc.get_parameters().get_parameter_by_name(param_name)
                     if param is None:
                         param = self._doc.get_parameters().create_parameter(param_name, 1.0)
-                    create_fillet(self._doc, sketch, self._kp_hover, param)
+                    create_fillet(self._doc, self._sketch, self._kp_hover, param)
                 else:
                     pass
         if self._states.insert_text:

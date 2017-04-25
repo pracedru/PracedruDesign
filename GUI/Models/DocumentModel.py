@@ -16,11 +16,21 @@ from GUI.Icons import get_icon
 class DocumentItemModel(QAbstractItemModel):
     def __init__(self, document: Document):
         QAbstractItemModel.__init__(self)
+        self._new_item_added_listeners = []
         self._doc = document
         self._root_item = DocumentModelItem(document, self)
         self.populate()
         if document is not None:
             document.add_change_handler(self.on_document_changed)
+
+    def add_new_item_added_listener(self, listener):
+        self._new_item_added_listeners.append(listener)
+
+    def on_new_item_added(self, item):
+        row = item.parent().children().index(item)
+        index = self.createIndex(row, 0, item)
+        for listener in self._new_item_added_listeners:
+            listener(index)
 
     def populate(self):
         glocal_params_item = DocumentModelItem(self._doc.get_parameters(), self, self._root_item)
@@ -60,7 +70,12 @@ class DocumentItemModel(QAbstractItemModel):
         elif model_item == self._root_item:
             return QModelIndex()
         else:
-            row = model_item.parent().children().index(model_item)
+            parent_item = model_item.parent()
+            elder_item = parent_item.parent()
+            if elder_item is not None:
+                row = elder_item.children().index(parent_item)
+            else:
+                row = 0
             return self.createIndex(row, 0, model_item.parent())
         return QModelIndex()
 
@@ -144,9 +159,11 @@ class DocumentItemModel(QAbstractItemModel):
         self.layoutAboutToBeChanged.emit()
 
     def on_object_added(self, parent_item, object):
-        self.create_model_item(parent_item, object)
+        item = self.create_model_item(parent_item, object)
+        self.on_new_item_added(item)
 
     def create_model_item(self, parent_item, object):
+        self.layoutAboutToBeChanged.emit()
         if type(parent_item.data) is Sketch:
             if type(object) is Parameter:
                 parameters_item = parent_item.children()[0]
@@ -176,7 +193,7 @@ class DocumentItemModel(QAbstractItemModel):
                 DocumentModelItem(None, self, new_item, "Annotation")
             if type(object) is Drawings:
                 DocumentModelItem(None, self, new_item, "Headers")
-            self.layoutChanged.emit()
+        self.layoutChanged.emit()
         return new_item
 
 

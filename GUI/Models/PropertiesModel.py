@@ -130,5 +130,11 @@ class PropertiesModel(QAbstractTableModel):
             return
 
     def flags(self, model_index: QModelIndex):
-        default_flags = Qt.ItemIsSelectable | Qt.ItemIsEnabled | Qt.ItemIsEditable
+        default_flags = Qt.ItemIsSelectable
+        if self._item is not None:
+            row = model_index.row()
+            class_attribute = getattr(type(self._item), self._rows[row][1], None)
+            if isinstance(class_attribute, property):
+                if class_attribute.fset is not None:
+                    default_flags = default_flags | Qt.ItemIsEditable | Qt.ItemIsEnabled
         return default_flags

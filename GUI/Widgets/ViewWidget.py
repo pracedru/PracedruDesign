@@ -65,3 +65,7 @@ class ViewWidget(QStackedWidget):
             self._sketchView.on_zoom_fit()
         elif self.currentIndex() == 2:
             self._drawingView.on_zoom_fit()
+
+    def on_add_fillet(self):
+        if self.currentIndex() == 0:
+            self._sketchView.on_add_fillet()
