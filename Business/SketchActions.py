@@ -20,14 +20,6 @@ def create_fillet(doc, sketch, fillet_kp, radius_param):
     fillet_edge = sketch.create_fillet_edge(fillet_kp)
     fillet_edge.set_meta_data('r', radius_param.value)
     fillet_edge.set_meta_data_parameter('r', radius_param)
-    areas = doc.get_areas()
-    for area_tuple in areas.get_areas():
-        area = area_tuple[1]
-        kps = area.get_inside_key_points()
-        for kp in kps:
-            if kp is fillet_kp:
-                area.add_edge(fillet_edge)
-
 
 def create_text(doc, sketch, kp, value, height):
     sketch.create_text(kp, value, height=height)

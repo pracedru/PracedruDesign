@@ -127,6 +127,8 @@ class SketchViewWidget(QWidget):
         self._states.create_area = False
         self._states.set_fillet_kp = False
         self._states.insert_text = False
+        self._selected_key_points.clear()
+        self._selected_edges.clear()
         self.setCursor(Qt.ArrowCursor)
         self._main_window.update_ribbon_state()
 

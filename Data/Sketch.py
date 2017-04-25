@@ -116,7 +116,7 @@ class Sketch(Geometry):
         fillet_edge = None
         if kp.uid in self._key_points:
             fillet_edge = Edge(self, Edge.FilletLineEdge)
-            fillet_edge.set_name("Edge" + str(self.edge_naming_index))
+            fillet_edge.name = "Edge" + str(self.edge_naming_index)
             fillet_edge.add_key_point(kp)
             self.edge_naming_index += 1
             self.changed(ChangeEvent(self, ChangeEvent.BeforeObjectAdded, fillet_edge))
@@ -386,8 +386,7 @@ class Edge(IdObject, NamedObservableObject):
 
     def set_meta_data_parameter(self, name, parameter):
         self._meta_data_parameters[parameter.uid] = name
-        doc = self._sketch.get_document()
-        param = doc.get_parameters().get_parameter_by_uid(parameter.uid)
+        param = self._sketch.get_parameter_by_uid(parameter.uid)
         self._meta_data[name] = param.value
         param.add_change_handler(self.on_parameter_change)
 

@@ -64,15 +64,15 @@ class ParametersWidget(QWidget):
     def on_set_governor(self):
         rows = self.parameters_table.selectionModel().selectedRows()
         params = []
-        for param_tuple in self._document.get_parameters().get_all_parameters():
+        for param_tuple in self._parameters.get_all_parameters():
             params.append(param_tuple[1].name)
         params.sort()
         value = QInputDialog.getItem(self, "Set parameter", "Parameter:", params, 0, False)
-        governor_parameter = self._document.get_parameters().get_parameter_by_name(value[0])
+        governor_parameter = self._parameters.get_parameter_by_name(value[0])
         for ndx in rows:
             index = self.parameters_sort_model.mapToSource(ndx)
             row = index.row()
-            param = self._document.get_parameters().get_parameter(row)
+            param = self._parameters.get_parameter_item(row)
             if param is not governor_parameter:
                 param.value = (governor_parameter.name + "+" + str(round(param.value-governor_parameter.value, 4))).replace("+-", '-')
 
