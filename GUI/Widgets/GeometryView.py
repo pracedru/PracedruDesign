@@ -14,7 +14,7 @@ __author__ = 'mamj'
 
 class GeometryDock(QDockWidget):
     def __init__(self, main_window, doc: Document):
-        QWidget.__init__(self, main_window)
+        QDockWidget.__init__(self, main_window)
         self._main_window = main_window
         self._doc = doc
         self._widget = QWidget(self)

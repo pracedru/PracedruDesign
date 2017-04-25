@@ -2,9 +2,12 @@ from math import *
 
 from PyQt5.QtCore import QPointF
 from PyQt5.QtCore import QRectF
+from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QFont
+from PyQt5.QtGui import QFontMetrics
 from PyQt5.QtGui import QPainter
 
-from Data.Sketch import Edge
+from Data.Sketch import Edge, Text
 
 
 def draw_sketch(qp: QPainter, sketch, scale, offset, center):
@@ -12,6 +15,34 @@ def draw_sketch(qp: QPainter, sketch, scale, offset, center):
     for edge_tuple in edges:
         edge = edge_tuple[1]
         draw_edge(edge, qp, scale, offset, center)
+    for text_tuple in sketch.get_texts():
+        text = text_tuple[1]
+        draw_text(text, qp, scale, offset, center)
+
+
+def draw_text(text, qp: QPainter, scale, offset, center):
+    key_point = text.key_point
+    factor = 10 / text.height
+    font = QFont("Helvetica", text.height*factor)
+    fm = QFontMetrics(font)
+    qp.setFont(font)
+    width = fm.width(text.value)/factor
+    qp.save()
+    x1 = (key_point.x + offset.x)*scale + center.x
+    y1 = -(key_point.y + offset.y)*scale + center.y
+    if text.horizontal_alignment == Text.Left:
+        x1 -= width*scale
+    elif text.horizontal_alignment == Text.Center:
+        x1 -= width*scale/2
+    if text.vertical_alignment == Text.Top:
+        y1 -= text.height*scale
+    elif text.vertical_alignment == Text.Center:
+        y1 -= text.height * 2 * scale/2
+    qp.translate(x1, y1)
+    qp.scale(scale/factor, scale/factor)
+    qp.rotate(text.angle*180/pi)
+    qp.drawText(QRectF(0, 0, width*factor, text.height*2*factor), Qt.AlignHCenter | Qt.AlignVCenter, text.value)
+    qp.restore()
 
 
 def draw_edge(edge: Edge, qp: QPainter, scale, offset, center):

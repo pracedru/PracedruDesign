@@ -1,6 +1,6 @@
 from math import pi, sin, cos, tan
 #from Data import Document
-from Data.Events import ChangeEvent
+from Data.Events import ChangeEvent, ValueChangeEvent
 from Data.Geometry import Geometry
 from Data.Objects import IdObject, ObservableObject
 from Data.Parameters import Parameters
@@ -15,6 +15,7 @@ class Sketch(Geometry):
         Geometry.__init__(self, params_parent, "New Sketch", Geometry.Sketch)
         self._key_points = {}
         self._edges = {}
+        self._texts = {}
         self.threshold = 0.1
         self.edge_naming_index = 1
 
@@ -43,6 +44,14 @@ class Sketch(Geometry):
     #         if kp in edge.get_end_key_points():
     #             edges.append(edge)
     #     return edges
+
+    @property
+    def key_point_count(self):
+        return len(self._key_points)
+
+    @property
+    def edges_count(self):
+        return len(self._edges)
 
     def get_edge(self, uid):
         if uid in self._edges:
@@ -116,6 +125,14 @@ class Sketch(Geometry):
             fillet_edge.add_change_handler(self.on_edge_changed)
         return fillet_edge
 
+    def create_text(self, key_point, value, height):
+        text = Text(self, key_point, value, height)
+        self.changed(ChangeEvent(self, ChangeEvent.BeforeObjectAdded, text))
+        self._texts[text.uid] = text
+        self.changed(ChangeEvent(self, ChangeEvent.ObjectAdded, text))
+        text.add_change_handler(self.on_text_changed)
+        return text
+
     def create_line_edge(self, key_point1, key_point2):
         line_edge = Edge(self, Edge.LineEdge)
         line_edge.set_name("Edge" + str(self.edge_naming_index))
@@ -148,8 +165,14 @@ class Sketch(Geometry):
     def get_key_points(self):
         return self._key_points.items()
 
+    def get_texts(self):
+        return self._texts.items()
+
     def on_kp_changed(self, event):
-        self.changed(event)
+        self.changed(ChangeEvent(self, ChangeEvent.ObjectChanged, event.sender))
+
+    def on_text_changed(self, event):
+        self.changed(ChangeEvent(self, ChangeEvent.ObjectChanged, event.sender))
 
     def on_edge_changed(self, event):
         if event.type == ChangeEvent.Deleted:
@@ -163,6 +186,7 @@ class Sketch(Geometry):
             'parameters': Parameters.serialize_json(self),
             'key_points': self._key_points,
             'edges': self._edges,
+            'texts': self._texts,
             'threshold': self.threshold,
             'edge_naming_index': self.edge_naming_index,
             'type': self._geometry_type
@@ -190,6 +214,11 @@ class Sketch(Geometry):
             edge = Edge.deserialize(self, edge_data)
             self._edges[edge.uid] = edge
             edge.add_change_handler(self.on_edge_changed)
+        for text_data_tuple in data.get('texts', {}).items():
+            text_data = text_data_tuple[1]
+            text = Text.deserialize(self, text_data)
+            self._texts[text.uid] = text
+            text.add_change_handler(self.on_text_changed)
 
         if self.edge_naming_index == 0:
             for edge_tuple in self._edges.items():
@@ -207,19 +236,64 @@ class Text(IdObject, ObservableObject):
     Bottom = 0
     Top = 1
     Center = 2
-    Left = 3
-    Right = 4
+    Left = 0
+    Right = 1
 
-    def __init__(self, sketch, key_point=None, value="", height=0.01, angle=0, vertical_orientation=Bottom, horizontal_orientation=Left):
+    def __init__(self, sketch, key_point=None, value="", height=0.01, angle=0, vertical_alignment=Center, horizontal_alignment=Center):
         IdObject.__init__(self)
         ObservableObject.__init__(self)
         self._sketch = sketch
-        self._vertical_orientation = vertical_orientation
-        self._horizontal_orientation = horizontal_orientation
+        self._vertical_alignment = vertical_alignment
+        self._horizontal_alignment = horizontal_alignment
         self._value = value
         self._height = height
         self._angle = angle
         self._key_point = key_point
+
+    @property
+    def name(self):
+        return self._value
+
+    @property
+    def key_point(self):
+        return self._key_point
+
+    @property
+    def value(self):
+        return self._value
+
+    @value.setter
+    def value(self, value):
+        old_value = self._value
+        self._value = value
+        self.changed(ValueChangeEvent(self, 'value', old_value, value))
+
+    @property
+    def vertical_alignment(self):
+        return self._vertical_alignment
+
+    @property
+    def horizontal_alignment(self):
+        return self._horizontal_alignment
+
+    @horizontal_alignment.setter
+    def horizontal_alignment(self, value):
+        self._horizontal_alignment = value
+        self.changed(ValueChangeEvent(self, 'horizontal_alignment', 0, value))
+
+    @property
+    def height(self):
+        return self._height
+
+    @height.setter
+    def height(self, value):
+        old_value = self._height
+        self._height = value
+        self.changed(ValueChangeEvent(self, 'height', old_value, value))
+
+    @property
+    def angle(self):
+        return self._angle
 
     def serialize_json(self):
         return {
@@ -228,13 +302,13 @@ class Text(IdObject, ObservableObject):
             'value': self._value,
             'height': self._height,
             'angle': self._angle,
-            'vor': self._vertical_orientation,
-            'hor': self._horizontal_orientation
+            'valign': self._vertical_alignment,
+            'halign': self._horizontal_alignment
         }
 
     @staticmethod
-    def deserialize(data, param_parent):
-        text = Text(param_parent)
+    def deserialize(sketch, data):
+        text = Text(sketch)
         if data is not None:
             text.deserialize_data(data)
         return text
@@ -245,8 +319,8 @@ class Text(IdObject, ObservableObject):
         self._value = data['value']
         self._height = data['height']
         self._angle = data['angle']
-        self._vertical_orientation = data['vor']
-        self._horizontal_orientation = data['hor']
+        self._vertical_alignment = data['valign']
+        self._horizontal_alignment = data['halign']
 
 
 class Attribute(Text):
@@ -263,7 +337,7 @@ class Attribute(Text):
 
     def serialize_json(self):
         return {
-            'uid': IdObject.serialize_json(self),
+            'text': Text.serialize_json(self),
             'name': self._name,
         }
 
@@ -275,12 +349,8 @@ class Attribute(Text):
         return text
 
     def deserialize_data(self, data):
-        IdObject.deserialize_data(self, data['uid'])
-        self._value = data['value']
-        self._height = data['height']
-        self._angle = data['angle']
-        self._vertical_orientation = data['vor']
-        self._horizontal_orientation = data['hor']
+        Text.deserialize_data(self, data['text'])
+        self._name = data['name']
 
 
 class Edge(IdObject, ObservableObject):

@@ -9,7 +9,7 @@ from Data.Events import ChangeEvent
 from Data.Geometry import Geometry
 from Data.Parameters import Parameters, Parameter
 from Data.Point3d import KeyPoint
-from Data.Sketch import Sketch, Edge
+from Data.Sketch import Sketch, Edge, Text
 from GUI.Icons import get_icon
 
 
@@ -48,6 +48,8 @@ class DocumentItemModel(QAbstractItemModel):
             param_item = DocumentModelItem(kp_tuple[1], self, geom_item.children()[1], "Key point")
         for edge_tuple in sketch.get_edges():
             param_item = DocumentModelItem(edge_tuple[1], self, geom_item.children()[2])
+        for text_tuple in sketch.get_texts():
+            param_item = DocumentModelItem(text_tuple[1], self, geom_item.children()[3])
 
     def parent(self, index: QModelIndex=None):
         if not index.isValid():
@@ -103,6 +105,8 @@ class DocumentItemModel(QAbstractItemModel):
                 return get_icon("edge")
             elif type(model_item.data) is Drawing:
                 return get_icon("drawing")
+            elif type(model_item.data) is Text:
+                return get_icon("text")
             return get_icon("default")
         return None
 
@@ -153,6 +157,9 @@ class DocumentItemModel(QAbstractItemModel):
             elif type(object) is Edge:
                 edges_item = parent_item.children()[2]
                 new_item = DocumentModelItem(object, self, edges_item)
+            elif isinstance(object, Text):
+                anno_item = parent_item.children()[3]
+                new_item = DocumentModelItem(object, self, anno_item)
         elif type(parent_item.data) is Drawings:
             if type(object) is Sketch:
                 headers_item = parent_item.children()[0]
@@ -166,6 +173,7 @@ class DocumentItemModel(QAbstractItemModel):
                 DocumentModelItem(None, self, new_item, "Parameters")
                 DocumentModelItem(None, self, new_item, "Key Points")
                 DocumentModelItem(None, self, new_item, "Edges")
+                DocumentModelItem(None, self, new_item, "Annotation")
             if type(object) is Drawings:
                 DocumentModelItem(None, self, new_item, "Headers")
             self.layoutChanged.emit()

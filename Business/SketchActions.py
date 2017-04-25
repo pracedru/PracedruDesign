@@ -29,6 +29,10 @@ def create_fillet(doc, sketch, fillet_kp, radius_param):
                 area.add_edge(fillet_edge)
 
 
+def create_text(doc, sketch, kp, value, height):
+    sketch.create_text(kp, value, height=height)
+
+
 def find_all_similar(doc, sketch):
     key_points = sketch.get_key_points()
     sim_x_dict = {}

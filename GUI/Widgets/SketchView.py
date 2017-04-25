@@ -7,6 +7,8 @@ from PyQt5.QtCore import QPointF
 from PyQt5.QtCore import QRectF
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QColor
+from PyQt5.QtGui import QFont
+from PyQt5.QtGui import QFontMetrics
 from PyQt5.QtGui import QLinearGradient
 from PyQt5.QtGui import QPen
 from PyQt5.QtWidgets import QDialog
@@ -63,6 +65,11 @@ class SketchViewWidget(QWidget):
         if self._sketch is not None:
             find_all_similar(self._doc, self._sketch)
 
+    def on_insert_text(self):
+        self.on_escape()
+        self._states.select_kp = True
+        self._states.insert_text = True
+
     def on_delete(self):
         txt = "Are you sure you want to delete these geometries?"
         ret = QMessageBox.warning(self, "Delete geometries?", txt, QMessageBox.Yes | QMessageBox.Cancel)
@@ -89,6 +96,7 @@ class SketchViewWidget(QWidget):
         self._states.draw_line_edge = False
         self._states.create_area = False
         self._states.set_fillet_kp = False
+        self._states.insert_text = False
         self._main_window.update_ribbon_state()
 
     def on_add_line(self):
@@ -264,6 +272,11 @@ class SketchViewWidget(QWidget):
                     create_fillet(self._doc, sketch, self._kp_hover, param)
                 else:
                     pass
+        if self._states.insert_text:
+            coincident_threshold = 5 / scale
+            kp = create_key_point(self._doc, self._sketch, x, y, 0.0, coincident_threshold)
+            create_text(self._doc, self._sketch, kp, "New Text", 0.007)
+            self.on_escape()
 
     def wheelEvent(self, event):
         if self._mouse_position is not None:
@@ -297,7 +310,21 @@ class SketchViewWidget(QWidget):
         qp.fillRect(event.rect(), gradient)
         qp.setRenderHint(QtGui.QPainter.Antialiasing)
         self.draw_edges(event, qp)
+        self.draw_texts(event, qp)
         qp.end()
+
+    def draw_texts(self, event, qp: QPainter):
+        if self._sketch is None:
+            return
+        sc = self._scale
+        half_width = self.width() / 2
+        half_height = self.height() / 2
+        center = Vertex(half_width, half_height)
+        normal_pen = QPen(QtGui.QColor(0, 0, 0), 2)
+        qp.setPen(normal_pen)
+        for text_tuple in self._sketch.get_texts():
+            text = text_tuple[1]
+            draw_text(text, qp, sc, self._offset, center)
 
     def draw_edges(self, event, qp):
         edge_hover_pen = QPen(QtGui.QColor(100, 100, 200), 4)

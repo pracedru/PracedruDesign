@@ -27,6 +27,7 @@ from GUI.Ribbon.RibbonWidget import RibbonWidget
 from GUI.Widgets.GeometryView import GeometryDock
 from GUI.Widgets.NewDrawingView import NewDrawingViewWidget
 from GUI.Widgets.ParametersWidget import ParametersWidget
+from GUI.Widgets.PropertiesView import PropertiesDock
 from GUI.Widgets.TreeView import TreeViewDock
 from GUI.Widgets.ViewWidget import ViewWidget
 
@@ -61,6 +62,7 @@ class MainWindow(QMainWindow):
         self._add_arc_action = self.add_action("Add\narc", "addarc", "Add arc edge to edges", True, self.on_add_arc)
         self._add_fillet_action = self.add_action("Add\nfillet", "addfillet", "Add fillet edge to existing edges", True, self.on_add_fillet, checkable=True)
         self._add_divide_action = self.add_action("Divide\nedge", "divideline", "Divide edge with keypoint", True, self.on_divide_edge, checkable=True)
+        self._add_text_action = self.add_action("Insert\ntext", "addtext", "Insert text in sketch", True, self.on_insert_text)
 
         self._scale_selected_action = self.add_action("Scale", "scale", "Scale selected items", True, self.on_scale_selected)
         self._pattern_selected_action = self.add_action("Pattern", "pattern", "Pattern selected items", True, self.on_pattern_selected)
@@ -102,6 +104,9 @@ class MainWindow(QMainWindow):
 
         self._geometry_dock = GeometryDock(self, self._document)
         self.addDockWidget(Qt.LeftDockWidgetArea, self._geometry_dock)
+
+        self._properties_dock = PropertiesDock(self, document)
+        self.addDockWidget(Qt.RightDockWidgetArea, self._properties_dock)
 
         self.read_settings()
         self.statusBar().showMessage("Ready")
@@ -189,6 +194,7 @@ class MainWindow(QMainWindow):
                 self._ribbon_widget.setCurrentIndex(3)
             if isinstance(selection[0], Parameters):
                 self.parameters_widget.set_parameters(selection[0])
+            self._properties_dock.set_item(selection[0])
 
     def on_kp_selection_changed_in_table(self, selected_key_points):
         self._viewWidget.on_kp_selection_changed_in_table(selected_key_points)
@@ -207,6 +213,9 @@ class MainWindow(QMainWindow):
 
     def on_add_fillet(self):
         self._viewWidget.on_add_fillet()
+
+    def on_insert_text(self):
+        self._viewWidget.on_insert_text()
 
     def on_add_arc(self):
         pass
@@ -262,7 +271,7 @@ class MainWindow(QMainWindow):
         insert_pane.add_ribbon_widget(RibbonButton(self, self._add_arc_action, True))
         insert_pane.add_ribbon_widget(RibbonButton(self, self._add_fillet_action, True))
         insert_pane.add_ribbon_widget(RibbonButton(self, self._add_divide_action, True))
-        # insert_pane.add_ribbon_widget(RibbonButton(self, self._import_edges_from_original_action, True))
+        insert_pane.add_ribbon_widget(RibbonButton(self, self._add_text_action, True))
 
         operate_pane = sketch_tab.add_ribbon_pane("Operate")
         operate_pane.add_ribbon_widget(RibbonButton(self, self._scale_selected_action, True))

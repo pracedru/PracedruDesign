@@ -50,6 +50,10 @@ class ViewWidget(QStackedWidget):
         if self.currentIndex() == 0:
             self._sketchView.on_find_all_similar()
 
+    def on_insert_text(self):
+        if self.currentIndex() == 0:
+            self._sketchView.on_insert_text()
+
     def on_kp_selection_changed_in_table(self, selected_key_points):
         self._sketchView.set_selected_key_points(selected_key_points)
 

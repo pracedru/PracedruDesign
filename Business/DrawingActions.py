@@ -23,9 +23,9 @@ def print_drawing(document, drawing):
 def create_empty_header(document):
     header = document.get_drawings().create_header()
     pnt1 = header.create_key_point(0, 0, 0)
-    pnt2 = header.create_key_point(0.2, 0, 0)
-    pnt3 = header.create_key_point(0.2, 0.15, 0)
-    pnt4 = header.create_key_point(0, 0.15, 0)
+    pnt2 = header.create_key_point(0.15, 0, 0)
+    pnt3 = header.create_key_point(0.15, 0.12, 0)
+    pnt4 = header.create_key_point(0, 0.12, 0)
     header.create_line_edge(pnt1, pnt2)
     header.create_line_edge(pnt2, pnt3)
     header.create_line_edge(pnt3, pnt4)
