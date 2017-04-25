@@ -18,6 +18,7 @@ import Business
 from Business.DrawingActions import create_empty_header
 from Data.Drawings import Drawing
 from Data.Parameters import Parameters
+from Data.Point3d import KeyPoint
 from Data.Sketch import Sketch
 from GUI import *
 from GUI.ActionsStates import ActionStates
@@ -194,6 +195,8 @@ class MainWindow(QMainWindow):
                 self._ribbon_widget.setCurrentIndex(3)
             if isinstance(selection[0], Parameters):
                 self.parameters_widget.set_parameters(selection[0])
+            if type(selection[0]) is KeyPoint:
+                self._viewWidget.on_kp_selection_changed_in_table(selection)
             self._properties_dock.set_item(selection[0])
 
     def on_kp_selection_changed_in_table(self, selected_key_points):
@@ -301,6 +304,8 @@ class MainWindow(QMainWindow):
         insert_pane.add_ribbon_widget(RibbonButton(self, self._insert_part_action, True))
         annotation_pane = drawing_tab.add_ribbon_pane("Annotation")
         edit_pane = drawing_tab.add_ribbon_pane("Edit")
+        view_pane = drawing_tab.add_ribbon_pane("View")
+        view_pane.add_ribbon_widget(RibbonButton(self, self._zoom_fit_action, True))
 
     def init_analysis_tab(self):
         pass
@@ -309,7 +314,7 @@ class MainWindow(QMainWindow):
         pass
 
     def on_zoom_fit(self):
-        pass
+        self._viewWidget.on_zoom_fit()
 
     def on_add_drawing(self):
         if len(self._document.get_drawings().get_headers()) == 0:

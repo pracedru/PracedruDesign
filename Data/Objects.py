@@ -1,5 +1,7 @@
 import uuid
 
+from Data.Events import ValueChangeEvent
+
 __author__ = 'mamj'
 
 
@@ -43,3 +45,25 @@ class ObservableObject(object):
             self._change_handlers.remove(change_handler)
         except KeyError:
             pass
+
+
+class NamedObservableObject(ObservableObject):
+    def __init__(self, name="No name"):
+        ObservableObject.__init__(self)
+        self._name = name
+
+    @property
+    def name(self):
+        return self._name
+
+    @name.setter
+    def name(self, value):
+        old_value = self._name
+        self._name = value
+        self.changed(ValueChangeEvent(self, 'name', old_value, value))
+
+    def serialize_json(self):
+        return {'name': self._name}
+
+    def deserialize_data(self, data):
+        self._name = data['name']

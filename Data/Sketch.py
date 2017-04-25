@@ -2,7 +2,7 @@ from math import pi, sin, cos, tan
 #from Data import Document
 from Data.Events import ChangeEvent, ValueChangeEvent
 from Data.Geometry import Geometry
-from Data.Objects import IdObject, ObservableObject
+from Data.Objects import IdObject, ObservableObject, NamedObservableObject
 from Data.Parameters import Parameters
 from Data.Point3d import KeyPoint
 from Data.Vertex import Vertex
@@ -135,7 +135,7 @@ class Sketch(Geometry):
 
     def create_line_edge(self, key_point1, key_point2):
         line_edge = Edge(self, Edge.LineEdge)
-        line_edge.set_name("Edge" + str(self.edge_naming_index))
+        line_edge.name = "Edge" + str(self.edge_naming_index)
         self.edge_naming_index += 1
         line_edge.add_key_point(key_point1)
         line_edge.add_key_point(key_point2)
@@ -147,7 +147,7 @@ class Sketch(Geometry):
 
     def create_arc_edge(self, center_key_point, start_angle, end_angle, radius):
         arc_edge = Edge(self, Edge.ArcEdge)
-        arc_edge.set_name("Edge" + str(self.edge_naming_index))
+        arc_edge.name = "Edge" + str(self.edge_naming_index)
         self.edge_naming_index += 1
         arc_edge.add_key_point(center_key_point)
         arc_edge.set_meta_data("sa", start_angle)
@@ -353,7 +353,7 @@ class Attribute(Text):
         self._name = data['name']
 
 
-class Edge(IdObject, ObservableObject):
+class Edge(IdObject, NamedObservableObject):
     LineEdge = 1
     ArcEdge = 2
     EllipseEdge = 3
@@ -361,22 +361,15 @@ class Edge(IdObject, ObservableObject):
     FilletLineEdge = 5
     CircleEdge = 3
 
-    def __init__(self, sketch, type=LineEdge):
+    def __init__(self, sketch, type=LineEdge, name="New Edge"):
         IdObject.__init__(self)
-        ObservableObject.__init__(self)
+        NamedObservableObject.__init__(self, name)
         self._type = type
         self._sketch = sketch
         self._key_points = []
         self._meta_data = {}
         self._meta_data_parameters = {}
-        self._name = "New Edge"
-
-    @property
-    def name(self):
-        return self._name
-
-    def set_name(self, name):
-        self._name = name
+        self._style = None
 
     def set_meta_data(self, name, value):
         self._meta_data[name] = value
@@ -715,7 +708,7 @@ class Edge(IdObject, ObservableObject):
     def serialize_json(self):
         return {
             'uid': IdObject.serialize_json(self),
-            'name': self._name,
+            'no': NamedObservableObject.serialize_json(self),
             'type': self._type,
             'key_points': self._key_points,
             'meta_data': self._meta_data,
@@ -724,6 +717,7 @@ class Edge(IdObject, ObservableObject):
 
     def deserialize_data(self, data):
         IdObject.deserialize_data(self, data['uid'])
+        NamedObservableObject.deserialize_data(self, data.get('no', None))
         self._type = data['type']
         self._name = data.get('name', "Edge")
         self._key_points = data['key_points']

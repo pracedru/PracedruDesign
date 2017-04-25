@@ -4,31 +4,38 @@ from PyQt5.QtCore import QModelIndex
 from PyQt5.QtCore import Qt
 from scipy.linalg._solve_toeplitz import float64
 
+from Data.Drawings import Drawing
 from Data.Point3d import KeyPoint
 from Data.Sketch import Edge, Text, Sketch
 
 col_header = ["Value"]
 
 rows_by_type = {
-        "Edge": [
-            ['Name', 'name']],
-        "Text": [
-            ['Name', 'name'],
-            ['Value', 'value'],
-            ['Height', 'height'],
-            ['Angle', 'angle'],
-            ['Horizontal Alignment', 'horizontal_alignment'],
-            ['Vertical Alignment', 'vertical_alignment']],
-        "KeyPoint": [
-            ['X Coordinate', 'x'],
-            ['Y Coordinate', 'y'],
-            ['Z Coordinate', 'z']],
-        "Sketch": [
-            ['Name', 'name'],
-            ['KeyPoints', 'key_point_count'],
-            ['Edges', 'edges_count']
-        ]
-    }
+    "Edge": [
+        ['Name', 'name']],
+    "Text": [
+        ['Name', 'name'],
+        ['Value', 'value'],
+        ['Height', 'height'],
+        ['Angle', 'angle'],
+        ['Horizontal Alignment', 'horizontal_alignment'],
+        ['Vertical Alignment', 'vertical_alignment']],
+    "KeyPoint": [
+        ['X Coordinate', 'x'],
+        ['Y Coordinate', 'y'],
+        ['Z Coordinate', 'z']],
+    "Sketch": [
+        ['Name', 'name'],
+        ['KeyPoints', 'key_point_count'],
+        ['Edges', 'edges_count']],
+    "Drawing": [
+        ['Name', 'name'],
+        ['Size', 'size'],
+        ['Orientation', 'orientation'],
+        ['Header', 'header'],
+        ['Margins', 'margins']
+    ]
+}
 
 
 class PropertiesModel(QAbstractTableModel):
@@ -53,6 +60,8 @@ class PropertiesModel(QAbstractTableModel):
             self._rows = rows_by_type['KeyPoint']
         elif type(item) is Sketch:
             self._rows = rows_by_type['Sketch']
+        elif type(item) is Drawing:
+            self._rows = rows_by_type['Drawing']
         else:
             self._rows = []
         self.layoutChanged.emit()
@@ -93,14 +102,17 @@ class PropertiesModel(QAbstractTableModel):
     def setData(self, model_index: QModelIndex, value, role=None):
         col = model_index.column()
         row = model_index.row()
+        origin_type = type(getattr(self._item, self._rows[row][1]))
         if role == Qt.EditRole:
             try:
-                if type(getattr(self._item, self._rows[row][1])) is float:
+                if origin_type is float:
                     value = QLocale().toFloat(value)[0]
-                if type(getattr(self._item, self._rows[row][1])) is float64:
+                if origin_type is float64:
                     value = float64(QLocale().toFloat(value)[0])
-                if type(getattr(self._item, self._rows[row][1])) is int:
+                if origin_type is int:
                     value = QLocale().toInt(value)[0]
+                if origin_type is list:
+                    value = eval(value)
                 setattr(self._item, self._rows[row][1], value)
                 success = True
             except Exception as e:

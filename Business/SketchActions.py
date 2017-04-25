@@ -33,7 +33,7 @@ def create_text(doc, sketch, kp, value, height):
     sketch.create_text(kp, value, height=height)
 
 
-def find_all_similar(doc, sketch):
+def find_all_similar(doc, sketch, digits):
     key_points = sketch.get_key_points()
     sim_x_dict = {}
     sim_y_dict = {}
@@ -41,8 +41,8 @@ def find_all_similar(doc, sketch):
     doc.do_update = False
     for kp_tuple in key_points:
         kp = kp_tuple[1]
-        x_name = round(kp.x, 1)
-        y_name = round(kp.y, 1)
+        x_name = round(kp.x, digits)
+        y_name = round(kp.y, digits)
         if x_name not in sim_x_dict:
             sim_x_dict[x_name] = []
         if y_name not in sim_y_dict:

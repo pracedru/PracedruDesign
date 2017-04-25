@@ -34,6 +34,26 @@ class DrawingViewWidget(QWidget):
         self._drawing = drawing
         self.update()
 
+    def on_zoom_fit(self):
+        if self._drawing is None:
+            return
+        x_min = 0
+        x_max = self._drawing.size[0]
+        y_min = 0
+        y_max = self._drawing.size[1]
+        y_scale = 1
+        x_scale = 1
+
+        if (y_max - y_min) != 0:
+            y_scale = self.height() / (y_max - y_min)
+        if (x_max - x_min) != 0:
+            x_scale = self.width() / (x_max - x_min)
+        scale = min(y_scale, x_scale) * 0.9
+        self._offset.x = -(x_min + (x_max - x_min) / 2)
+        self._offset.y = -(y_min + (y_max - y_min) / 2)
+        self._scale = scale
+        self.update()
+
     def eventFilter(self, obj, event):
         if event.type() == QEvent.KeyPress:
             if event.key() == Qt.Key_Delete:
@@ -124,9 +144,10 @@ class DrawingViewWidget(QWidget):
     def draw_drawing(self, event, qp):
         if self._drawing is not None:
             sc = self._scale
-            contour_pen = QPen(QtGui.QColor(0, 0, 0), 0.001 * sc)
-            hatch_pen = QPen(QtGui.QColor(0, 0, 0), 0.00033 * sc)
-            annotation_pen = QPen(QtGui.QColor(0, 0, 0), 0.00033 * sc)
+            border_pen = QPen(QtGui.QColor(0, 0, 0), 0.001 * sc)
+            contour_pen = QPen(QtGui.QColor(0, 0, 0), 0.00033 * sc)
+            hatch_pen = QPen(QtGui.QColor(0, 0, 0), 0.00018 * sc)
+            annotation_pen = QPen(QtGui.QColor(0, 0, 0), 0.00018 * sc)
             half_width = self.width() / 2
             half_height = self.height() / 2
             center = Vertex(half_width, half_height)
@@ -134,7 +155,7 @@ class DrawingViewWidget(QWidget):
             cy = -self._offset.y * sc + half_height
             rect = QRectF(QPointF(cx, cy), QPointF(cx+self._drawing.size[0]*sc, cy - self._drawing.size[1]*sc))
             qp.fillRect(rect, QColor(255, 255, 255))
-            self.draw_border(event, qp, cx, cy, contour_pen)
+            self.draw_border(event, qp, cx, cy, border_pen)
             self.draw_header(event, qp, cx, cy, center, contour_pen, hatch_pen, annotation_pen)
             self.draw_views(event, qp, cx, cy, contour_pen, hatch_pen, annotation_pen)
 
@@ -148,20 +169,22 @@ class DrawingViewWidget(QWidget):
         header_height = limits[3] - limits[1]
         m = self._drawing.margins
         sz = self._drawing.size
+        qp.setPen(contour_pen)
         offset = Vertex(sz[0]-header_width-m[2]+self._offset.x, m[3]+self._offset.y)
+
         draw_sketch(qp, sketch, self._scale, offset, center)
 
     def draw_sketch_view(self, event, qp, cx, cy, contour_pen, hatch_pen, annotation_pen, sketch_view):
         pass
 
-    def draw_border(self, event, qp, cx, cy, contour_pen):
+    def draw_border(self, event, qp, cx, cy, border_pen):
         sc = self._scale
         sz = self._drawing.size
         shadow_pen = QPen(QtGui.QColor(150, 150, 150), 2)
         rect = QRectF(QPointF(cx, cy), QPointF(cx + sz[0] * sc, cy - sz[1] * sc))
         qp.setPen(shadow_pen)
         qp.drawRect(rect)
-        qp.setPen(contour_pen)
+        qp.setPen(border_pen)
         m = self._drawing.margins
         rect = QRectF(QPointF(cx+m[0]*sc, cy-m[3]*sc), QPointF(cx + sz[0] * sc - m[2]*sc, cy - sz[1] * sc + m[1]*sc))
         qp.drawRect(rect)

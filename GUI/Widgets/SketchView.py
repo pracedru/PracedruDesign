@@ -63,12 +63,33 @@ class SketchViewWidget(QWidget):
 
     def on_find_all_similar(self):
         if self._sketch is not None:
-            find_all_similar(self._doc, self._sketch)
+            find_all_similar(self._doc, self._sketch, 3)
 
     def on_insert_text(self):
         self.on_escape()
         self._states.select_kp = True
         self._states.insert_text = True
+
+    def on_zoom_fit(self):
+        if self._sketch is None:
+            return
+        limits = self._sketch.get_limits()
+        x_min = limits[0]
+        x_max = limits[2]
+        y_min = limits[1]
+        y_max = limits[3]
+        y_scale = 1
+        x_scale = 1
+
+        if (y_max - y_min) != 0:
+            y_scale = self.height() / (y_max - y_min)
+        if (x_max - x_min) != 0:
+            x_scale = self.width() / (x_max - x_min)
+        scale = min(y_scale, x_scale) * 0.9
+        self._offset.x = -(x_min + (x_max - x_min) / 2)
+        self._offset.y = -(y_min + (y_max - y_min) / 2)
+        self._scale = scale
+        self.update()
 
     def on_delete(self):
         txt = "Are you sure you want to delete these geometries?"

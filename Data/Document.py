@@ -7,6 +7,7 @@ from Data.Materials import Materials
 from Data.Mesh import Mesh
 from Data.Objects import ObservableObject, IdObject
 from Data.Parameters import Parameters
+from Data.Style import Styles
 
 from Data.Sweeps import Sweeps
 
@@ -18,6 +19,7 @@ class Document(IdObject, ObservableObject):
         IdObject.__init__(self)
         ObservableObject.__init__(self)
         self._parameters = Parameters("Global Parameters")
+        self._styles = Styles()
         self._geometries = Geometries(self)
         self._margins = Margins(self)
         self._materials = Materials(self)
@@ -33,6 +35,7 @@ class Document(IdObject, ObservableObject):
 
     def init_change_handlers(self):
         self._parameters.add_change_handler(self.on_parameters_changed)
+        self._styles.add_change_handler(self.on_object_changed)
         self._geometries.add_change_handler(self.on_geometries_changed)
         self._materials.add_change_handler(self.on_materials_changed)
         self._components.add_change_handler(self.on_components_changed)
@@ -40,6 +43,9 @@ class Document(IdObject, ObservableObject):
         self._mesh.add_change_handler(self.on_object_changed)
         self._sweeps.add_change_handler(self.on_object_changed)
         self._drawings.add_change_handler(self.on_object_changed)
+
+    def get_styles(self):
+        return self._styles
 
     def get_materials_object(self):
         return self._materials
@@ -100,6 +106,7 @@ class Document(IdObject, ObservableObject):
         return \
             {
                 'uid': IdObject.serialize_json(self),
+                'styles': self._styles,
                 'params': self._parameters,
                 'geoms': self._geometries,
                 'name': self.name,
@@ -121,6 +128,7 @@ class Document(IdObject, ObservableObject):
     def deserialize_data(self, data):
         IdObject.deserialize_data(self, data['uid'])
         self._parameters = Parameters.deserialize(data.get('params', None), None)
+        self._styles = Styles.deserialize(data.get('styles', None))
         self._geometries = Geometries.deserialize(data.get('geoms', None), self)
         self._materials = Materials.deserialize(data.get('materials'), self)
         self._components = Components.deserialize(data.get('components'), self)

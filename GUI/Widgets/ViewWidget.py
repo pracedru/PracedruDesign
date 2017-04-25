@@ -59,3 +59,9 @@ class ViewWidget(QStackedWidget):
 
     def on_edge_selection_changed_in_table(self, selected_edges):
         self._sketchView.set_selected_edges(selected_edges)
+
+    def on_zoom_fit(self):
+        if self.currentIndex() == 0:
+            self._sketchView.on_zoom_fit()
+        elif self.currentIndex() == 2:
+            self._drawingView.on_zoom_fit()

@@ -90,6 +90,6 @@ class Paper(ObservableObject):
         return paper
 
     def deserialize_data(self, data):
-        self._size = data.get('size', Sizes["A4"])
+        self._size = data.get('size', Sizes["ISO A4"])
         self._margins = data.get('margins', [0.01, 0.01, 0.01, 0.01])
         self._orientation = data.get('orientation', Paper.Landscape)

@@ -71,7 +71,7 @@ class Drawings(ObservableObject):
 
 
 class Drawing(Paper, Parameters):
-    def __init__(self, document, size, name, header, orientation):
+    def __init__(self, document, size=[1, 1], name="New Drawing", header=[0, 0, 0, 0], orientation=Paper.Landscape):
         Paper.__init__(self, size, orientation)
         Parameters.__init__(self, name, document.get_parameters())
         self._doc = document
@@ -83,6 +83,10 @@ class Drawing(Paper, Parameters):
     @property
     def header_sketch(self):
         return self._header_sketch
+
+    @property
+    def header(self):
+        return self._header_sketch.name
 
     def serialize_json(self):
         return {

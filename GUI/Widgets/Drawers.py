@@ -37,7 +37,7 @@ def draw_text(text, qp: QPainter, scale, offset, center):
     if text.vertical_alignment == Text.Top:
         y1 -= text.height*scale
     elif text.vertical_alignment == Text.Center:
-        y1 -= text.height * 2 * scale/2
+        y1 -= text.height * 2.3 * scale/2
     qp.translate(x1, y1)
     qp.scale(scale/factor, scale/factor)
     qp.rotate(text.angle*180/pi)
