@@ -79,6 +79,8 @@ class MainWindow(QMainWindow):
         self._insert_part_action = self.add_action("Insert\npart", "addpartview", "Insert part in drawing", True, self.on_insert_part_in_drawing)
 
         self._add_field_action = self.add_action("Insert\nfield", "addfield", "Insert field on drawing", True, self.on_add_field)
+
+        self._about_action = self.add_action("About", "about", "About this programme", True, self.on_about)
         # Ribbon initialization
 
 
@@ -166,6 +168,9 @@ class MainWindow(QMainWindow):
 
     def on_add_field(self):
         self._viewWidget.drawing_view.on_add_field()
+
+    def on_about(self):
+        pass
 
     def on_save(self):
         if self._document.path == "" or self._document.name == "":
@@ -286,6 +291,8 @@ class MainWindow(QMainWindow):
         self._add_fillet_action.setChecked(self._states.add_fillet_edge)
         self._add_arc_action.setEnabled(False)
         self._add_divide_action.setEnabled(False)
+        self._scale_selected_action.setEnabled(False)
+        self._pattern_selected_action.setEnabled(False)
         self._add_circle_action.setChecked(self._states.add_circle_edge)
         self._add_attribute_action.setChecked(self._states.add_attribute)
         self._add_text_action.setChecked(self._states.add_text)
@@ -297,6 +304,7 @@ class MainWindow(QMainWindow):
         self.init_assembly_tab()
         self.init_drawing_tab()
         self.init_analysis_tab()
+        self.init_info_tab()
 
     def init_home_tab(self):
         home_tab = self._ribbon_widget.add_ribbon_tab("Home")
@@ -361,6 +369,11 @@ class MainWindow(QMainWindow):
 
     def init_analysis_tab(self):
         pass
+
+    def init_info_tab(self):
+        drawing_tab = self._ribbon_widget.add_ribbon_tab("Info")
+        information_pane = drawing_tab.add_ribbon_pane("Information")
+        information_pane.add_ribbon_widget(RibbonButton(self, self._about_action, True))
 
     def on_show_hidden_parameters(self):
         pass
