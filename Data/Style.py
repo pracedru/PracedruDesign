@@ -12,6 +12,14 @@ class Styles(ObservableObject):
             return self._edge_styles[uid]
         return None
 
+    def get_edge_style_by_name(self, name):
+        for style in self._edge_styles.values():
+            if style.name == name:
+                return style
+        style = self.create_edge_style()
+        style.name = name
+        return style
+
     def get_edge_styles(self):
         return self._edge_styles.items()
 
@@ -52,7 +60,7 @@ class EdgeStyle(NamedObservableObject, IdObject):
     Dashed = 1
     DotDashed = 2
 
-    def __init__(self, name="New style", thickness=0.33, color=Black, line_type=Continuous):
+    def __init__(self, name="New style", thickness=0.00033, color=Black, line_type=Continuous):
         NamedObservableObject.__init__(self, name)
         IdObject.__init__(self)
         self._thickness = thickness
@@ -66,6 +74,12 @@ class EdgeStyle(NamedObservableObject, IdObject):
     @property
     def thickness(self):
         return self._thickness
+
+    @thickness.setter
+    def thickness(self, value):
+        old_value = value
+        self._thickness = value
+        self.changed(ValueChangeEvent(self, 'thickness', old_value, value))
 
     @property
     def line_type(self):

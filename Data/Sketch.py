@@ -11,13 +11,17 @@ __author__ = 'mamj'
 
 
 class Sketch(Geometry):
-    def __init__(self, params_parent):
+    def __init__(self, params_parent, document):
         Geometry.__init__(self, params_parent, "New Sketch", Geometry.Sketch)
+        self._doc = document
         self._key_points = {}
         self._edges = {}
         self._texts = {}
         self.threshold = 0.1
         self.edge_naming_index = 1
+
+    def get_document(self):
+        return self._doc
 
     def add_edge(self, edge):
         self._edges[edge.uid] = edge
@@ -193,8 +197,8 @@ class Sketch(Geometry):
         }
 
     @staticmethod
-    def deserialize(data, param_parent):
-        sketch = Sketch(param_parent)
+    def deserialize(data, param_parent, document):
+        sketch = Sketch(param_parent, document)
         if data is not None:
             sketch.deserialize_data(data)
         return sketch
@@ -369,7 +373,24 @@ class Edge(IdObject, NamedObservableObject):
         self._key_points = []
         self._meta_data = {}
         self._meta_data_parameters = {}
-        self._style = None
+        self._style = sketch.get_document().get_styles().get_edge_style_by_name('default')
+
+    @property
+    def style(self):
+        return self._style
+
+    @property
+    def style_name(self):
+        if self._style is None:
+            return "No style"
+        else:
+            return self._style.name
+
+    @style_name.setter
+    def style_name(self, value):
+        styles = self._sketch.get_document().get_styles()
+        edge_style = styles.get_edge_style_by_name(value)
+        self._style = edge_style
 
     def set_meta_data(self, name, value):
         self._meta_data[name] = value
@@ -711,15 +732,16 @@ class Edge(IdObject, NamedObservableObject):
             'type': self._type,
             'key_points': self._key_points,
             'meta_data': self._meta_data,
-            'meta_data_parameters': self._meta_data_parameters
+            'meta_data_parameters': self._meta_data_parameters,
+            'style': self._style.uid
         }
 
     def deserialize_data(self, data):
         IdObject.deserialize_data(self, data['uid'])
         NamedObservableObject.deserialize_data(self, data.get('no', None))
         self._type = data['type']
-        self._name = data.get('name', "Edge")
         self._key_points = data['key_points']
+        self._style = self._sketch.get_document().get_styles().get_edge_style(data.get('style', None))
         for kp_uid in self._key_points:
             kp = self._sketch.get_key_point(kp_uid)
             kp.add_change_handler(self.on_key_point_changed)

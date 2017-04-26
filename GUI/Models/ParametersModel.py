@@ -60,7 +60,7 @@ class ParametersModel(QAbstractTableModel):
                     param = param_item
                 data = param.value
             elif col == 3:
-                data = param_item.hidden
+                data = None #  param_item.hidden
         elif int_role == Qt.CheckStateRole:
             param_item = self._parameters.get_parameter_item(row)
             if col == 3:

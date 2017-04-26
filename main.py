@@ -9,8 +9,7 @@ import os
 from pathlib import Path
 
 __author__ = 'mamj'
-if os.name == "nt":
-    os.chdir("P:\SETUP\Topsoe\AnsysPrep")
+
 
 
 def except_hook(cls, exception, traceback):

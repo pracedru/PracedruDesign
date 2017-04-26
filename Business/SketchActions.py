@@ -87,3 +87,15 @@ def find_all_similar(doc, sketch, digits):
                 param_ea = doc.get_parameters().create_parameter('PAREA_' + edge.name, ea)
                 edge.set_meta_data_parameter('ea', param_ea)
     doc.do_update = True
+
+
+def remove_key_points(doc, sketch, kps):
+    sketch.remove_key_points(kps)
+
+
+def remove_edge(doc, sketch, edge):
+    remove_edges(doc. sketch, [edge])
+
+
+def remove_edges(doc, sketch, edges):
+    sketch.remove_edges(edges)

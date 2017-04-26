@@ -34,6 +34,9 @@ class DocumentItemModel(QAbstractItemModel):
 
     def populate(self):
         glocal_params_item = DocumentModelItem(self._doc.get_parameters(), self, self._root_item)
+        styles_item = DocumentModelItem(self._doc.get_styles(), self, self._root_item, "Styles")
+        for style_tuple in self._doc.get_styles().get_edge_styles():
+            DocumentModelItem(style_tuple[1], self, styles_item)
         for param_tuple in self._doc.get_parameters().get_all_parameters():
             DocumentModelItem(param_tuple[1], self, glocal_params_item)
         geoms_item = DocumentModelItem(self._doc.get_geometries(), self, self._root_item)
@@ -42,16 +45,11 @@ class DocumentItemModel(QAbstractItemModel):
                 self.populate_sketch(geom, geoms_item)
 
         DocumentModelItem(None, self, self._root_item, "Analyses")
-
-        drawings_item = self.create_model_item(self._root_item, self._doc.get_drawings())
-        for dwg in self._doc.get_drawings().items:
-            dwg_item = DocumentModelItem(dwg, self, drawings_item)
-            DocumentModelItem(dwg.header_sketch, self, dwg_item)
-
+        self.populate_Drawings()
         DocumentModelItem(None, self, self._root_item, "Reports")
 
-    def populate_sketch(self, sketch, geoms_item):
-        geom_item = self.create_model_item(geoms_item, sketch)
+    def populate_sketch(self, sketch, parent_item):
+        geom_item = self.create_model_item(parent_item, sketch)
         for param_tuple in sketch.get_all_local_parameters():
             param_item = DocumentModelItem(param_tuple[1], self, geom_item.children()[0])
         for kp_tuple in sketch.get_key_points():
@@ -60,6 +58,15 @@ class DocumentItemModel(QAbstractItemModel):
             param_item = DocumentModelItem(edge_tuple[1], self, geom_item.children()[2])
         for text_tuple in sketch.get_texts():
             param_item = DocumentModelItem(text_tuple[1], self, geom_item.children()[3])
+
+    def populate_Drawings(self):
+        drawings = self._doc.get_drawings()
+        drawings_item = self.create_model_item(self._root_item, drawings)
+        for header in drawings.get_headers():
+            self.populate_sketch(header, drawings_item)
+        for dwg in self._doc.get_drawings().items:
+            dwg_item = DocumentModelItem(dwg, self, drawings_item)
+            self.populate_sketch(dwg.header_sketch, dwg_item)
 
     def parent(self, index: QModelIndex=None):
         if not index.isValid():

@@ -25,6 +25,11 @@ class Geometries(ObservableObject):
                 if event.object.uid in self._geometries:
                     self._geometries.pop(event.object.uid)
 
+    def get_geometry(self, uid):
+        if uid in self._geometries:
+            return self._geometries[uid]
+        return None
+
     def child_geometry_changed(self, event):
         if event.type == ChangeEvent.Deleted:
             if type(event.object) is Geometry:
@@ -64,7 +69,7 @@ class Geometries(ObservableObject):
             geometry_data = data['geoms'][geometry_uid]
             geometry = None
             if geometry_data['type'] == Geometry.Sketch:
-                geometry = Sketch.deserialize(geometry_data, document.get_parameters())
+                geometry = Sketch.deserialize(geometry_data, document.get_parameters(), document)
             if geometry is not None:
                 self._geometries[geometry.uid] = geometry
         for child_id in data.get("children", []):

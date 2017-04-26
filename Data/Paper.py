@@ -60,11 +60,17 @@ class Paper(ObservableObject):
                                  }))
 
     @property
+    def orientation_name(self):
+        if self._orientation==Paper.Landscape:
+            return "Landscape"
+        elif self._orientation==Paper.Portrait:
+            return "Portrait"
+
+    @property
     def orientation(self):
         return self._orientation
 
     @orientation.setter
-
     def orientation(self, value):
         old_value = self._orientation
         self._orientation = value

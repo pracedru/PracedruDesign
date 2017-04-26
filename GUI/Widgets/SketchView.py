@@ -96,12 +96,10 @@ class SketchViewWidget(QWidget):
         ret = QMessageBox.warning(self, "Delete geometries?", txt, QMessageBox.Yes | QMessageBox.Cancel)
         if ret == QMessageBox.Yes:
             pass
-            Business.remove_key_points(self._doc, self._selected_key_points)
-            Business.remove_edges(self._doc, self._selected_edges)
-            Business.remove_areas(self._doc, self._selected_areas)
+            remove_key_points(self._doc, self._sketch, self._selected_key_points)
+            remove_edges(self._doc, self._sketch, self._selected_edges)
             self._selected_key_points.clear()
             self._selected_edges.clear()
-            self._selected_areas.clear()
 
     def set_selected_key_points(self, selected_key_points):
         self._selected_key_points = selected_key_points
@@ -268,11 +266,11 @@ class SketchViewWidget(QWidget):
             else:
                 self._selected_edges = [self._edge_hover]
             self.update()
-            # self.parent().on_edge_selection_changed_in_view(self._selected_edges)
+            self._main_window.on_edge_selection_changed_in_view(self._selected_edges)
         elif self._states.select_edge and self._edge_hover is None:
             self._selected_edges = []
             self.update()
-            # self.parent().on_edge_selection_changed_in_view(self._selected_edges)
+            self._main_window.on_edge_selection_changed_in_view(self._selected_edges)
 
         if self._kp_hover is not None and self._states.select_kp:
             if self._states.multi_select or self._states.draw_line_edge:
@@ -280,11 +278,11 @@ class SketchViewWidget(QWidget):
             else:
                 self._selected_key_points = [self._kp_hover]
             self.update()
-            # self.parent().on_kp_selection_changed_in_view(self._selected_key_points)
+            self._main_window.on_kp_selection_changed_in_view(self._selected_key_points)
         elif self._kp_hover is None and self._states.select_kp and len(self._selected_edges) == 0 and not self._states.draw_line_edge:
             self._selected_key_points = []
             self.update()
-            # self.parent().on_kp_selection_changed_in_view(self._selected_key_points)
+            self._main_window.on_kp_selection_changed_in_view(self._selected_key_points)
 
         if self._states.draw_line_edge:
             doc = self._doc
@@ -303,9 +301,9 @@ class SketchViewWidget(QWidget):
                 edges = self._kp_hover.get_edges()
                 if len(edges) == 2:
                     param_name = "New Fillet radius"
-                    param = self._doc.get_parameters().get_parameter_by_name(param_name)
+                    param = self._sketch.get_parameter_by_name(param_name)
                     if param is None:
-                        param = self._doc.get_parameters().create_parameter(param_name, 1.0)
+                        param = self._sketch.create_parameter(param_name, 1.0)
                     create_fillet(self._doc, self._sketch, self._kp_hover, param)
                 else:
                     pass
@@ -364,10 +362,10 @@ class SketchViewWidget(QWidget):
             draw_text(text, qp, sc, self._offset, center)
 
     def draw_edges(self, event, qp):
-        edge_hover_pen = QPen(QtGui.QColor(100, 100, 200), 4)
-        normal_pen = QPen(QtGui.QColor(0, 0, 0), 2)
-        select_pen_high = QPen(QtGui.QColor(255, 0, 0), 6)
-        select_pen = QPen(QtGui.QColor(255, 255, 255), 2)
+        pens = create_pens(self._doc, 6000)
+        pens_hover = create_pens(self._doc, 12000, QtGui.QColor(100, 100, 200))
+        pens_select_high = create_pens(self._doc, 18000, QtGui.QColor(255, 0, 0))
+        pens_select = create_pens(self._doc, 6000, QtGui.QColor(255, 255, 255))
         if self._is_dark_theme:
             axis_pen = QPen(QtGui.QColor(40, 50, 80), 1)
             kp_pen = QPen(QtGui.QColor(0, 200, 200), 1)
@@ -395,23 +393,19 @@ class SketchViewWidget(QWidget):
         if self.height() > cy > 0:
             qp.drawLine(QPointF(0, cy), QPointF(self.width(), cy))
 
-        qp.setPen(normal_pen)
         for edge_tuple in edges:
             edge = edge_tuple[1]
-            draw_edge(edge, qp, scale, self._offset, center)
+            draw_edge(edge, qp, scale, self._offset, center, pens)
 
         for edge in self._selected_edges:
-            qp.setPen(select_pen_high)
-            draw_edge(edge, qp, scale, self._offset, center)
+            draw_edge(edge, qp, scale, self._offset, center, pens_select_high)
 
         for edge in self._selected_edges:
-            qp.setPen(select_pen)
-            draw_edge(edge, qp, scale, self._offset, center)
+            draw_edge(edge, qp, scale, self._offset, center, pens_select)
 
         if self._edge_hover is not None:
-            qp.setPen(edge_hover_pen)
-            draw_edge(self._edge_hover, qp, scale, self._offset, center)
-        qp.setPen(normal_pen)
+            draw_edge(self._edge_hover, qp, scale, self._offset, center, pens_hover)
+        qp.setPen(pens['default'])
 
         key_points = self._sketch.get_key_points()
         for kp_tuple in key_points:

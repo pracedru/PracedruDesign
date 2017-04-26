@@ -14,7 +14,7 @@ class Drawings(ObservableObject):
         self._doc = document
 
     def create_header(self):
-        header = Sketch(self._doc.get_parameters())
+        header = Sketch(self._doc.get_parameters(), self._doc)
         header.name = "New Header"
         self.changed(ChangeEvent(self, ChangeEvent.BeforeObjectAdded, header))
         self._doc.get_geometries().add_geometry(header)
@@ -49,8 +49,15 @@ class Drawings(ObservableObject):
     def item(self, index):
         return self._drawings[index]
 
+    def get_header_uids(self):
+        uids = []
+        for header in self._headers:
+            uids.append(header.uid)
+        return uids
+
     def serialize_json(self):
         return {
+            'headers': self.get_header_uids(),
             'drawings': self._drawings
         }
 
@@ -65,6 +72,9 @@ class Drawings(ObservableObject):
         return drawings
 
     def deserialize_data(self, data):
+        for uid in data['headers']:
+            header = self._doc.get_geometries().get_geometry(uid)
+            self._headers.append(header)
         for dwg_data in data['drawings']:
             drawing = Drawing.deserialize(dwg_data, self._doc)
             self._drawings.append(drawing)
@@ -94,7 +104,7 @@ class Drawing(Paper, Parameters):
             'name': self._name,
             'views': self._views,
             'border_sketch': self._border_sketch,
-            'header_sketch': self._header_sketch
+            'header_sketch': self._header_sketch.uid
         }
 
     @staticmethod
@@ -108,8 +118,8 @@ class Drawing(Paper, Parameters):
         Paper.deserialize_data(self, data['paper'])
         self._name = data.get('name', "No name")
         self._views = data['views']
-        self._border_sketch = Sketch.deserialize(data['border_sketch'], None)
-        self._header_sketch = Sketch.deserialize(data['header_sketch'], None)
+        self._border_sketch = data['border_sketch']
+        self._header_sketch = self._doc.get_geometries().get_geometry(data['header_sketch'])
 
 
 class SketchView(ObservableObject):

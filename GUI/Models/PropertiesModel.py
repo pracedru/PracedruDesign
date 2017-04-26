@@ -1,18 +1,22 @@
+import numpy
 from PyQt5.QtCore import QAbstractTableModel
 from PyQt5.QtCore import QLocale
 from PyQt5.QtCore import QModelIndex
 from PyQt5.QtCore import Qt
-from scipy.linalg._solve_toeplitz import float64
+#from scipy.linalg._solve_toeplitz import float64
 
 from Data.Drawings import Drawing
 from Data.Point3d import KeyPoint
 from Data.Sketch import Edge, Text, Sketch
+from Data.Style import EdgeStyle
 
 col_header = ["Value"]
 
 rows_by_type = {
     "Edge": [
-        ['Name', 'name']],
+        ['Name', 'name'],
+        ['Style', 'style_name']
+    ],
     "Text": [
         ['Name', 'name'],
         ['Value', 'value'],
@@ -31,9 +35,14 @@ rows_by_type = {
     "Drawing": [
         ['Name', 'name'],
         ['Size', 'size'],
-        ['Orientation', 'orientation'],
+        ['Orientation', 'orientation_name'],
         ['Header', 'header'],
-        ['Margins', 'margins']
+        ['Margins', 'margins']],
+    "EdgeStyle":[
+        ['Name', 'name'],
+        ['Thickness', 'thickness'],
+        ['Color', 'color'],
+        ['Line type', 'line_type']
     ]
 }
 
@@ -62,6 +71,8 @@ class PropertiesModel(QAbstractTableModel):
             self._rows = rows_by_type['Sketch']
         elif type(item) is Drawing:
             self._rows = rows_by_type['Drawing']
+        elif type(item) is EdgeStyle:
+            self._rows = rows_by_type['EdgeStyle']
         else:
             self._rows = []
         self.layoutChanged.emit()
@@ -85,14 +96,14 @@ class PropertiesModel(QAbstractTableModel):
         data = None
         if int_role == Qt.DisplayRole:
             data = getattr(self._item, self._rows[row][1])
-            if type(data) is float64:
+            if type(data) is numpy.float64:
                 data = float(data)
             if type(data) is float:
                 data = QLocale().toString(data)
             data = str(data)
         elif int_role == Qt.EditRole:
             data = getattr(self._item, self._rows[row][1])
-            if type(data) is float64:
+            if type(data) is numpy.float64:
                 data = float(data)
             if type(data) is float:
                 data = QLocale().toString(data)
@@ -107,8 +118,8 @@ class PropertiesModel(QAbstractTableModel):
             try:
                 if origin_type is float:
                     value = QLocale().toFloat(value)[0]
-                if origin_type is float64:
-                    value = float64(QLocale().toFloat(value)[0])
+                if origin_type is numpy.float64:
+                    value = numpy.float64(QLocale().toFloat(value)[0])
                 if origin_type is int:
                     value = QLocale().toInt(value)[0]
                 if origin_type is list:

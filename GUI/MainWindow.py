@@ -205,6 +205,16 @@ class MainWindow(QMainWindow):
     def on_edge_selection_changed_in_table(self, selected_edges):
         self._viewWidget.on_edge_selection_changed_in_table(selected_edges)
 
+    def on_edge_selection_changed_in_view(self, selected_edges):
+        self._geometry_dock.on_edge_selection_changed(selected_edges)
+        if len(selected_edges) > 0:
+            self._properties_dock.set_item(selected_edges[0])
+
+    def on_kp_selection_changed_in_view(self, selected_key_points):
+        self._geometry_dock.on_kp_selection_changed(selected_key_points)
+        if len(selected_key_points) > 0:
+            self._properties_dock.set_item(selected_key_points[0])
+
     def on_set_sim_x(self):
         self._viewWidget.on_set_similar_x_coordinates()
 

@@ -76,12 +76,12 @@ class KeyPointsModel(QAbstractTableModel):
         if parsed[1]:
             value = parsed[0]
         else:
-            parameter = self._doc.get_parameters().get_parameter_by_name(value)
+            parameter = self._sketch.get_parameter_by_name(value)
         if not parsed[1] and parameter is None:
             if col == 0:
-                parameter = self._doc.get_parameters().create_parameter(value, kp_item.x)
+                parameter = self._sketch.create_parameter(value, kp_item.x)
             elif col == 1:
-                parameter = self._doc.get_parameters().create_parameter(value, kp_item.y)
+                parameter = self._sketch.create_parameter(value, kp_item.y)
         if col == 0:
             if parameter is not None:
                 kp_item.set_x_parameter(parameter.uid)

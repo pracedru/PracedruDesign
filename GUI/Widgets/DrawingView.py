@@ -13,7 +13,7 @@ from PyQt5.QtWidgets import QWidget
 
 from Data.Vertex import Vertex
 from GUI import is_dark_theme
-from GUI.Widgets.Drawers import draw_sketch
+from GUI.Widgets.Drawers import draw_sketch, create_pens
 
 
 class DrawingViewWidget(QWidget):
@@ -144,10 +144,8 @@ class DrawingViewWidget(QWidget):
     def draw_drawing(self, event, qp):
         if self._drawing is not None:
             sc = self._scale
-            border_pen = QPen(QtGui.QColor(0, 0, 0), 0.001 * sc)
-            contour_pen = QPen(QtGui.QColor(0, 0, 0), 0.00033 * sc)
-            hatch_pen = QPen(QtGui.QColor(0, 0, 0), 0.00018 * sc)
-            annotation_pen = QPen(QtGui.QColor(0, 0, 0), 0.00018 * sc)
+            border_pen = QPen(QtGui.QColor(0, 0, 0), 0.0005 * sc)
+            pens = create_pens(self._doc, sc)
             half_width = self.width() / 2
             half_height = self.height() / 2
             center = Vertex(half_width, half_height)
@@ -156,23 +154,21 @@ class DrawingViewWidget(QWidget):
             rect = QRectF(QPointF(cx, cy), QPointF(cx+self._drawing.size[0]*sc, cy - self._drawing.size[1]*sc))
             qp.fillRect(rect, QColor(255, 255, 255))
             self.draw_border(event, qp, cx, cy, border_pen)
-            self.draw_header(event, qp, cx, cy, center, contour_pen, hatch_pen, annotation_pen)
-            self.draw_views(event, qp, cx, cy, contour_pen, hatch_pen, annotation_pen)
+            self.draw_header(event, qp, cx, cy, center, pens)
+            self.draw_views(event, qp, cx, cy, pens)
 
-    def draw_views(self, event, qp, cx, cy, contour_pen, hatch_pen, annotation_pen):
+    def draw_views(self, event, qp, cx, cy, pens):
         sc = self._scale
 
-    def draw_header(self, event, qp, cx, cy, center, contour_pen, hatch_pen, annotation_pen):
+    def draw_header(self, event, qp, cx, cy, center, pens):
         sketch = self._drawing.header_sketch
         limits = sketch.get_limits()
         header_width = limits[2] - limits[0]
         header_height = limits[3] - limits[1]
         m = self._drawing.margins
         sz = self._drawing.size
-        qp.setPen(contour_pen)
         offset = Vertex(sz[0]-header_width-m[2]+self._offset.x, m[3]+self._offset.y)
-
-        draw_sketch(qp, sketch, self._scale, offset, center)
+        draw_sketch(qp, sketch, self._scale, offset, center, pens)
 
     def draw_sketch_view(self, event, qp, cx, cy, contour_pen, hatch_pen, annotation_pen, sketch_view):
         pass

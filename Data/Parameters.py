@@ -285,7 +285,10 @@ class Parameters(ObservableObject):
         self.changed(event)
 
     def get_index_of(self, parameter):
-        return self._parameter_list.index(parameter.uid)
+        if parameter.uid in self._parameter_list:
+            return self._parameter_list.index(parameter.uid)
+        else:
+            return -1
 
     @property
     def length(self):

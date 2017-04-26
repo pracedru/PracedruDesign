@@ -1,20 +1,36 @@
+from PyQt5 import QtGui
 from math import *
 
 from PyQt5.QtCore import QPointF
 from PyQt5.QtCore import QRectF
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QFont
+from PyQt5.QtGui import QFont, QPen
 from PyQt5.QtGui import QFontMetrics
 from PyQt5.QtGui import QPainter
 
 from Data.Sketch import Edge, Text
 
 
-def draw_sketch(qp: QPainter, sketch, scale, offset, center):
+def create_pens(document, scale, color_override=None):
+    pens = {}
+    color = color_override
+    if color_override is None:
+        color = QtGui.QColor(0, 0, 0)
+    pens['default'] = QPen(QtGui.QColor(0, 0, 0), 0.0002 * scale)
+    for style in document.get_styles().get_edge_styles():
+        color = color_override
+        if color_override is None:
+            c = style[1].color
+            color =QtGui.QColor(c[0], c[1], c[2])
+        pens[style[1].uid] = QPen(color, style[1].thickness * scale)
+    return pens
+
+
+def draw_sketch(qp: QPainter, sketch, scale, offset, center, pens):
     edges = sketch.get_edges()
     for edge_tuple in edges:
         edge = edge_tuple[1]
-        draw_edge(edge, qp, scale, offset, center)
+        draw_edge(edge, qp, scale, offset, center, pens)
     for text_tuple in sketch.get_texts():
         text = text_tuple[1]
         draw_text(text, qp, scale, offset, center)
@@ -45,7 +61,11 @@ def draw_text(text, qp: QPainter, scale, offset, center):
     qp.restore()
 
 
-def draw_edge(edge: Edge, qp: QPainter, scale, offset, center):
+def draw_edge(edge: Edge, qp: QPainter, scale, offset, center, pens):
+    if edge.style is None:
+        qp.setPen(pens['default'])
+    else:
+        qp.setPen(pens[edge.style.uid])
     if edge is not None:
         key_points = edge.get_key_points()
         if edge.type == Edge.LineEdge:

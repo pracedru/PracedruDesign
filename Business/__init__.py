@@ -37,7 +37,7 @@ def add_parameter(parameters_object: Parameters):
 
 
 def create_add_sketch_to_document(document):
-    sketch = Sketch(document.get_parameters())
+    sketch = Sketch(document.get_parameters(), document)
     document.get_geometries().add_geometry(sketch)
     document.get_geometries().add_child(sketch)
     return sketch
