@@ -1,5 +1,6 @@
 from PyQt5.QtCore import *
 from Business import *
+from Business.SketchActions import remove_edge, remove_edges
 from Data.Sketch import Edge
 from Data.Parameters import *
 
@@ -19,12 +20,12 @@ class EdgesModel(QAbstractTableModel):
     def set_sketch(self, sketch):
         self.layoutAboutToBeChanged.emit()
         if self._sketch is not None:
-            self._sketch.remove_change_handler(self.on_edges_changed)
+            self._sketch.remove_change_handler(self.on_sketch_changed)
             self._rows.clear()
         self._sketch = sketch
         for edge_tuple in self._sketch.get_edges():
             self._rows.append(edge_tuple[1].uid)
-        self._sketch.add_change_handler(self.on_edges_changed)
+        self._sketch.add_change_handler(self.on_sketch_changed)
         self.layoutChanged.emit()
 
     def rowCount(self, model_index=None, *args, **kwargs):
@@ -72,7 +73,7 @@ class EdgesModel(QAbstractTableModel):
             edges.append(self._sketch.get_edge(self._rows[row]))
         remove_edges(self._doc, edges)
 
-    def on_edges_changed(self, event: ChangeEvent):
+    def on_sketch_changed(self, event: ChangeEvent):
         if type(event.object) is Edge:
             if event.type == event.BeforeObjectAdded:
                 self.beginInsertRows(QModelIndex(), len(self._rows), len(self._rows))
@@ -94,7 +95,6 @@ class EdgesModel(QAbstractTableModel):
             self.beginRemoveRows(QModelIndex(), 0, len(self._rows)-1)
             self._rows = []
             self.endRemoveRows()
-
 
     def flags(self, model_index: QModelIndex):
         default_flags = Qt.ItemIsSelectable | Qt.ItemIsEnabled | Qt.ItemIsEditable

@@ -1,7 +1,11 @@
+from PyQt5.QtCore import QEvent
 from PyQt5.QtCore import QItemSelectionModel
+from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QDockWidget
+from PyQt5.QtWidgets import QMessageBox
 from PyQt5.QtWidgets import QTreeView
 
+from Business import delete_items
 from Data.Document import Document
 from Data.Drawings import Drawing
 from Data.Sketch import Sketch
@@ -22,6 +26,25 @@ class TreeViewDock(QDockWidget):
         self._treeView.setRootIndex(self._model.index(0, 0))
         self._treeView.selectionModel().selectionChanged.connect(self.on_tree_selection_changed)
         self._model.add_new_item_added_listener(self.on_new_item_added)
+        self.installEventFilter(self)
+
+    def on_delete(self):
+        txt = "Are you sure you want to delete this item?"
+        ret = QMessageBox.warning(self, "Delete item?", txt, QMessageBox.Yes | QMessageBox.Cancel)
+        if ret == QMessageBox.Yes:
+            selection_model = self._treeView.selectionModel()
+            indexes = selection_model.selectedIndexes()
+            selected_items = set()
+            for index in indexes:
+                selected_items.add(index.internalPointer())
+            delete_items(self._doc, selected_items)
+
+    def eventFilter(self, obj, event):
+        if event.type() == QEvent.KeyPress:
+            if event.key() == Qt.Key_Delete:
+                self.on_delete()
+                return True
+        return False
 
     def on_tree_selection_changed(self, selection):
         selection_model = self._treeView.selectionModel()
@@ -49,4 +72,4 @@ class TreeViewDock(QDockWidget):
             while parent_index.isValid():
                 self._treeView.setExpanded(parent_index, True)
                 parent_index = self._model.parent(parent_index)
-
+        self._main_window.on_new_item_added_in_tree(index.internalPointer().data)

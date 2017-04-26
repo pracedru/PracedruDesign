@@ -4,12 +4,13 @@ from PyQt5.QtCore import QObject
 from PyQt5.QtCore import Qt
 
 from Data.Document import Document
-from Data.Drawings import Drawing, Drawings
+from Data.Drawings import Drawing, Drawings, Field
 from Data.Events import ChangeEvent
 from Data.Geometry import Geometry
 from Data.Parameters import Parameters, Parameter
 from Data.Point3d import KeyPoint
-from Data.Sketch import Sketch, Edge, Text
+from Data.Sketch import Sketch, Edge, Text, Attribute
+from Data.Style import EdgeStyle
 from GUI.Icons import get_icon
 
 
@@ -45,7 +46,7 @@ class DocumentItemModel(QAbstractItemModel):
                 self.populate_sketch(geom, geoms_item)
 
         DocumentModelItem(None, self, self._root_item, "Analyses")
-        self.populate_Drawings()
+        self.populate_drawings()
         DocumentModelItem(None, self, self._root_item, "Reports")
 
     def populate_sketch(self, sketch, parent_item):
@@ -58,15 +59,21 @@ class DocumentItemModel(QAbstractItemModel):
             param_item = DocumentModelItem(edge_tuple[1], self, geom_item.children()[2])
         for text_tuple in sketch.get_texts():
             param_item = DocumentModelItem(text_tuple[1], self, geom_item.children()[3])
+        return geom_item
 
-    def populate_Drawings(self):
+    def populate_drawing(self, drawing, parent_item):
+        drawing_item = self.create_model_item(parent_item, drawing)
+        for field_tuple in drawing.get_fields().items():
+            field_item = DocumentModelItem(field_tuple[1], self, drawing_item.children()[0])
+        return drawing_item
+
+    def populate_drawings(self):
         drawings = self._doc.get_drawings()
         drawings_item = self.create_model_item(self._root_item, drawings)
         for header in drawings.get_headers():
             self.populate_sketch(header, drawings_item)
         for dwg in self._doc.get_drawings().items:
-            dwg_item = DocumentModelItem(dwg, self, drawings_item)
-            self.populate_sketch(dwg.header_sketch, dwg_item)
+            self.populate_drawing(dwg, drawings_item)
 
     def parent(self, index: QModelIndex=None):
         if not index.isValid():
@@ -78,12 +85,13 @@ class DocumentItemModel(QAbstractItemModel):
             return QModelIndex()
         else:
             parent_item = model_item.parent()
-            elder_item = parent_item.parent()
-            if elder_item is not None:
-                row = elder_item.children().index(parent_item)
-            else:
-                row = 0
-            return self.createIndex(row, 0, model_item.parent())
+            if parent_item is not None:
+                elder_item = parent_item.parent()
+                if elder_item is not None:
+                    row = elder_item.children().index(parent_item)
+                else:
+                    row = 0
+                return self.createIndex(row, 0, model_item.parent())
         return QModelIndex()
 
     def index(self, row, col, parent: QModelIndex=None, *args, **kwargs):
@@ -129,6 +137,12 @@ class DocumentItemModel(QAbstractItemModel):
                 return get_icon("drawing")
             elif type(model_item.data) is Text:
                 return get_icon("text")
+            elif type(model_item.data) is EdgeStyle:
+                return get_icon("edgestyle")
+            elif type(model_item.data) is Attribute:
+                return get_icon("attribute")
+            elif type(model_item.data) is Field:
+                return get_icon("field")
             return get_icon("default")
         return None
 
@@ -160,6 +174,16 @@ class DocumentItemModel(QAbstractItemModel):
         return default_flags
 
     def on_document_changed(self, event):
+        self.layoutAboutToBeChanged.emit()
+        self.layoutChanged.emit()
+
+    def on_before_object_removed(self, parent_item, event):
+        self.layoutAboutToBeChanged.emit()
+
+    def on_object_removed(self, parent_item, event):
+        for child in parent_item.children():
+            if child.data == event.object:
+                child.setParent(None)
         self.layoutChanged.emit()
 
     def on_before_object_added(self, parent_item, object):
@@ -168,9 +192,9 @@ class DocumentItemModel(QAbstractItemModel):
     def on_object_added(self, parent_item, object):
         item = self.create_model_item(parent_item, object)
         self.on_new_item_added(item)
+        self.layoutChanged.emit()
 
     def create_model_item(self, parent_item, object):
-        self.layoutAboutToBeChanged.emit()
         if type(parent_item.data) is Sketch:
             if type(object) is Parameter:
                 parameters_item = parent_item.children()[0]
@@ -184,13 +208,12 @@ class DocumentItemModel(QAbstractItemModel):
             elif isinstance(object, Text):
                 anno_item = parent_item.children()[3]
                 new_item = DocumentModelItem(object, self, anno_item)
-        elif type(parent_item.data) is Drawings:
-            if type(object) is Sketch:
-                headers_item = parent_item.children()[0]
-                new_item = self.create_model_item(headers_item, object)
-            elif type(object) is Drawing:
-                new_item = DocumentModelItem(object, self, parent_item)
-                self.create_model_item(new_item, object.header_sketch)
+        elif type(parent_item.data) is Drawings and type(object) is Sketch:
+            headers_item = parent_item.children()[0]
+            new_item = self.create_model_item(headers_item, object)
+        elif type(parent_item.data) is Drawing and type(object) is Field:
+                fields_item = parent_item.children()[0]
+                new_item = DocumentModelItem(object, self, fields_item)
         else:
             new_item = DocumentModelItem(object, self, parent_item)
             if type(object) is Sketch:
@@ -200,7 +223,10 @@ class DocumentItemModel(QAbstractItemModel):
                 DocumentModelItem(None, self, new_item, "Annotation")
             if type(object) is Drawings:
                 DocumentModelItem(None, self, new_item, "Headers")
-        self.layoutChanged.emit()
+            if type(object) is Drawing:
+                DocumentModelItem(None, self, new_item, "Fields")
+                self.populate_sketch(object.header_sketch, new_item)
+
         return new_item
 
 
@@ -235,5 +261,10 @@ class DocumentModelItem(QObject):
     def data_changed(self, event: ChangeEvent):
         if event.type == ChangeEvent.BeforeObjectAdded:
             self._model.on_before_object_added(self, event.object)
-        if event.type == ChangeEvent.ObjectAdded:
+        elif event.type == ChangeEvent.ObjectAdded:
             self._model.on_object_added(self, event.object)
+        elif event.type == ChangeEvent.BeforeObjectRemoved:
+            self._model.on_before_object_removed(self, event)
+        elif event.type == ChangeEvent.ObjectRemoved:
+            event.object.remove_change_handler(self.data_changed)
+            self._model.on_object_removed(self, event)

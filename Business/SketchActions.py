@@ -1,6 +1,7 @@
 import collections
 
-from Data.Sketch import Edge
+from Data.Document import Document
+from Data.Sketch import Edge, Sketch
 
 
 def create_key_point(doc, sketch, x, y, param, coincident_threshold):
@@ -16,13 +17,43 @@ def create_key_point(doc, sketch, x, y, param, coincident_threshold):
     return kp
 
 
+def create_circle(doc, sketch, kp, radius_param):
+    circle_edge = sketch.create_circle_edge(kp)
+    circle_edge.set_meta_data('r', radius_param.value)
+    circle_edge.set_meta_data_parameter('r', radius_param)
+
 def create_fillet(doc, sketch, fillet_kp, radius_param):
     fillet_edge = sketch.create_fillet_edge(fillet_kp)
     fillet_edge.set_meta_data('r', radius_param.value)
     fillet_edge.set_meta_data_parameter('r', radius_param)
 
+
 def create_text(doc, sketch, kp, value, height):
-    sketch.create_text(kp, value, height=height)
+    sketch.create_text(kp, value, height)
+
+def create_attribute(doc, sketch, kp, name, default_value, height):
+    sketch.create_attribute(kp, name, default_value, height)
+
+def set_similar_x(document: Document, sketch: Sketch, key_points: [], name):
+    for e in key_points:
+        value = e.x
+        break
+    param = sketch.get_parameter_by_name(name)
+    if param is None:
+        param = sketch.create_parameter(name, value)
+    for kp in key_points:
+        kp.set_x_parameter(param.uid)
+
+
+def set_similar_y(document: Document, sketch: Sketch, key_points: [], name):
+    for e in key_points:
+        value = e.y
+        break
+    param = sketch.get_parameter_by_name(name)
+    if param is None:
+        param = sketch.create_parameter(name, value)
+    for kp in key_points:
+        kp.set_y_parameter(param.uid)
 
 
 def find_all_similar(doc, sketch, digits):
@@ -42,6 +73,7 @@ def find_all_similar(doc, sketch, digits):
         sim_x_dict[x_name].append(kp)
         sim_y_dict[y_name].append(kp)
     counter = 0
+
     sim_x_dict = collections.OrderedDict(sorted(sim_x_dict.items()))
     sim_y_dict = collections.OrderedDict(sorted(sim_y_dict.items()))
     for sim_x_list_tuple in sim_x_dict.items():
@@ -52,8 +84,13 @@ def find_all_similar(doc, sketch, digits):
                 param = kp.get_x_parameter()
                 break
         if param is None:
-            param = sketch.create_parameter('PARX' + str(counter), float(sim_x_list_tuple[0]))
-            counter += 1
+            exists = True
+            while exists:
+                name = 'X%03d' % counter
+                if sketch.get_parameter_by_name(name) is None:
+                    exists = False
+                counter += 1
+            param = sketch.create_parameter(name, float(sim_x_list_tuple[0]))
             param.hidden = True
         for kp in sim_x_list:
             kp.set_x_parameter(param.uid)
@@ -66,8 +103,13 @@ def find_all_similar(doc, sketch, digits):
                 param = kp.get_y_parameter()
                 break
         if param is None:
-            param = sketch.create_parameter('PARY' + str(counter), float(sim_y_list_tuple[0]))
-            counter += 1
+            exists = True
+            while exists:
+                name = 'Y%03d' % counter
+                if sketch.get_parameter_by_name(name) is None:
+                    exists = False
+                counter += 1
+            param = sketch.create_parameter(name, float(sim_y_list_tuple[0]))
             param.hidden = True
         for kp in sim_y_list:
             kp.set_y_parameter(param.uid)

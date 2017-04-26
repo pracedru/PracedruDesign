@@ -12,4 +12,7 @@ class ActionStates(object):
         self.multi_select = False
         self.select_kp = True
         self.select_edge = True
-        self.insert_text = False
+        self.select_text = True
+        self.add_text = False
+        self.add_circle_edge = False
+        self.add_attribute = False

@@ -13,10 +13,17 @@ from Data.Style import EdgeStyle
 col_header = ["Value"]
 
 rows_by_type = {
+    "None": [],
     "Edge": [
         ['Name', 'name'],
-        ['Style', 'style_name']
-    ],
+        ['Style', 'style_name']],
+    "Attribute": [
+        ['Attribute Name', 'name'],
+        ['Default Value', 'value'],
+        ['Height', 'height'],
+        ['Angle', 'angle'],
+        ['Horizontal Alignment', 'horizontal_alignment'],
+        ['Vertical Alignment', 'vertical_alignment']],
     "Text": [
         ['Name', 'name'],
         ['Value', 'value'],
@@ -38,11 +45,14 @@ rows_by_type = {
         ['Orientation', 'orientation_name'],
         ['Header', 'header'],
         ['Margins', 'margins']],
-    "EdgeStyle":[
+    "EdgeStyle": [
         ['Name', 'name'],
         ['Thickness', 'thickness'],
         ['Color', 'color'],
-        ['Line type', 'line_type']
+        ['Line type', 'line_type']],
+    "Field": [
+        ['Name', 'name'],
+        ['Value', 'value']
     ]
 }
 
@@ -61,18 +71,9 @@ class PropertiesModel(QAbstractTableModel):
         if self._item is not None:
             self._item.remove_change_handler(self.on_item_changed)
         self._item = item
-        if type(item) is Edge:
-            self._rows = rows_by_type['Edge']
-        elif type(item) is Text:
-            self._rows = rows_by_type['Text']
-        elif type(item) is KeyPoint:
-            self._rows = rows_by_type['KeyPoint']
-        elif type(item) is Sketch:
-            self._rows = rows_by_type['Sketch']
-        elif type(item) is Drawing:
-            self._rows = rows_by_type['Drawing']
-        elif type(item) is EdgeStyle:
-            self._rows = rows_by_type['EdgeStyle']
+        type_name = type(item).__name__
+        if type_name in rows_by_type:
+            self._rows = rows_by_type[type_name]
         else:
             self._rows = []
         self.layoutChanged.emit()
@@ -144,8 +145,9 @@ class PropertiesModel(QAbstractTableModel):
         default_flags = Qt.ItemIsSelectable
         if self._item is not None:
             row = model_index.row()
-            class_attribute = getattr(type(self._item), self._rows[row][1], None)
-            if isinstance(class_attribute, property):
-                if class_attribute.fset is not None:
-                    default_flags = default_flags | Qt.ItemIsEditable | Qt.ItemIsEnabled
+            if row < len(self._rows):
+                class_attribute = getattr(type(self._item), self._rows[row][1], None)
+                if isinstance(class_attribute, property):
+                    if class_attribute.fset is not None:
+                        default_flags = default_flags | Qt.ItemIsEditable | Qt.ItemIsEnabled
         return default_flags

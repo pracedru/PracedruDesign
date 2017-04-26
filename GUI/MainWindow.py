@@ -9,6 +9,7 @@ from PyQt5.QtWidgets import QAction
 from PyQt5.QtWidgets import QDialog
 from PyQt5.QtWidgets import QDockWidget
 from PyQt5.QtWidgets import QFileDialog
+from PyQt5.QtWidgets import QLabel
 from PyQt5.QtWidgets import QMainWindow
 from PyQt5.QtWidgets import QMessageBox
 from PyQt5.QtWidgets import QProgressBar
@@ -16,6 +17,7 @@ from PyQt5.QtWidgets import QToolBar
 
 import Business
 from Business.DrawingActions import create_empty_header
+from Data.Document import Document
 from Data.Drawings import Drawing
 from Data.Parameters import Parameters
 from Data.Point3d import KeyPoint
@@ -24,6 +26,7 @@ from GUI import *
 from GUI.ActionsStates import ActionStates
 from GUI.Icons import get_icon
 from GUI.Ribbon.RibbonButton import RibbonButton
+from GUI.Ribbon.RibbonTextbox import RibbonTextbox
 from GUI.Ribbon.RibbonWidget import RibbonWidget
 from GUI.Widgets.GeometryView import GeometryDock
 from GUI.Widgets.NewDrawingView import NewDrawingViewWidget
@@ -36,10 +39,11 @@ main_windows = []
 
 
 class MainWindow(QMainWindow):
-    def __init__(self, document):
+    def __init__(self, document: Document):
         QMainWindow.__init__(self, None)
         main_windows.append(self)
         self._document = document
+        self._document.add_status_handler(self.on_status_changed)
         self.setMinimumHeight(800)
         self.setMinimumWidth(1280)
         self._Title = "Pracedru Design"
@@ -63,7 +67,9 @@ class MainWindow(QMainWindow):
         self._add_arc_action = self.add_action("Add\narc", "addarc", "Add arc edge to edges", True, self.on_add_arc)
         self._add_fillet_action = self.add_action("Add\nfillet", "addfillet", "Add fillet edge to existing edges", True, self.on_add_fillet, checkable=True)
         self._add_divide_action = self.add_action("Divide\nedge", "divideline", "Divide edge with keypoint", True, self.on_divide_edge, checkable=True)
-        self._add_text_action = self.add_action("Insert\ntext", "addtext", "Insert text in sketch", True, self.on_insert_text)
+        self._add_text_action = self.add_action("Insert\ntext", "addtext", "Insert text in sketch", True, self.on_insert_text, checkable=True)
+        self._add_attribute_action = self.add_action("Insert\nattribute", "addattribute", "Insert attribute in sketch", True, self.on_insert_attribute, checkable=True)
+        self._add_circle_action = self.add_action("Insert\ncircle", "addcircle", "Insert circle in sketch", True, self.on_add_circle, checkable=True)
 
         self._scale_selected_action = self.add_action("Scale", "scale", "Scale selected items", True, self.on_scale_selected)
         self._pattern_selected_action = self.add_action("Pattern", "pattern", "Pattern selected items", True, self.on_pattern_selected)
@@ -72,7 +78,11 @@ class MainWindow(QMainWindow):
         self._insert_sketch_action = self.add_action("Insert\nsketch", "addsketchview", "Insert sketch in drawing", True, self.on_insert_sketch_in_drawing)
         self._insert_part_action = self.add_action("Insert\npart", "addpartview", "Insert part in drawing", True, self.on_insert_part_in_drawing)
 
+        self._add_field_action = self.add_action("Insert\nfield", "addfield", "Insert field on drawing", True, self.on_add_field)
         # Ribbon initialization
+
+
+
         self._ribbon = QToolBar(self)
         if is_dark_theme():
             self._ribbon.setStyleSheet(get_stylesheet("ribbon_dark"))
@@ -132,7 +142,7 @@ class MainWindow(QMainWindow):
         file_path = file_name[0]
 
         if file_path != "":
-            # doc = load_document(file_path)
+            doc = Business.load_document(file_path)
             try:
                 doc = Business.load_document(file_path)
             except ValueError as e:
@@ -153,6 +163,9 @@ class MainWindow(QMainWindow):
 
     def on_insert_part_in_drawing(self):
         pass
+
+    def on_add_field(self):
+        self._viewWidget.drawing_view.on_add_field()
 
     def on_save(self):
         if self._document.path == "" or self._document.name == "":
@@ -215,6 +228,13 @@ class MainWindow(QMainWindow):
         if len(selected_key_points) > 0:
             self._properties_dock.set_item(selected_key_points[0])
 
+    def on_text_selection_changed_in_view(self, selected_texts):
+        if len(selected_texts) > 0:
+            self._properties_dock.set_item(selected_texts[0])
+
+    def on_new_item_added_in_tree(self, item_object):
+        self._properties_dock.set_item(item_object)
+
     def on_set_sim_x(self):
         self._viewWidget.on_set_similar_x_coordinates()
 
@@ -229,6 +249,12 @@ class MainWindow(QMainWindow):
 
     def on_insert_text(self):
         self._viewWidget.on_insert_text()
+
+    def on_insert_attribute(self):
+        self._viewWidget.on_insert_attribute()
+
+    def on_add_circle(self):
+        self._viewWidget.on_add_circle()
 
     def on_add_arc(self):
         pass
@@ -249,6 +275,10 @@ class MainWindow(QMainWindow):
         self._states.show_key_points = self._show_key_points_action.isChecked()
         self._viewWidget.update()
 
+    def on_similar_thresshold_changed(self, event):
+        value = float(event)
+        self._viewWidget.sketch_view.on_similar_thresshold_changed(value)
+
     def update_ribbon_state(self):
         self._add_line_action.setChecked(self._states.draw_line_edge)
         self._set_sim_x_action.setChecked(self._states.set_similar_x)
@@ -256,6 +286,9 @@ class MainWindow(QMainWindow):
         self._add_fillet_action.setChecked(self._states.add_fillet_edge)
         self._add_arc_action.setEnabled(False)
         self._add_divide_action.setEnabled(False)
+        self._add_circle_action.setChecked(self._states.add_circle_edge)
+        self._add_attribute_action.setChecked(self._states.add_attribute)
+        self._add_text_action.setChecked(self._states.add_text)
 
     def init_ribbon(self):
         self.init_home_tab()
@@ -282,9 +315,11 @@ class MainWindow(QMainWindow):
         insert_pane = sketch_tab.add_ribbon_pane("Insert")
         insert_pane.add_ribbon_widget(RibbonButton(self, self._add_line_action, True))
         insert_pane.add_ribbon_widget(RibbonButton(self, self._add_arc_action, True))
+        insert_pane.add_ribbon_widget(RibbonButton(self, self._add_circle_action, True))
         insert_pane.add_ribbon_widget(RibbonButton(self, self._add_fillet_action, True))
         insert_pane.add_ribbon_widget(RibbonButton(self, self._add_divide_action, True))
         insert_pane.add_ribbon_widget(RibbonButton(self, self._add_text_action, True))
+        insert_pane.add_ribbon_widget(RibbonButton(self, self._add_attribute_action, True))
 
         operate_pane = sketch_tab.add_ribbon_pane("Operate")
         operate_pane.add_ribbon_widget(RibbonButton(self, self._scale_selected_action, True))
@@ -294,11 +329,17 @@ class MainWindow(QMainWindow):
         parametry_pane.add_ribbon_widget(RibbonButton(self, self._set_sim_x_action, True))
         parametry_pane.add_ribbon_widget(RibbonButton(self, self._set_sim_y_action, True))
         parametry_pane.add_ribbon_widget(RibbonButton(self, self._find_all_sim_action, True))
+        thresshold_text_box = RibbonTextbox(str(1), self.on_similar_thresshold_changed)
+        grid = parametry_pane.add_grid_widget(200)
+        grid.addWidget(QLabel("Thresshold"), 0, 0)
+        grid.addWidget(thresshold_text_box, 0, 1)
+
 
         view_pane = sketch_tab.add_ribbon_pane("View")
         view_pane.add_ribbon_widget(RibbonButton(self, self._show_key_points_action, True))
         view_pane.add_ribbon_widget(RibbonButton(self, self._show_hidden_params_action, True))
         view_pane.add_ribbon_widget(RibbonButton(self, self._zoom_fit_action, True))
+        sketch_tab.add_spacer()
 
     def init_part_tab(self):
         part_tab = self._ribbon_widget.add_ribbon_tab("Part")
@@ -314,6 +355,7 @@ class MainWindow(QMainWindow):
         insert_pane.add_ribbon_widget(RibbonButton(self, self._insert_part_action, True))
         annotation_pane = drawing_tab.add_ribbon_pane("Annotation")
         edit_pane = drawing_tab.add_ribbon_pane("Edit")
+        edit_pane.add_ribbon_widget(RibbonButton(self, self._add_field_action, True))
         view_pane = drawing_tab.add_ribbon_pane("View")
         view_pane.add_ribbon_widget(RibbonButton(self, self._zoom_fit_action, True))
 
@@ -392,3 +434,7 @@ class MainWindow(QMainWindow):
         settings.setValue("size", self.size())
         settings.setValue("maximized", self.isMaximized())
         settings.setValue("docks", self.saveState(1))
+
+    def on_status_changed(self, text, progress):
+        self.statusBar().showMessage(text)
+        self.progress_bar.setValue(progress)

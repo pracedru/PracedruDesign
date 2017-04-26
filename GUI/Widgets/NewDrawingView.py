@@ -88,6 +88,7 @@ class NewDrawingViewWidget(QDialog):
     def orientation(self):
         return self._orientations.currentIndex()
 
+
 class HeaderViewWidget(QWidget):
     def __init__(self, parent, header, document):
         QWidget.__init__(self, parent)
@@ -117,5 +118,5 @@ class HeaderViewWidget(QWidget):
             scale_y = self.height() / header_height
             scale = min(scale_x, scale_y)*0.9
             offset = Vertex(-limits[0] - header_width/2, -limits[1] - header_height/2)
-            draw_sketch(qp, self._header, scale, offset, center, pens)
+            draw_sketch(qp, self._header, scale, offset, center, pens, {})
         qp.end()

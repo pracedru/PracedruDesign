@@ -6,7 +6,7 @@ import GUI
 from Data.Document import Document
 from Data.Paper import Sizes
 from Data.Parameters import Parameters
-from Data.Sketch import Sketch
+from Data.Sketch import Sketch, Attribute
 
 undo_stacks = {}
 
@@ -45,4 +45,16 @@ def create_add_sketch_to_document(document):
 
 def add_drawing(document, size, name, header, orientation):
     drawing = document.get_drawings().create_drawing(size, name, header, orientation)
+    for text_tuple in header.get_texts():
+        text = text_tuple[1]
+        if type(text) is Attribute:
+            drawing.add_field(text.name, text.value)
     return drawing
+
+
+def delete_items(doc, items):
+    for item in items:
+        object = item.data
+        if object is not None:
+            if "delete" in dir(object):
+                object.delete()

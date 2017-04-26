@@ -41,14 +41,6 @@ class Sketch(Geometry):
             limits[3] = max(pnt.y, limits[3])
         return limits
 
-    # def get_edges_from_key_point(self, kp):
-    #     edges = []
-    #     for edge_tuple in self._edges.items():
-    #         edge = edge_tuple[1]
-    #         if kp in edge.get_end_key_points():
-    #             edges.append(edge)
-    #     return edges
-
     @property
     def key_point_count(self):
         return len(self._key_points)
@@ -116,6 +108,19 @@ class Sketch(Geometry):
             key_point.add_change_handler(self.on_kp_changed)
         return key_point
 
+    def create_circle_edge(self, kp):
+        circle_edge = None
+        if kp.uid in self._key_points:
+            circle_edge = Edge(self, Edge.CircleEdge)
+            circle_edge.name = "Edge" + str(self.edge_naming_index)
+            circle_edge.add_key_point(kp)
+            self.edge_naming_index += 1
+            self.changed(ChangeEvent(self, ChangeEvent.BeforeObjectAdded, circle_edge))
+            self._edges[circle_edge.uid] = circle_edge
+            self.changed(ChangeEvent(self, ChangeEvent.ObjectAdded, circle_edge))
+            circle_edge.add_change_handler(self.on_edge_changed)
+        return circle_edge
+
     def create_fillet_edge(self, kp):
         fillet_edge = None
         if kp.uid in self._key_points:
@@ -136,6 +141,14 @@ class Sketch(Geometry):
         self.changed(ChangeEvent(self, ChangeEvent.ObjectAdded, text))
         text.add_change_handler(self.on_text_changed)
         return text
+
+    def create_attribute(self, kp, name, default_value, height):
+        attribute = Attribute(self, kp, name, default_value, height)
+        self.changed(ChangeEvent(self, ChangeEvent.BeforeObjectAdded, attribute))
+        self._texts[attribute.uid] = attribute
+        self.changed(ChangeEvent(self, ChangeEvent.ObjectAdded, attribute))
+        attribute.add_change_handler(self.on_text_changed)
+        return attribute
 
     def create_line_edge(self, key_point1, key_point2):
         line_edge = Edge(self, Edge.LineEdge)
@@ -220,7 +233,11 @@ class Sketch(Geometry):
             edge.add_change_handler(self.on_edge_changed)
         for text_data_tuple in data.get('texts', {}).items():
             text_data = text_data_tuple[1]
-            text = Text.deserialize(self, text_data)
+            text_type = text_data.get('type', Text.SimpleTextType)
+            if text_type == Text.SimpleTextType:
+                text = Text.deserialize(self, text_data)
+            elif text_type == Text.AttributeType:
+                text = Attribute.deserialize(self, text_data)
             self._texts[text.uid] = text
             text.add_change_handler(self.on_text_changed)
 
@@ -242,6 +259,8 @@ class Text(IdObject, ObservableObject):
     Center = 2
     Left = 0
     Right = 1
+    SimpleTextType = 0
+    AttributeType = 1
 
     def __init__(self, sketch, key_point=None, value="", height=0.01, angle=0, vertical_alignment=Center, horizontal_alignment=Center):
         IdObject.__init__(self)
@@ -253,6 +272,10 @@ class Text(IdObject, ObservableObject):
         self._height = height
         self._angle = angle
         self._key_point = key_point
+
+    @property
+    def text_type(self):
+        return Text.SimpleTextType
 
     @property
     def name(self):
@@ -275,6 +298,11 @@ class Text(IdObject, ObservableObject):
     @property
     def vertical_alignment(self):
         return self._vertical_alignment
+
+    @vertical_alignment.setter
+    def vertical_alignment(self, value):
+        self._vertical_alignment = value
+        self.changed(ValueChangeEvent(self, 'vertical_alignment', 0, value))
 
     @property
     def horizontal_alignment(self):
@@ -307,7 +335,8 @@ class Text(IdObject, ObservableObject):
             'height': self._height,
             'angle': self._angle,
             'valign': self._vertical_alignment,
-            'halign': self._horizontal_alignment
+            'halign': self._horizontal_alignment,
+            'type': self.text_type
         }
 
     @staticmethod
@@ -328,29 +357,37 @@ class Text(IdObject, ObservableObject):
 
 
 class Attribute(Text):
-    def __init__(self, name, default_value):
-        Text.__init__(default_value)
+    def __init__(self, sketch, key_point=None, name="Attribute name", default_value="Default value", height=0.01):
+        Text.__init__(self, sketch, key_point, default_value, height)
         self._name = name
+
+    @property
+    def text_type(self):
+        return Text.AttributeType
 
     @property
     def name(self):
         return self._name
 
-    def set_name(self, name):
+    @name.setter
+    def name(self, name):
+        old_value = self._name
         self._name = name
+        self.changed(ValueChangeEvent(self, "name", old_value, name))
 
     def serialize_json(self):
         return {
             'text': Text.serialize_json(self),
             'name': self._name,
+            'type': self.text_type
         }
 
     @staticmethod
-    def deserialize(data, param_parent):
-        text = Text(param_parent)
+    def deserialize(param_parent, data):
+        att = Attribute(param_parent)
         if data is not None:
-            text.deserialize_data(data)
-        return text
+            att.deserialize_data(data)
+        return att
 
     def deserialize_data(self, data):
         Text.deserialize_data(self, data['text'])
@@ -363,7 +400,8 @@ class Edge(IdObject, NamedObservableObject):
     EllipseEdge = 3
     PolyLineEdge = 4
     FilletLineEdge = 5
-    CircleEdge = 3
+    CircleEdge = 6
+    SplineEdge = 7
 
     def __init__(self, sketch, type=LineEdge, name="New Edge"):
         IdObject.__init__(self)
@@ -451,6 +489,8 @@ class Edge(IdObject, NamedObservableObject):
                 end_kp.add_edge(self)
                 self._meta_data['end_kp'] = end_kp.uid
             return [start_kp, end_kp]
+        elif self.type == Edge.CircleEdge:
+            return self.get_key_points()
         elif self.type == Edge.PolyLineEdge:
             return self.get_key_points()
         elif self.type == Edge.FilletLineEdge:
@@ -511,6 +551,12 @@ class Edge(IdObject, NamedObservableObject):
                 dist = min(ekp[0].distance(point), ekp[1].distance(point))
             else:
                 dist = abs(center.distance(point)-radius)
+            return dist
+        elif self.type == Edge.CircleEdge:
+            center = kps[0]
+            radius = self._meta_data['r']
+
+            dist = abs(center.distance(point) - radius)
             return dist
         elif self.type == Edge.FilletLineEdge:
             kp = kps[0]

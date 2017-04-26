@@ -55,3 +55,10 @@ def create_empty_header(document):
 
 
 
+def add_field_to_drawing(doc, drawing):
+    counter = 1
+    name = "New Field %d" % counter
+    while drawing.get_field(name) is not None:
+        counter += 1
+        name = "New Field %d" % counter
+    drawing.add_field(name, "Field value")

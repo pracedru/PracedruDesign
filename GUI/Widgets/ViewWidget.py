@@ -34,6 +34,14 @@ class ViewWidget(QStackedWidget):
         self.addWidget(self._partView)
         self.addWidget(self._drawingView)
 
+    @property
+    def sketch_view(self):
+        return self._sketchView
+
+    @property
+    def drawing_view(self):
+        return self._drawingView
+
     def set_sketch_view(self, sketch):
         self.setCurrentIndex(0)
         self._sketchView.set_sketch(sketch)
@@ -69,3 +77,15 @@ class ViewWidget(QStackedWidget):
     def on_add_fillet(self):
         if self.currentIndex() == 0:
             self._sketchView.on_add_fillet()
+
+    def on_add_circle(self):
+        if self.currentIndex() == 0:
+            self._sketchView.on_add_circle()
+
+    def on_set_similar_x_coordinates(self):
+        if self.currentIndex() == 0:
+            self._sketchView.on_set_similar_x_coordinates()
+
+    def on_insert_attribute(self):
+        if self.currentIndex() == 0:
+            self._sketchView.on_insert_attribute()

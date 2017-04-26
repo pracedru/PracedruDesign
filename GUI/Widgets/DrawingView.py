@@ -11,6 +11,7 @@ from PyQt5.QtGui import QLinearGradient
 from PyQt5.QtGui import QPen
 from PyQt5.QtWidgets import QWidget
 
+from Business.DrawingActions import *
 from Data.Vertex import Vertex
 from GUI import is_dark_theme
 from GUI.Widgets.Drawers import draw_sketch, create_pens
@@ -53,6 +54,9 @@ class DrawingViewWidget(QWidget):
         self._offset.y = -(y_min + (y_max - y_min) / 2)
         self._scale = scale
         self.update()
+
+    def on_add_field(self):
+        add_field_to_drawing(self._doc, self._drawing)
 
     def eventFilter(self, obj, event):
         if event.type() == QEvent.KeyPress:
@@ -168,7 +172,7 @@ class DrawingViewWidget(QWidget):
         m = self._drawing.margins
         sz = self._drawing.size
         offset = Vertex(sz[0]-header_width-m[2]+self._offset.x, m[3]+self._offset.y)
-        draw_sketch(qp, sketch, self._scale, offset, center, pens)
+        draw_sketch(qp, sketch, self._scale, offset, center, pens, self._drawing.get_fields())
 
     def draw_sketch_view(self, event, qp, cx, cy, contour_pen, hatch_pen, annotation_pen, sketch_view):
         pass

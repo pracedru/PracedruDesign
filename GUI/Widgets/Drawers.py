@@ -8,7 +8,7 @@ from PyQt5.QtGui import QFont, QPen
 from PyQt5.QtGui import QFontMetrics
 from PyQt5.QtGui import QPainter
 
-from Data.Sketch import Edge, Text
+from Data.Sketch import Edge, Text, Attribute
 
 
 def create_pens(document, scale, color_override=None):
@@ -26,14 +26,52 @@ def create_pens(document, scale, color_override=None):
     return pens
 
 
-def draw_sketch(qp: QPainter, sketch, scale, offset, center, pens):
+def draw_sketch(qp: QPainter, sketch, scale, offset, center, pens, fields):
     edges = sketch.get_edges()
     for edge_tuple in edges:
         edge = edge_tuple[1]
         draw_edge(edge, qp, scale, offset, center, pens)
     for text_tuple in sketch.get_texts():
         text = text_tuple[1]
-        draw_text(text, qp, scale, offset, center)
+        if type(text) is Attribute:
+            value = None
+            if text.name in fields:
+                value = fields[text.name].value
+            draw_attribute(text, qp, scale, offset, center, True, value)
+        else:
+            draw_text(text, qp, scale, offset, center)
+
+
+def draw_attribute(text, qp: QPainter, scale, offset, center, show_value=False, value=None):
+    key_point = text.key_point
+    factor = 10 / text.height
+    font = QFont("Helvetica", text.height*factor)
+    fm = QFontMetrics(font)
+    qp.setFont(font)
+    if show_value:
+        if value is None:
+            txt = text.value
+        else:
+            txt = value
+    else:
+        txt = "<" + text.name + ">"
+    width = fm.width(txt)/factor
+    qp.save()
+    x1 = (key_point.x + offset.x)*scale + center.x
+    y1 = -(key_point.y + offset.y)*scale + center.y
+    if text.horizontal_alignment == Text.Left:
+        x1 -= width*scale
+    elif text.horizontal_alignment == Text.Center:
+        x1 -= width*scale/2
+    if text.vertical_alignment == Text.Top:
+        y1 -= text.height*scale
+    elif text.vertical_alignment == Text.Center:
+        y1 -= text.height * 2.3 * scale/2
+    qp.translate(x1, y1)
+    qp.scale(scale/factor, scale/factor)
+    qp.rotate(text.angle*180/pi)
+    qp.drawText(QRectF(0, 0, width*factor, text.height*2*factor), Qt.AlignHCenter | Qt.AlignVCenter, txt)
+    qp.restore()
 
 
 def draw_text(text, qp: QPainter, scale, offset, center):
@@ -128,6 +166,13 @@ def draw_edge(edge: Edge, qp: QPainter, scale, offset, center, pens):
             if span < 0:
                 span += 2 * 180 * 16
             qp.drawArc(rect, start_angle, span)
+        elif edge.type == Edge.CircleEdge:
+            cx = (key_points[0].x + offset.x) * scale + center.x
+            cy = -(key_points[0].y + offset.y) * scale + center.y
+            radius = edge.get_meta_data("r") * scale
+            rect = QRectF(cx - radius, cy - 1 * radius, radius * 2, radius * 2)
+
+            qp.drawEllipse(rect)
         elif edge.type == Edge.FilletLineEdge:
             kp = key_points[0]
             edges_list = kp.get_edges()

@@ -18,7 +18,7 @@ from PyQt5.QtWidgets import QWidget
 
 import Business
 from Business.SketchActions import *
-from Data.Sketch import Edge
+from Data.Sketch import Edge, Attribute
 from Data.Vertex import Vertex
 from GUI import is_dark_theme
 from GUI.Widgets.Drawers import *
@@ -40,9 +40,13 @@ class SketchViewWidget(QWidget):
         self._pan_ref_pos = None
         self._selected_edges = []
         self._selected_key_points = []
+        self._selected_texts = []
+        self._similar_coords = set()
         self._kp_hover = None
         self._kp_move = None
         self._edge_hover = None
+        self._text_hover = None
+        self.similar_threshold = 1
         self.installEventFilter(self)
 
     def eventFilter(self, obj, event):
@@ -63,7 +67,7 @@ class SketchViewWidget(QWidget):
 
     def on_find_all_similar(self):
         if self._sketch is not None:
-            find_all_similar(self._doc, self._sketch, 3)
+            find_all_similar(self._doc, self._sketch, int(round(log10(1/self.similar_threshold))))
 
     def on_insert_text(self):
         self.on_escape()
@@ -90,6 +94,9 @@ class SketchViewWidget(QWidget):
         self._offset.y = -(y_min + (y_max - y_min) / 2)
         self._scale = scale
         self.update()
+
+    def on_similar_thresshold_changed(self, value):
+        self.similar_threshold = value
 
     def on_delete(self):
         txt = "Are you sure you want to delete these geometries?"
@@ -125,9 +132,23 @@ class SketchViewWidget(QWidget):
         self._states.create_area = False
         self._states.set_fillet_kp = False
         self._states.insert_text = False
+        self._states.add_circle_edge = False
+        self._states.add_attribute = False
         self._selected_key_points.clear()
         self._selected_edges.clear()
         self.setCursor(Qt.ArrowCursor)
+        self._main_window.update_ribbon_state()
+
+    def on_set_similar_x_coordinates(self):
+        self.on_escape()
+        self._states.set_similar_x = True
+        self._states.select_kp = True
+        self._main_window.update_ribbon_state()
+
+    def on_set_similar_y_coordinates(self):
+        self.on_escape()
+        self._states.set_similar_y = True
+        self._states.select_kp = True
         self._main_window.update_ribbon_state()
 
     def on_add_line(self):
@@ -137,6 +158,24 @@ class SketchViewWidget(QWidget):
         self.setCursor(Qt.CrossCursor)
         self._states.select_kp = True
         self._states.draw_line_edge = True
+        self._main_window.update_ribbon_state()
+
+    def on_add_circle(self):
+        self.on_escape()
+        if self._sketch is None:
+            return
+        self.setCursor(Qt.CrossCursor)
+        self._states.select_kp = True
+        self._states.add_circle_edge = True
+        self._main_window.update_ribbon_state()
+
+    def on_insert_attribute(self):
+        self.on_escape()
+        if self._sketch is None:
+            return
+        self.setCursor(Qt.CrossCursor)
+        self._states.select_kp = True
+        self._states.add_attribute= True
         self._main_window.update_ribbon_state()
 
     def set_sketch(self, sketch):
@@ -181,6 +220,7 @@ class SketchViewWidget(QWidget):
                     self._kp_move.y = y
         self._kp_hover = None
         self._edge_hover = None
+        self._text_hover = None
         if self._states.select_kp:
             for kp_tuple in key_points:
                 key_point = kp_tuple[1]
@@ -201,6 +241,24 @@ class SketchViewWidget(QWidget):
                     closest_edge = edge
             if smallest_dist * scale < 10:
                 self._edge_hover = closest_edge
+
+        if self._states.select_text and self._edge_hover is None and self._kp_hover is None:
+            for text_tuple in sketch.get_texts():
+                text = text_tuple[1]
+                key_point = text.key_point
+                x1 = key_point.x
+                y1 = key_point.y
+                if text.horizontal_alignment == Text.Left:
+                    x1 -= text.height * 2.5
+                elif text.horizontal_alignment == Text.Right:
+                    x1 += text.height * 2.5
+                if text.vertical_alignment == Text.Top:
+                    y1 -= text.height / 2
+                elif text.vertical_alignment == Text.Bottom:
+                    y1 += text.height / 2
+                if abs(y1 - y) < text.height/2 and abs(x1 - x) < text.height*2.5:
+                    self._text_hover = text
+                    break
 
         if self._states.set_similar_x and self._kp_hover is not None:
             self._similar_coords.clear()
@@ -240,19 +298,29 @@ class SketchViewWidget(QWidget):
         y = -((self._mouse_position.y() - height) / scale + self._offset.y)
         if self._states.set_similar_x or self._states.set_similar_y:
             params = []
-            for param_tuple in self._doc.get_parameters().get_all_parameters():
+            for param_tuple in self._sketch.get_all_parameters():
                 params.append(param_tuple[1].name)
             value = QInputDialog.getItem(self, "Set parameter", "Parameter:", params, 0, True)
-        if self._states.set_similar_x and value[1] == QDialog.Accepted:
-            self._states.set_similar_x = False
-            Business.set_similar_x(self._doc, self._similar_coords, value[0])
-        else:
-            self._states.set_similar_x = False
-        if self._states.set_similar_y and value[1] == QDialog.Accepted:
-            self._states.set_similar_y = False
-            Business.set_similar_y(self._doc, self._similar_coords, value[0])
-        else:
-            self._states.set_similar_y = False
+            if self._states.set_similar_x and value[1] == QDialog.Accepted:
+                self._states.set_similar_x = False
+                set_similar_x(self._doc, self._sketch, self._similar_coords, value[0])
+            else:
+                self._states.set_similar_x = False
+            if self._states.set_similar_y and value[1] == QDialog.Accepted:
+                self._states.set_similar_y = False
+                set_similar_y(self._doc, self._sketch, self._similar_coords, value[0])
+            else:
+                self._states.set_similar_y = False
+
+        if self._states.select_text:
+            if self._text_hover is not None:
+                if self._states.multi_select:
+                    self._selected_texts.append(self._text_hover)
+                else:
+                    self._selected_texts = [self._text_hover]
+            else:
+                self._selected_texts = []
+            self._main_window.on_text_selection_changed_in_view(self._selected_texts)
 
         if self._states.left_button_hold and self._kp_hover is not None:
             if self._kp_hover in self._selected_key_points:
@@ -300,17 +368,41 @@ class SketchViewWidget(QWidget):
                 doc = self._doc
                 edges = self._kp_hover.get_edges()
                 if len(edges) == 2:
-                    param_name = "New Fillet radius"
-                    param = self._sketch.get_parameter_by_name(param_name)
-                    if param is None:
-                        param = self._sketch.create_parameter(param_name, 1.0)
-                    create_fillet(self._doc, self._sketch, self._kp_hover, param)
+                    params = []
+                    params.sort()
+                    for param_tuple in self._sketch.get_all_parameters():
+                        params.append(param_tuple[1].name)
+                    value = QInputDialog.getItem(self, "Set radius parameter", "Parameter:", params, 0, True)
+                    if value[1] == QDialog.Accepted:
+                        radius_param = self._sketch.get_parameter_by_name(value[0])
+                        if radius_param is None:
+                            radius_param = self._sketch.create_parameter(value[0], 1.0)
+                        create_fillet(self._doc, self._sketch, self._kp_hover, radius_param)
                 else:
                     pass
-        if self._states.insert_text:
+        if self._states.add_text:
             coincident_threshold = 5 / scale
             kp = create_key_point(self._doc, self._sketch, x, y, 0.0, coincident_threshold)
-            create_text(self._doc, self._sketch, kp, "New Text", 0.007)
+            create_text(self._doc, self._sketch, kp, "New Text", 0.003)
+            self.on_escape()
+        if self._states.add_circle_edge:
+            coincident_threshold = 5 / scale
+            kp = create_key_point(self._doc, self._sketch, x, y, 0.0, coincident_threshold)
+            params = []
+            params.sort()
+            for param_tuple in self._sketch.get_all_parameters():
+                params.append(param_tuple[1].name)
+            value = QInputDialog.getItem(self, "Set radius parameter", "Parameter:", params, 0, True)
+            if value[1] == QDialog.Accepted:
+                radius_param = self._sketch.get_parameter_by_name(value[0])
+                if radius_param is None:
+                    radius_param = self._sketch.create_parameter(value[0], 1.0)
+                create_circle(self._doc, self._sketch, kp, radius_param)
+            self.on_escape()
+        if self._states.add_attribute:
+            coincident_threshold = 5 / scale
+            kp = create_key_point(self._doc, self._sketch, x, y, 0.0, coincident_threshold)
+            create_attribute(self._doc, self._sketch, kp, "Attribute name", "Default value", 0.007)
             self.on_escape()
 
     def wheelEvent(self, event):
@@ -356,10 +448,27 @@ class SketchViewWidget(QWidget):
         half_height = self.height() / 2
         center = Vertex(half_width, half_height)
         normal_pen = QPen(QtGui.QColor(0, 0, 0), 2)
+        kp_pen_hover = QPen(QtGui.QColor(0, 120, 255), 3)
+        kp_pen_hl = QPen(QtGui.QColor(180, 50, 0), 3)
         qp.setPen(normal_pen)
         for text_tuple in self._sketch.get_texts():
             text = text_tuple[1]
-            draw_text(text, qp, sc, self._offset, center)
+            if type(text) is Text:
+                draw_text(text, qp, sc, self._offset, center)
+            elif type(text) is Attribute:
+                draw_attribute(text, qp, sc, self._offset, center, {})
+        if self._text_hover is not None:
+            qp.setPen(kp_pen_hover)
+            if type(self._text_hover) is Text:
+                draw_text(self._text_hover, qp, sc, self._offset, center)
+            elif type(self._text_hover) is Attribute:
+                draw_attribute(self._text_hover, qp, sc, self._offset, center, {})
+        qp.setPen(kp_pen_hl)
+        for text in self._selected_texts:
+            if type(text) is Text:
+                draw_text(text, qp, sc, self._offset, center)
+            elif type(text) is Attribute:
+                draw_attribute(text, qp, sc, self._offset, center, {})
 
     def draw_edges(self, event, qp):
         pens = create_pens(self._doc, 6000)
@@ -405,6 +514,7 @@ class SketchViewWidget(QWidget):
 
         if self._edge_hover is not None:
             draw_edge(self._edge_hover, qp, scale, self._offset, center, pens_hover)
+
         qp.setPen(pens['default'])
 
         key_points = self._sketch.get_key_points()
@@ -425,3 +535,5 @@ class SketchViewWidget(QWidget):
 
         for key_point in self._selected_key_points:
             draw_kp(qp, key_point, scale, self._offset, center)
+
+
