@@ -8,6 +8,7 @@ from Data.Drawings import Drawing, Drawings, Field, SketchView
 from Data.Events import ChangeEvent
 from Data.Geometry import Geometry
 from Data.Parameters import Parameters, Parameter
+from Data.Part import Part
 from Data.Point3d import KeyPoint
 from Data.Sketch import Sketch, Edge, Text, Attribute
 from Data.Style import EdgeStyle
@@ -44,6 +45,8 @@ class DocumentItemModel(QAbstractItemModel):
         for geom in self._doc.get_geometries().items():
             if type(geom) is Sketch:
                 self.populate_sketch(geom, geoms_item)
+            if type(geom) is Part:
+                DocumentModelItem(geom, self, geoms_item)
 
         DocumentModelItem(None, self, self._root_item, "Analyses")
         self.populate_drawings()

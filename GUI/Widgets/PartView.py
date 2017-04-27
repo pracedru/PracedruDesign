@@ -1,6 +1,11 @@
 import math
+
+from OpenGL.raw.GL.VERSION.GL_1_1 import GL_POLYGON
 from PyQt5.QtCore import QPoint
+from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QColor
+from OpenGL import GL
+from PyQt5.QtGui import QLinearGradient
 from PyQt5.QtGui import QOpenGLContext
 from PyQt5.QtGui import QOpenGLVersionProfile
 from PyQt5.QtGui import QSurfaceFormat
@@ -32,25 +37,24 @@ class PartViewWidget(QOpenGLWidget):
         angle = self.normalizeAngle(angle)
         if angle != self.xRot:
             self.xRot = angle
-            self.xRotationChanged.emit(angle)
+            # self.xRotationChanged.emit(angle)
             self.update()
 
     def setYRotation(self, angle):
         angle = self.normalizeAngle(angle)
         if angle != self.yRot:
             self.yRot = angle
-            self.yRotationChanged.emit(angle)
+            # self.yRotationChanged.emit(angle)
             self.update()
 
     def setZRotation(self, angle):
         angle = self.normalizeAngle(angle)
         if angle != self.zRot:
             self.zRot = angle
-            self.zRotationChanged.emit(angle)
+            # self.zRotationChanged.emit(angle)
             self.update()
 
     def initializeGL(self):
-        # c = QOpenGLContext()
         c = self.context()
         f = QSurfaceFormat()             # The default
         p = QOpenGLVersionProfile(f)
@@ -90,7 +94,7 @@ class PartViewWidget(QOpenGLWidget):
         dy = event.y() - self.lastPos.y()
 
         if event.buttons() & Qt.LeftButton:
-            self.setXRotation(self.xRot + 8 * dy)
+            self.setXRotation(self.xRot - 8 * dy)
             self.setYRotation(self.yRot + 8 * dx)
         elif event.buttons() & Qt.RightButton:
             self.setXRotation(self.xRot + 8 * dy)

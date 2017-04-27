@@ -22,6 +22,9 @@ class Part(Geometry):
             self.changed(ChangeEvent(self, ChangeEvent.ObjectRemoved, event.sender))
             event.sender.remove_change_handler(self.on_feature_changed)
 
+    def delete(self):
+        self.changed(ChangeEvent(self, ChangeEvent.Deleted, self))
+
     def serialize_json(self):
         return {
             'uid': IdObject.serialize_json(self),

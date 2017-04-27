@@ -1,85 +1,12 @@
 from math import pi, cos, sin, tan
 
-from Data.Sketch import Edge
+from Data.Edges import Edge
 from Data.Events import ChangeEvent
 from Data.Objects import IdObject, ObservableObject
 from Data.Point3d import KeyPoint
 from Data.Vertex import Vertex
 
 __author__ = 'mamj'
-
-
-class Areas(ObservableObject):
-    def __init__(self):
-        ObservableObject.__init__(self)
-        self._areas = {}
-        self.naming_index = 1
-
-    def create_area(self):
-        self.changed(ChangeEvent(self, ChangeEvent.BeforeObjectAdded, None))
-        area = Area()
-        self._areas[area.uid] = area
-        area.set_name("Area" + str(self.naming_index))
-        self.naming_index += 1
-        self.changed(ChangeEvent(self, ChangeEvent.ObjectAdded, area))
-        area.add_change_handler(self.on_area_changed)
-        return area
-
-    def remove_area(self, area):
-        if area.uid in self._areas:
-            self.changed(ChangeEvent(self, ChangeEvent.BeforeObjectRemoved, area))
-            self._areas.pop(area.uid)
-            self.changed(ChangeEvent(self, ChangeEvent.ObjectRemoved, area))
-            area.changed(ChangeEvent(self, ChangeEvent.Deleted, area))
-
-    def remove_areas(self, areas):
-        for area in areas:
-            self.remove_area(area)
-
-    def get_areas(self):
-        return self._areas.items()
-
-    def clear(self):
-        self._areas.clear()
-        self.naming_index = 1
-        self.changed(ChangeEvent(self, ChangeEvent.Cleared, self))
-
-    @property
-    def length(self):
-        return len(self._areas)
-
-    def get_area_item(self, uid):
-        if uid in self._areas:
-            return self._areas[uid]
-        return None
-
-    def on_area_changed(self, event: ChangeEvent):
-        if event.type == ChangeEvent.Deleted:
-            self.remove_area(event.object)
-        self.changed(event)
-
-
-    @staticmethod
-    def deserialize(data, doc):
-        areas = Areas()
-        areas.deserialize_data(data, doc)
-        return areas
-
-    def serialize_json(self):
-        return \
-            {
-                'areas': self._areas,
-                'naming_index': self.naming_index
-            }
-
-    def deserialize_data(self, data, doc):
-        if data is not None:
-            for area_data_tuple in data.get('areas', {}).items():
-                area_data = area_data_tuple[1]
-                area = Area.deserialize(area_data, doc)
-                self._areas[area.uid] = area
-                area.add_change_handler(self.on_area_changed)
-            self.naming_index = data['naming_index']
 
 
 class Area(IdObject, ObservableObject):

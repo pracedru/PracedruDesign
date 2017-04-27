@@ -72,6 +72,10 @@ class MainWindow(QMainWindow):
         self._add_attribute_action = self.add_action("Insert\nattribute", "addattribute", "Insert attribute in sketch", True, self.on_insert_attribute, checkable=True)
         self._add_circle_action = self.add_action("Insert\ncircle", "addcircle", "Insert circle in sketch", True, self.on_add_circle, checkable=True)
 
+        self._create_areas_action = self.add_action("Create\nAreas", "createareas", "Create areas from existing edges", True, self.on_create_areas)
+        self._create_area_action = self.add_action("Create\nArea", "createarea", "Create area from existing edges", True, self.on_create_area, checkable=True)
+        self._show_area_names_action = self.add_action("Show area\nNames", "showareanames", "Show area names", True, self.on_show_area_names, checkable=True)
+
         self._scale_selected_action = self.add_action("Scale", "scale", "Scale selected items", True, self.on_scale_selected)
         self._pattern_selected_action = self.add_action("Pattern", "pattern", "Pattern selected items", True, self.on_pattern_selected)
         self._show_key_points_action = self.add_action("Show key\npoints", "showkeypoints", "Show keypoints as circles", True, self.on_show_key_points, checkable=True)
@@ -264,6 +268,25 @@ class MainWindow(QMainWindow):
 
     def on_add_circle(self):
         self._viewWidget.on_add_circle()
+
+    def on_create_areas(self):
+        go = False
+        if self._document.get_areas().length > 0:
+            txt = "This will replace all existing areas with new areas generated from the edges."
+            txt += "Are you sure you want to do this?"
+            ret = QMessageBox.warning(self, "Create areas?", txt, QMessageBox.Yes | QMessageBox.Cancel)
+            if ret == QMessageBox.Yes:
+                go = True
+        else:
+            go = True
+        if go:
+            self._viewWidget.sketch_view.create_all_areas()
+
+    def on_create_area(self):
+        self._viewWidget.sketch_view.on_create_area()
+
+    def on_show_area_names(self, event):
+        self._states.show_area_names = self._show_area_names_action.isChecked()
 
     def on_add_arc(self):
         self._viewWidget.sketch_view.on_add_arc()

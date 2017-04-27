@@ -1,6 +1,7 @@
 from Data.Events import ChangeEvent
 from Data.Geometry import Geometry
 from Data.Objects import ObservableObject
+from Data.Part import Part
 from Data.Sketch import Sketch
 
 
@@ -21,7 +22,7 @@ class Geometries(ObservableObject):
 
     def geometry_changed(self, event):
         if event.type == ChangeEvent.Deleted:
-            if type(event.object) is Geometry:
+            if isinstance(event.object, Geometry):
                 if event.object.uid in self._geometries:
                     self._geometries.pop(event.object.uid)
 
@@ -32,9 +33,11 @@ class Geometries(ObservableObject):
 
     def child_geometry_changed(self, event):
         if event.type == ChangeEvent.Deleted:
-            if type(event.object) is Geometry:
+            if isinstance(event.object, Geometry):
                 if event.object in self._children:
+                    self.changed(ChangeEvent(self, ChangeEvent.BeforeObjectRemoved, event.sender))
                     self._children.remove(event.object)
+                    self.changed(ChangeEvent(self, ChangeEvent.ObjectRemoved, event.sender))
         self.changed(ChangeEvent(self, ChangeEvent.ObjectChanged, event.sender))
 
     def add_child(self, child_geometry):
@@ -84,8 +87,11 @@ class Geometries(ObservableObject):
             geometry = None
             if geometry_data['type'] == Geometry.Sketch:
                 geometry = Sketch.deserialize(geometry_data, document.get_parameters(), document)
+            if geometry_data['type'] == Geometry.Part:
+                geometry = Part.deserialize(geometry_data, document.get_parameters(), document)
             if geometry is not None:
                 self._geometries[geometry.uid] = geometry
         for child_id in data.get("children", []):
-            child = self._geometries[child_id]
-            self.add_child(child)
+            if child_id in self._geometries:
+                child = self._geometries[child_id]
+                self.add_child(child)

@@ -8,6 +8,7 @@ from PyQt5.QtWidgets import QTreeView
 from Business import delete_items
 from Data.Document import Document
 from Data.Drawings import Drawing
+from Data.Part import Part
 from Data.Sketch import Sketch
 from GUI.Models.DocumentModel import DocumentItemModel
 
@@ -59,6 +60,8 @@ class TreeViewDock(QDockWidget):
         if type(index.internalPointer().data) is Sketch:
             select = True
         if type(index.internalPointer().data) is Drawing:
+            select = True
+        if type(index.internalPointer().data) is Part:
             select = True
         if select:
             sel_type = QItemSelectionModel.ClearAndSelect
