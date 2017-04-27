@@ -46,6 +46,13 @@ class Vertex(object):
     def serialize_json(self):
         return {'xyz': self.xyz.tolist()}
 
+    @staticmethod
+    def deserialize(data):
+        vertex = Vertex()
+        if data is not None:
+            vertex.deserialize_data(data)
+        return vertex
+
     def deserialize_data(self, data):
         self.xyz = np.array(data['xyz'])
 

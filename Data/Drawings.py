@@ -3,6 +3,7 @@ from Data.Events import ChangeEvent, ValueChangeEvent
 from Data.Objects import ObservableObject, NamedObservableObject
 from Data.Parameters import Parameters
 from Data.Sketch import Sketch
+from Data.Vertex import Vertex
 
 
 class Drawings(ObservableObject):
@@ -105,6 +106,14 @@ class Drawing(Paper, Parameters):
     def header(self):
         return self._header_sketch.name
 
+    def create_sketch_view(self, sketch, scale, offset):
+        view = SketchView(sketch, scale, offset)
+        self.changed(ChangeEvent(self, ChangeEvent.BeforeObjectAdded, view))
+        self._views.append(view)
+        self.changed(ChangeEvent(self, ChangeEvent.ObjectAdded, view))
+        view.add_change_handler(self.on_view_changed)
+        return view
+
     def delete(self):
         self.changed(ChangeEvent(self, ChangeEvent.Deleted, self))
 
@@ -124,7 +133,25 @@ class Drawing(Paper, Parameters):
     def get_fields(self):
         return dict(self._fields)
 
+    def get_views(self):
+        return list(self._views)
+
+    def on_view_changed(self, event):
+        self.changed(ChangeEvent(self, ChangeEvent.ObjectChanged, event.sender))
+        if event.type == ChangeEvent.Deleted:
+            self.changed(ChangeEvent(self, ChangeEvent.BeforeObjectRemoved, event.sender))
+            self._views.remove(event.sender)
+            self.changed(ChangeEvent(self, ChangeEvent.ObjectRemoved, event.sender))
+            event.sender.remove_change_handler(self.on_view_changed)
+
+    def on_field_changed(self, event):
+        self.changed(ChangeEvent(self, ChangeEvent.ObjectChanged, event.sender))
+        if event.object == "name":
+            self._fields.pop(event.old_value)
+            self._fields[event.sender.name] = event.sender
+
     def serialize_json(self):
+        print("test")
         return {
             'paper': Paper.serialize_json(self),
             'name': self._name,
@@ -133,13 +160,6 @@ class Drawing(Paper, Parameters):
             'header_sketch': self._header_sketch.uid,
             'fields': self._fields
         }
-
-    def on_field_changed(self, event):
-        self.changed(ChangeEvent(self, ChangeEvent.ObjectChanged, event.sender))
-        if event.object == "name":
-            self._fields.pop(event.old_value)
-            self._fields[event.sender.name] = event.sender
-
 
     @staticmethod
     def deserialize(data, document):
@@ -151,7 +171,6 @@ class Drawing(Paper, Parameters):
     def deserialize_data(self, data):
         Paper.deserialize_data(self, data['paper'])
         self._name = data.get('name', "No name")
-        self._views = data['views']
         self._border_sketch = data['border_sketch']
         self._header_sketch = self._doc.get_geometries().get_geometry(data['header_sketch'])
         for field_data_tuple in data.get('fields', {}).items():
@@ -159,6 +178,11 @@ class Drawing(Paper, Parameters):
             field = Field.deserialize(field_data)
             self._fields[field.name] = field
             field.add_change_handler(self.on_field_changed)
+        for view_data in data.get('views', []):
+            if view_data.get('type', SketchView) == SketchViewType:
+                view = SketchView.deserialize(view_data, self._doc)
+                self._views.append(view)
+                view.add_change_handler(self.on_view_changed)
 
 
 class Field(NamedObservableObject):
@@ -194,6 +218,66 @@ class Field(NamedObservableObject):
         self._value = data['value']
 
 
-class SketchView(ObservableObject):
-    def __init__(self):
-        pass
+SketchViewType = 0
+PartViewType = 1
+
+
+class SketchView(NamedObservableObject):
+    def __init__(self, sketch=None, scale=1, offset=Vertex()):
+        NamedObservableObject.__init__(self, "New view")
+        self._sketch = sketch
+        self._offset = offset
+        self._scale = float(scale)
+        if sketch is not None:
+            self._name = sketch.name
+
+    @property
+    def view_type(self):
+        return SketchViewType
+
+    @property
+    def sketch(self):
+        return self._sketch
+
+    @property
+    def scale(self):
+        return self._scale
+
+    @scale.setter
+    def scale(self, value):
+        old_value = self._scale
+        self._scale = value
+        self.changed(ValueChangeEvent(self,'scale', old_value, value))
+
+    @property
+    def offset(self):
+        return self._offset
+
+    @property
+    def offset_values(self):
+        return self._offset.xyz
+
+    def delete(self):
+        self.changed(ChangeEvent(self, ChangeEvent.Deleted, self))
+
+    def serialize_json(self):
+        return {
+            'name': NamedObservableObject.serialize_json(self),
+            'sketch': self._sketch.uid,
+            'offset': self._offset,
+            'scale': self._scale,
+            'type': self.view_type
+        }
+
+    @staticmethod
+    def deserialize(data, document):
+        sketch_view = SketchView()
+        if data is not None:
+            sketch_view.deserialize_data(data, document)
+        return sketch_view
+
+    def deserialize_data(self, data, document):
+        NamedObservableObject.deserialize_data(self, data['name'])
+        self._scale = data['scale']
+        self._offset = Vertex.deserialize(data['offset'])
+        self._sketch = document.get_geometries().get_geometry(data['sketch'])

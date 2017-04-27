@@ -53,6 +53,11 @@ rows_by_type = {
     "Field": [
         ['Name', 'name'],
         ['Value', 'value']
+    ],
+    "SketchView": [
+        ['Name', 'name'],
+        ['Scale', 'scale'],
+        ['Position', 'offset_values']
     ]
 }
 

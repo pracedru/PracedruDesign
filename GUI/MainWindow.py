@@ -75,7 +75,7 @@ class MainWindow(QMainWindow):
         self._pattern_selected_action = self.add_action("Pattern", "pattern", "Pattern selected items", True, self.on_pattern_selected)
         self._show_key_points_action = self.add_action("Show key\npoints", "showkeypoints", "Show keypoints as circles", True, self.on_show_key_points, checkable=True)
 
-        self._insert_sketch_action = self.add_action("Insert\nsketch", "addsketchview", "Insert sketch in drawing", True, self.on_insert_sketch_in_drawing)
+        self._insert_sketch_action = self.add_action("Insert\nsketch", "addsketchview", "Insert sketch in drawing", True, self.on_insert_sketch)
         self._insert_part_action = self.add_action("Insert\npart", "addpartview", "Insert part in drawing", True, self.on_insert_part_in_drawing)
 
         self._add_field_action = self.add_action("Insert\nfield", "addfield", "Insert field on drawing", True, self.on_add_field)
@@ -160,8 +160,8 @@ class MainWindow(QMainWindow):
                 self.close()
         return
 
-    def on_insert_sketch_in_drawing(self):
-        pass
+    def on_insert_sketch(self):
+        self._viewWidget.on_insert_sketch()
 
     def on_insert_part_in_drawing(self):
         pass

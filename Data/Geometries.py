@@ -43,6 +43,20 @@ class Geometries(ObservableObject):
         self.changed(ChangeEvent(self, ChangeEvent.ObjectAdded, child_geometry))
         child_geometry.add_change_handler(self.child_geometry_changed)
 
+    def get_sketches(self):
+        sketches = []
+        for geometry_tuple in self._geometries.items():
+            geometry = geometry_tuple[1]
+            if type(geometry) is Sketch:
+                sketches.append(geometry)
+        return sketches
+
+    def get_sketch_by_name(self, name):
+        for sketch in self.get_sketches():
+            if sketch.name == name:
+                return sketch
+        return None
+
     def items(self):
         return self._children
 

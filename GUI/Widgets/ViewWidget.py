@@ -89,3 +89,7 @@ class ViewWidget(QStackedWidget):
     def on_insert_attribute(self):
         if self.currentIndex() == 0:
             self._sketchView.on_insert_attribute()
+
+    def on_insert_sketch(self):
+        if self.currentIndex() == 2:
+            self._drawingView.on_insert_sketch()

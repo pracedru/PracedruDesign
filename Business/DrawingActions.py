@@ -54,7 +54,6 @@ def create_empty_header(document):
         header.create_line_edge(pnta, pntb)
 
 
-
 def add_field_to_drawing(doc, drawing):
     counter = 1
     name = "New Field %d" % counter
@@ -62,3 +61,7 @@ def add_field_to_drawing(doc, drawing):
         counter += 1
         name = "New Field %d" % counter
     drawing.add_field(name, "Field value")
+
+
+def add_sketch_to_drawing(document, drawing, sketch, scale, offset):
+    drawing.create_sketch_view(sketch, scale, offset)

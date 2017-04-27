@@ -4,7 +4,7 @@ from PyQt5.QtCore import QObject
 from PyQt5.QtCore import Qt
 
 from Data.Document import Document
-from Data.Drawings import Drawing, Drawings, Field
+from Data.Drawings import Drawing, Drawings, Field, SketchView
 from Data.Events import ChangeEvent
 from Data.Geometry import Geometry
 from Data.Parameters import Parameters, Parameter
@@ -65,6 +65,8 @@ class DocumentItemModel(QAbstractItemModel):
         drawing_item = self.create_model_item(parent_item, drawing)
         for field_tuple in drawing.get_fields().items():
             field_item = DocumentModelItem(field_tuple[1], self, drawing_item.children()[0])
+        for view in drawing.get_views():
+            view_item = DocumentModelItem(view, self, drawing_item)
         return drawing_item
 
     def populate_drawings(self):
@@ -143,6 +145,8 @@ class DocumentItemModel(QAbstractItemModel):
                 return get_icon("attribute")
             elif type(model_item.data) is Field:
                 return get_icon("field")
+            elif type(model_item.data) is SketchView:
+                return get_icon("sketchview")
             return get_icon("default")
         return None
 

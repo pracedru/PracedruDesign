@@ -9,6 +9,7 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QColor
 from PyQt5.QtGui import QLinearGradient
 from PyQt5.QtGui import QPen
+from PyQt5.QtWidgets import QInputDialog
 from PyQt5.QtWidgets import QWidget
 
 from Business.DrawingActions import *
@@ -58,6 +59,19 @@ class DrawingViewWidget(QWidget):
     def on_add_field(self):
         add_field_to_drawing(self._doc, self._drawing)
 
+    def on_escape(self):
+        self._states.add_sketch = False
+        self.setCursor(Qt.ArrowCursor)
+        self._main_window.update_ribbon_state()
+
+    def on_insert_sketch(self):
+        self.on_escape()
+        if self._drawing is None:
+            return
+        self.setCursor(Qt.CrossCursor)
+        self._states.add_sketch = True
+        self._main_window.update_ribbon_state()
+
     def eventFilter(self, obj, event):
         if event.type() == QEvent.KeyPress:
             if event.key() == Qt.Key_Delete:
@@ -86,6 +100,11 @@ class DrawingViewWidget(QWidget):
     def mousePressEvent(self, q_mouse_event):
         self.setFocus()
         position = q_mouse_event.pos()
+        half_width = self.width() / 2
+        half_height = self.height() / 2
+        scale = self._scale
+        x = (self._mouse_position.x() - half_width) / scale - self._offset.x
+        y = -((self._mouse_position.y() - half_height) / scale + self._offset.y)
         if q_mouse_event.button() == 4:
             self._states.middle_button_hold = True
             self._pan_ref_pos = position
@@ -94,6 +113,17 @@ class DrawingViewWidget(QWidget):
             self._states.left_button_hold = True
             self._move_ref_pos = position
         position = q_mouse_event.pos()
+        if self._states.add_sketch:
+            offset = Vertex(x, y)
+            scale = 1
+            sketches = []
+            for sketch in self._doc.get_geometries().get_sketches():
+                sketches.append(sketch.name)
+            value = QInputDialog.getItem(self, "Select sketch", "sketch:", sketches, 0, True)
+            sketch = self._doc.get_geometries().get_sketch_by_name(value[0])
+            add_sketch_to_drawing(self._doc, self._drawing, sketch, scale, offset)
+            self.on_escape()
+
 
     def mouseMoveEvent(self, q_mouse_event):
         position = q_mouse_event.pos()
@@ -159,10 +189,15 @@ class DrawingViewWidget(QWidget):
             qp.fillRect(rect, QColor(255, 255, 255))
             self.draw_border(event, qp, cx, cy, border_pen)
             self.draw_header(event, qp, cx, cy, center, pens)
-            self.draw_views(event, qp, cx, cy, pens)
+            self.draw_views(event, qp, center, pens)
 
-    def draw_views(self, event, qp, cx, cy, pens):
+    def draw_views(self, event, qp, center, pens):
         sc = self._scale
+        for view in self._drawing.get_views():
+            scale = sc*view.scale
+            offset = Vertex(self._offset.x/view.scale, self._offset.y/view.scale)
+            c = Vertex(center.x + view.offset.x*sc, center.y - view.offset.y*sc)
+            draw_sketch(qp, view.sketch, scale, offset, c, pens, {})
 
     def draw_header(self, event, qp, cx, cy, center, pens):
         sketch = self._drawing.header_sketch

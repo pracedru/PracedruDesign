@@ -291,11 +291,11 @@ class SketchViewWidget(QWidget):
             self._move_ref_pos = position
         position = q_mouse_event.pos()
 
-        width = self.width() / 2
-        height = self.height() / 2
+        half_width = self.width() / 2
+        half_height = self.height() / 2
         scale = self._scale
-        x = (self._mouse_position.x() - width) / scale - self._offset.x
-        y = -((self._mouse_position.y() - height) / scale + self._offset.y)
+        x = (self._mouse_position.x() - half_width) / scale - self._offset.x
+        y = -((self._mouse_position.y() - half_height) / scale + self._offset.y)
         if self._states.set_similar_x or self._states.set_similar_y:
             params = []
             for param_tuple in self._sketch.get_all_parameters():
