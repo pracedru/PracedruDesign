@@ -29,6 +29,7 @@ class SketchEditorViewWidget(QWidget):
         self._selected_edges = []
         self._selected_key_points = []
         self._selected_texts = []
+        self._selected_areas = []
         self._similar_coords = set()
         self._kp_hover = None
         self._kp_move = None
@@ -204,9 +205,11 @@ class SketchEditorViewWidget(QWidget):
             go = True
         if go:
             create_all_areas(self._doc, self._sketch)
+            self.update()
 
     def mouseMoveEvent(self, q_mouse_event):
         position = q_mouse_event.pos()
+        update_view = False
         if self._mouse_position is not None:
             mouse_move_x = self._mouse_position.x() - position.x()
             mouse_move_y = self._mouse_position.y() - position.y()
@@ -226,12 +229,15 @@ class SketchEditorViewWidget(QWidget):
         if self._states.middle_button_hold:
             self._offset.x -= mouse_move_x/scale
             self._offset.y += mouse_move_y/scale
+            update_view = True
         if self._states.left_button_hold:
             if self._kp_move is not None:
                 if self._kp_move.get_x_parameter() is None:
                     self._kp_move.x = x
+                    update_view = True
                 if self._kp_move.get_y_parameter() is None:
                     self._kp_move.y = y
+                    update_view = True
         self._kp_hover = None
         self._edge_hover = None
         self._text_hover = None
@@ -242,6 +248,7 @@ class SketchEditorViewWidget(QWidget):
                 y1 = key_point.y
                 if abs(x1 - x) < 5 / scale and abs(y1 - y) < 5 / scale:
                     self._kp_hover = key_point
+                    update_view = True
                     break
 
         if self._states.select_edge and self._kp_hover is None:
@@ -255,6 +262,7 @@ class SketchEditorViewWidget(QWidget):
                     closest_edge = edge
             if smallest_dist * scale < 10:
                 self._edge_hover = closest_edge
+                update_view = True
 
         if self._states.select_text and self._edge_hover is None and self._kp_hover is None:
             for text_tuple in sketch.get_texts():
@@ -272,6 +280,7 @@ class SketchEditorViewWidget(QWidget):
                     y1 += text.height / 2
                 if abs(y1 - y) < text.height/2 and abs(x1 - x) < text.height*2.5:
                     self._text_hover = text
+                    update_view = True
                     break
 
         if self._states.set_similar_x and self._kp_hover is not None:
@@ -281,6 +290,7 @@ class SketchEditorViewWidget(QWidget):
                 x1 = key_point.x
                 if abs(x1 - self._kp_hover.x) < self.similar_threshold:
                     self._similar_coords.add(key_point)
+                    update_view = True
 
         if self._states.set_similar_y and self._kp_hover is not None:
             self._similar_coords.clear()
@@ -289,8 +299,9 @@ class SketchEditorViewWidget(QWidget):
                 y1 = key_point.y
                 if abs(y1 - self._kp_hover.y) < self.similar_threshold:
                     self._similar_coords.add(key_point)
+                    update_view = True
 
-        if self._states.set_similar_x or self._states.select_kp or self._states.select_edge or self._states.set_similar_y:
+        if update_view:
             self.update()
 
     def mousePressEvent(self, q_mouse_event):
@@ -458,7 +469,7 @@ class SketchEditorViewWidget(QWidget):
                 self.update()
 
     def paintEvent(self, event):
-        qp = QtGui.QPainter()
+        qp = QPainter()
         qp.begin(self)
         p1 = QPoint(0, 0)
         p2 = QPoint(self.width(), self.height())
@@ -471,7 +482,8 @@ class SketchEditorViewWidget(QWidget):
             gradient.setColorAt(0, QColor(220, 220, 230))
             gradient.setColorAt(1, QColor(170, 170, 180))
         qp.fillRect(event.rect(), gradient)
-        qp.setRenderHint(QtGui.QPainter.Antialiasing)
+        qp.setRenderHint(QPainter.Antialiasing)
+        self.draw_areas(event, qp)
         self.draw_edges(event, qp)
         self.draw_texts(event, qp)
         qp.end()
@@ -483,9 +495,9 @@ class SketchEditorViewWidget(QWidget):
         half_width = self.width() / 2
         half_height = self.height() / 2
         center = Vertex(half_width, half_height)
-        normal_pen = QPen(QtGui.QColor(0, 0, 0), 2)
-        kp_pen_hover = QPen(QtGui.QColor(0, 120, 255), 3)
-        kp_pen_hl = QPen(QtGui.QColor(180, 50, 0), 3)
+        normal_pen = QPen(QColor(0, 0, 0), 2)
+        kp_pen_hover = QPen(QColor(0, 120, 255), 3)
+        kp_pen_hl = QPen(QColor(180, 50, 0), 3)
         qp.setPen(normal_pen)
         for text_tuple in self._sketch.get_texts():
             text = text_tuple[1]
@@ -508,19 +520,19 @@ class SketchEditorViewWidget(QWidget):
 
     def draw_edges(self, event, qp):
         pens = create_pens(self._doc, 6000)
-        pens_hover = create_pens(self._doc, 12000, QtGui.QColor(100, 100, 200))
-        pens_select_high = create_pens(self._doc, 18000, QtGui.QColor(255, 0, 0))
-        pens_select = create_pens(self._doc, 6000, QtGui.QColor(255, 255, 255))
+        pens_hover = create_pens(self._doc, 12000, QColor(100, 100, 200))
+        pens_select_high = create_pens(self._doc, 18000, QColor(255, 0, 0))
+        pens_select = create_pens(self._doc, 6000, QColor(255, 255, 255))
         if self._is_dark_theme:
-            axis_pen = QPen(QtGui.QColor(40, 50, 80), 1)
-            kp_pen = QPen(QtGui.QColor(0, 200, 200), 1)
-            kp_pen_hl = QPen(QtGui.QColor(190, 0, 0), 3)
-            kp_pen_hover = QPen(QtGui.QColor(0, 60, 150), 3)
+            axis_pen = QPen(QColor(40, 50, 80), 1)
+            kp_pen = QPen(QColor(0, 200, 200), 1)
+            kp_pen_hl = QPen(QColor(190, 0, 0), 3)
+            kp_pen_hover = QPen(QColor(0, 60, 150), 3)
         else:
-            axis_pen = QPen(QtGui.QColor(140, 150, 180), 1)
-            kp_pen = QPen(QtGui.QColor(0, 100, 200), 1)
-            kp_pen_hl = QPen(QtGui.QColor(180, 50, 0), 3)
-            kp_pen_hover = QPen(QtGui.QColor(0, 120, 255), 3)
+            axis_pen = QPen(QColor(140, 150, 180), 1)
+            kp_pen = QPen(QColor(0, 100, 200), 1)
+            kp_pen_hl = QPen(QColor(180, 50, 0), 3)
+            kp_pen_hover = QPen(QColor(0, 120, 255), 3)
         half_width = self.width() / 2
         half_height = self.height() / 2
         center = Vertex(half_width, half_height)
@@ -572,4 +584,24 @@ class SketchEditorViewWidget(QWidget):
         for key_point in self._selected_key_points:
             draw_kp(qp, key_point, scale, self._offset, center)
 
+    def draw_areas(self, event, qp: QPainter):
+        if self._sketch is None:
+            return
+        normal_pen = QPen(QColor(0, 0, 0), 2)
 
+        areas = self._sketch.get_areas()
+        qp.setPen(normal_pen)
+        width = self.width() / 2
+        height = self.height() / 2
+        scale = self._scale
+
+        for area_tuple in areas:
+            area = area_tuple[1]
+            draw_area(area, qp, scale, self._offset, height, width, True, QBrush(QColor(150, 150, 150, 80)))
+
+        # for area_tuple in areas:
+        #     area = area_tuple[1]
+        #     if area not in self._selected_areas:
+        #         for edge_tuple in area.get_edges():
+        #             edge = edge_tuple  # [1]
+                    #draw_edge(edge, qp, scale, self._offset, center, pens_select)

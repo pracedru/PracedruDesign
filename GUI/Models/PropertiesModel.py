@@ -17,6 +17,9 @@ rows_by_type = {
     "Edge": [
         ['Name', 'name'],
         ['Style', 'style_name']],
+    "Area": [
+        ['Name', 'name'],
+        ['Hatch', 'hatch']],
     "Attribute": [
         ['Attribute Name', 'name'],
         ['Default Value', 'value'],

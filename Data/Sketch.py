@@ -189,7 +189,7 @@ class Sketch(Geometry):
         self.changed(ChangeEvent(self, ChangeEvent.BeforeObjectAdded, None))
         area = Area()
         self._areas[area.uid] = area
-        area.set_name("New Area")
+        area.name = "New Area"
         self.changed(ChangeEvent(self, ChangeEvent.ObjectAdded, area))
         area.add_change_handler(self.on_area_changed)
         return area
@@ -204,8 +204,12 @@ class Sketch(Geometry):
         return self._texts.items()
 
     def clear_areas(self):
-        for area_tuple in self._areas:
-            area_tuple[1].delete()
+        areas_to_delete = []
+        for area_tuple in self._areas.items():
+            areas_to_delete.append(area_tuple[1])
+
+        for area in areas_to_delete:
+            area.delete()
 
     def on_kp_changed(self, event):
         self.changed(ChangeEvent(self, ChangeEvent.ObjectChanged, event.sender))

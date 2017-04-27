@@ -21,34 +21,16 @@ class Area(IdObject, ObservableObject):
     def name(self):
         return self._name
 
-    def set_name(self, name):
+    @name.setter
+    def name(self, name):
         self._name = name
         self.changed(ChangeEvent(self, ChangeEvent.ValueChanged, self))
 
+    @property
+    def hatch(self):
+        return None
+
     def inside(self, point):
-        # This is uncommented since arcs can go beyond the bounding box of all keypoints
-        # top_left = Vertex()
-        # bottom_right = Vertex()
-        # first = True
-        # for edge in self._edges:
-        #     for kp in edge.get_end_key_points():
-        #         if first:
-        #             first = False
-        #             top_left.x = kp.x
-        #             bottom_right.x = kp.x
-        #             top_left.y = kp.y
-        #             bottom_right.y = kp.y
-        #         else:
-        #             if kp.x < top_left.x:
-        #                 top_left.x = kp.x
-        #             if kp.x > bottom_right.x:
-        #                 bottom_right.x = kp.x
-        #             if kp.y > top_left.y:
-        #                 top_left.y = kp.y
-        #             if kp.y < bottom_right.y:
-        #                 bottom_right.y = kp.y
-        # if bottom_right.x > point.x > top_left.x:
-        #     if top_left.y > point.y > bottom_right.y:
         anglesum = 0.0
         last_point = None
         for pnt in self.get_inside_key_points():

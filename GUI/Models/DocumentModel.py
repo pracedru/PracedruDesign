@@ -151,6 +151,10 @@ class DocumentItemModel(QAbstractItemModel):
                 return get_icon("field")
             elif type(model_item.data) is SketchView:
                 return get_icon("sketchview")
+            elif type(model_item.data) is Area:
+                return get_icon("area")
+            elif type(model_item.data) is Part:
+                return get_icon("part")
             return get_icon("default")
         return None
 
