@@ -3,6 +3,7 @@ from PyQt5.QtCore import QModelIndex
 from PyQt5.QtCore import QObject
 from PyQt5.QtCore import Qt
 
+from Data.Areas import Area
 from Data.Document import Document
 from Data.Drawings import Drawing, Drawings, Field, SketchView
 from Data.Events import ChangeEvent
@@ -215,6 +216,11 @@ class DocumentItemModel(QAbstractItemModel):
             elif isinstance(object, Text):
                 anno_item = parent_item.children()[3]
                 new_item = DocumentModelItem(object, self, anno_item)
+            elif type(object) is Area:
+                anno_item = parent_item.children()[4]
+                new_item = DocumentModelItem(object, self, anno_item)
+            else:
+                new_item = DocumentModelItem(object, self, parent_item)
         elif type(parent_item.data) is Drawings and type(object) is Sketch:
             headers_item = parent_item.children()[0]
             new_item = self.create_model_item(headers_item, object)
@@ -228,6 +234,7 @@ class DocumentItemModel(QAbstractItemModel):
                 DocumentModelItem(None, self, new_item, "Key Points")
                 DocumentModelItem(None, self, new_item, "Edges")
                 DocumentModelItem(None, self, new_item, "Annotation")
+                DocumentModelItem(None, self, new_item, "Areas")
             if type(object) is Drawings:
                 DocumentModelItem(None, self, new_item, "Headers")
             if type(object) is Drawing:

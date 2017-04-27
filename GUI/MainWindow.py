@@ -270,17 +270,7 @@ class MainWindow(QMainWindow):
         self._viewWidget.on_add_circle()
 
     def on_create_areas(self):
-        go = False
-        if self._document.get_areas().length > 0:
-            txt = "This will replace all existing areas with new areas generated from the edges."
-            txt += "Are you sure you want to do this?"
-            ret = QMessageBox.warning(self, "Create areas?", txt, QMessageBox.Yes | QMessageBox.Cancel)
-            if ret == QMessageBox.Yes:
-                go = True
-        else:
-            go = True
-        if go:
-            self._viewWidget.sketch_view.create_all_areas()
+        self._viewWidget.sketch_view.on_create_areas()
 
     def on_create_area(self):
         self._viewWidget.sketch_view.on_create_area()
@@ -355,6 +345,9 @@ class MainWindow(QMainWindow):
         insert_pane.add_ribbon_widget(RibbonButton(self, self._add_divide_action, True))
         insert_pane.add_ribbon_widget(RibbonButton(self, self._add_text_action, True))
         insert_pane.add_ribbon_widget(RibbonButton(self, self._add_attribute_action, True))
+        insert_pane.add_ribbon_widget(RibbonButton(self, self._create_areas_action, True))
+        insert_pane.add_ribbon_widget(RibbonButton(self, self._create_area_action, True))
+
 
         operate_pane = sketch_tab.add_ribbon_pane("Operate")
         operate_pane.add_ribbon_widget(RibbonButton(self, self._scale_selected_action, True))
@@ -374,6 +367,7 @@ class MainWindow(QMainWindow):
         view_pane.add_ribbon_widget(RibbonButton(self, self._show_key_points_action, True))
         view_pane.add_ribbon_widget(RibbonButton(self, self._show_hidden_params_action, True))
         view_pane.add_ribbon_widget(RibbonButton(self, self._zoom_fit_action, True))
+        view_pane.add_ribbon_widget(RibbonButton(self, self._show_area_names_action, True))
         sketch_tab.add_spacer()
 
     def init_part_tab(self):

@@ -116,6 +116,9 @@ class Area(IdObject, ObservableObject):
         edge.add_change_handler(self.on_edge_changed)
         self._key_points = None
 
+    def delete(self):
+        self.changed(ChangeEvent(self, ChangeEvent.Deleted, self))
+
     def on_edge_changed(self, event: ChangeEvent):
         if event.type == ChangeEvent.Deleted:
             if type(event.object) is Edge:

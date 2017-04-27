@@ -189,6 +189,22 @@ class SketchEditorViewWidget(QWidget):
             self._kp_move = None
             return
 
+    def on_create_areas(self):
+        self.on_escape()
+        if self._sketch is None:
+            return
+        go = False
+        if len(self._sketch.get_areas()) > 0:
+            txt = "This will replace all existing areas with new areas generated from the edges."
+            txt += "Are you sure you want to do this?"
+            ret = QMessageBox.warning(self, "Create areas?", txt, QMessageBox.Yes | QMessageBox.Cancel)
+            if ret == QMessageBox.Yes:
+                go = True
+        else:
+            go = True
+        if go:
+            create_all_areas(self._doc, self._sketch)
+
     def mouseMoveEvent(self, q_mouse_event):
         position = q_mouse_event.pos()
         if self._mouse_position is not None:

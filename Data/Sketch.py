@@ -203,6 +203,10 @@ class Sketch(Geometry):
     def get_texts(self):
         return self._texts.items()
 
+    def clear_areas(self):
+        for area_tuple in self._areas:
+            area_tuple[1].delete()
+
     def on_kp_changed(self, event):
         self.changed(ChangeEvent(self, ChangeEvent.ObjectChanged, event.sender))
 
