@@ -1,30 +1,18 @@
 from math import *
 
-from PyQt5 import QtGui
-from PyQt5.QtCore import QEvent
-from PyQt5.QtCore import QPoint
-from PyQt5.QtCore import QPointF
-from PyQt5.QtCore import QRectF
-from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QColor
-from PyQt5.QtGui import QFont
-from PyQt5.QtGui import QFontMetrics
-from PyQt5.QtGui import QLinearGradient
-from PyQt5.QtGui import QPen
-from PyQt5.QtWidgets import QDialog
-from PyQt5.QtWidgets import QInputDialog
-from PyQt5.QtWidgets import QMessageBox
-from PyQt5.QtWidgets import QWidget
+from PyQt5.QtCore import QEvent, QPoint
+from PyQt5.QtGui import QColor, QLinearGradient
+from PyQt5.QtWidgets import QDialog, QInputDialog, QMessageBox, QWidget
 
-import Business
 from Business.SketchActions import *
-from Data.Sketch import Edge, Attribute
+
 from Data.Vertex import Vertex
 from GUI import is_dark_theme
 from GUI.Widgets.Drawers import *
+from GUI.Widgets.SimpleDialogs import AddArcDialog
 
 
-class SketchViewWidget(QWidget):
+class SketchEditorViewWidget(QWidget):
     def __init__(self, parent, document, main_window):
         QWidget.__init__(self, parent)
         self._main_window = main_window
@@ -134,6 +122,7 @@ class SketchViewWidget(QWidget):
         self._states.insert_text = False
         self._states.add_circle_edge = False
         self._states.add_attribute = False
+        self._states.add_arc_edge = False
         self._selected_key_points.clear()
         self._selected_edges.clear()
         self.setCursor(Qt.ArrowCursor)
@@ -167,6 +156,15 @@ class SketchViewWidget(QWidget):
         self.setCursor(Qt.CrossCursor)
         self._states.select_kp = True
         self._states.add_circle_edge = True
+        self._main_window.update_ribbon_state()
+
+    def on_add_arc(self):
+        self.on_escape()
+        if self._sketch is None:
+            return
+        self.setCursor(Qt.CrossCursor)
+        self._states.select_kp = True
+        self._states.add_arc_edge = True
         self._main_window.update_ribbon_state()
 
     def on_insert_attribute(self):
@@ -361,8 +359,11 @@ class SketchViewWidget(QWidget):
                 self._selected_key_points.append(kp)
             if len(self._selected_key_points) == 2:
                 sketch.create_line_edge(self._selected_key_points[0], self._selected_key_points[1])
-                self._selected_key_points.clear()
-                self.on_escape()
+                if not self._states.multi_select:
+                    self._selected_key_points.clear()
+                    self.on_escape()
+                else:
+                    self._selected_key_points.remove(self._selected_key_points[0])
         if self._states.set_fillet_kp:
             if self._kp_hover is not None:
                 doc = self._doc
@@ -378,6 +379,7 @@ class SketchViewWidget(QWidget):
                         if radius_param is None:
                             radius_param = self._sketch.create_parameter(value[0], 1.0)
                         create_fillet(self._doc, self._sketch, self._kp_hover, radius_param)
+                        self.on_escape()
                 else:
                     pass
         if self._states.add_text:
@@ -399,6 +401,24 @@ class SketchViewWidget(QWidget):
                     radius_param = self._sketch.create_parameter(value[0], 1.0)
                 create_circle(self._doc, self._sketch, kp, radius_param)
             self.on_escape()
+        if self._states.add_arc_edge:
+            coincident_threshold = 5 / scale
+            add_arc_widget = AddArcDialog(self, self._sketch)
+            result = add_arc_widget.exec_()
+            if result == QDialog.Accepted:
+                kp = create_key_point(self._doc, self._sketch, x, y, 0.0, coincident_threshold)
+                radius_param = self._sketch.get_parameter_by_name(add_arc_widget.radius_param())
+                start_angle_param = self._sketch.get_parameter_by_name(add_arc_widget.start_angle_param())
+                end_angle_param = self._sketch.get_parameter_by_name(add_arc_widget.end_angle_param())
+                if radius_param is None:
+                    radius_param = self._sketch.create_parameter(add_arc_widget.radius_param(), 1.0)
+                if start_angle_param is None:
+                    start_angle_param = self._sketch.create_parameter(add_arc_widget.start_angle_param(), 0.0)
+                if end_angle_param is None:
+                    end_angle_param = self._sketch.create_parameter(add_arc_widget.end_angle_param(), pi)
+                add_arc(self._doc, self._sketch, kp, radius_param, start_angle_param, end_angle_param)
+            self.on_escape()
+
         if self._states.add_attribute:
             coincident_threshold = 5 / scale
             kp = create_key_point(self._doc, self._sketch, x, y, 0.0, coincident_threshold)

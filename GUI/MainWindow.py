@@ -20,6 +20,7 @@ from Business.DrawingActions import create_empty_header
 from Data.Document import Document
 from Data.Drawings import Drawing
 from Data.Parameters import Parameters
+from Data.Part import Part
 from Data.Point3d import KeyPoint
 from Data.Sketch import Sketch
 from GUI import *
@@ -215,6 +216,9 @@ class MainWindow(QMainWindow):
                 self.parameters_widget.set_parameters(selection[0])
             if type(selection[0]) is KeyPoint:
                 self._viewWidget.on_kp_selection_changed_in_table(selection)
+            if type(selection[0]) is Part:
+                self._viewWidget.set_part_view(selection[0])
+                self._ribbon_widget.setCurrentIndex(2)
             self._properties_dock.set_item(selection[0])
 
     def on_kp_selection_changed_in_table(self, selected_key_points):
@@ -262,7 +266,7 @@ class MainWindow(QMainWindow):
         self._viewWidget.on_add_circle()
 
     def on_add_arc(self):
-        pass
+        self._viewWidget.sketch_view.on_add_arc()
 
     def on_divide_edge(self):
         pass
@@ -289,7 +293,7 @@ class MainWindow(QMainWindow):
         self._set_sim_x_action.setChecked(self._states.set_similar_x)
         self._set_sim_y_action.setChecked(self._states.set_similar_y)
         self._add_fillet_action.setChecked(self._states.add_fillet_edge)
-        self._add_arc_action.setEnabled(False)
+        # self._add_arc_action.setEnabled(False)
         self._add_divide_action.setEnabled(False)
         self._scale_selected_action.setEnabled(False)
         self._pattern_selected_action.setEnabled(False)
@@ -394,7 +398,7 @@ class MainWindow(QMainWindow):
             Business.add_drawing(self._document, size, name, header, orientation)
 
     def on_add_part(self):
-        pass
+        Business.add_part(self._document)
 
     def add_action(self, caption, icon_name, status_tip, icon_visible, connection, shortcut=None, checkable=False):
         action = QAction(get_icon(icon_name), caption, self)

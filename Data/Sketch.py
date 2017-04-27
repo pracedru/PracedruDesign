@@ -454,6 +454,9 @@ class Edge(IdObject, NamedObservableObject):
         uid = param.uid
         meta_name = self._meta_data_parameters[uid]
         self._meta_data[meta_name] = param.value
+        if self._type == Edge.ArcEdge:
+            ckp = self._sketch.get_key_point(self._key_points[0])
+            self.update_linked_kps(ckp)
 
     def get_key_points(self):
         kps = []
@@ -479,6 +482,7 @@ class Edge(IdObject, NamedObservableObject):
                 y = ckp.y + sin(self._meta_data['sa'])*self._meta_data['r']
                 start_kp = self._sketch.create_key_point(x, y, 0)
                 start_kp.add_edge(self)
+                start_kp.add_change_handler(self.on_key_point_changed)
                 self._meta_data['start_kp'] = start_kp.uid
             if 'end_kp' in self._meta_data:
                 end_kp = self._sketch.get_key_point(self._meta_data['end_kp'])
@@ -487,6 +491,7 @@ class Edge(IdObject, NamedObservableObject):
                 y = ckp.y + sin(self._meta_data['ea'])*self._meta_data['r']
                 end_kp = self._sketch.create_key_point(x, y, 0)
                 end_kp.add_edge(self)
+                end_kp.add_change_handler(self.on_key_point_changed)
                 self._meta_data['end_kp'] = end_kp.uid
             return [start_kp, end_kp]
         elif self.type == Edge.CircleEdge:
@@ -517,6 +522,23 @@ class Edge(IdObject, NamedObservableObject):
             self.changed(ChangeEvent(self, ChangeEvent.Deleted, self))
             event.object.remove_change_handler(self.on_key_point_changed)
         self.changed(event)
+        if self._type == Edge.ArcEdge:
+            ckp = self._sketch.get_key_point(self._key_points[0])
+            if event.sender == ckp:
+                self.update_linked_kps(ckp)
+
+    def update_linked_kps(self, ckp):
+        if self._type == Edge.ArcEdge:
+            x = ckp.x + cos(self._meta_data['ea']) * self._meta_data['r']
+            y = ckp.y + sin(self._meta_data['ea']) * self._meta_data['r']
+            end_kp = self._sketch.get_key_point(self._meta_data['end_kp'])
+            end_kp.x = x
+            end_kp.y = y
+            start_kp = self._sketch.get_key_point(self._meta_data['start_kp'])
+            x = ckp.x + cos(self._meta_data['sa']) * self._meta_data['r']
+            y = ckp.y + sin(self._meta_data['sa']) * self._meta_data['r']
+            start_kp.x = x
+            start_kp.y = y
 
     def distance(self, point):
         kps = self.get_key_points()
@@ -564,9 +586,12 @@ class Edge(IdObject, NamedObservableObject):
             edges = kp.get_edges()
             edges.remove(self)
             draw_data = self.get_draw_data()
-            rect = draw_data['rect']
-            center = Vertex(rect[0]+rect[2]/2, rect[1]+rect[3]/2)
-            dist = abs(center.distance(point) - radius)
+            if 'rect' in draw_data:
+                rect = draw_data['rect']
+                center = Vertex(rect[0]+rect[2]/2, rect[1]+rect[3]/2)
+                dist = abs(center.distance(point) - radius)
+            else:
+                dist = kp.distance(point)
             return dist
 
     def get_draw_data(self):

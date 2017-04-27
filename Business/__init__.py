@@ -6,6 +6,7 @@ import GUI
 from Data.Document import Document
 from Data.Paper import Sizes
 from Data.Parameters import Parameters
+from Data.Part import Part
 from Data.Sketch import Sketch, Attribute
 
 undo_stacks = {}
@@ -41,6 +42,13 @@ def create_add_sketch_to_document(document):
     document.get_geometries().add_geometry(sketch)
     document.get_geometries().add_child(sketch)
     return sketch
+
+
+def add_part(document):
+    part = Part(document.get_parameters(), document)
+    document.get_geometries().add_geometry(part)
+    document.get_geometries().add_child(part)
+    return part
 
 
 def add_drawing(document, size, name, header, orientation):

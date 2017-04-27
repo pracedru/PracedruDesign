@@ -19,6 +19,7 @@ from Data import Paper
 from Data.Document import Document
 from Data.Vertex import Vertex
 from GUI.Widgets.Drawers import draw_sketch, create_pens
+from GUI.Widgets.SketchViewWidget import SketchViewWidget
 
 
 class NewDrawingViewWidget(QDialog):
@@ -65,7 +66,7 @@ class NewDrawingViewWidget(QDialog):
         controls_layout.addItem(QSpacerItem(0, 0, QSizePolicy.MinimumExpanding, QSizePolicy.MinimumExpanding), 8, 0)
 
         content_widget.layout().addWidget(controls_widget)
-        self._header_view = HeaderViewWidget(self, None, self._doc)
+        self._header_view = SketchViewWidget(self, None, self._doc)
         content_widget.layout().addWidget(self._header_view)
         self._header_view.set_header(self.header)
 
@@ -89,34 +90,3 @@ class NewDrawingViewWidget(QDialog):
         return self._orientations.currentIndex()
 
 
-class HeaderViewWidget(QWidget):
-    def __init__(self, parent, header, document):
-        QWidget.__init__(self, parent)
-        self._doc = document
-        self._header = header
-        self.setMinimumHeight(250)
-        self.setMinimumWidth(250)
-
-    def set_header(self, header):
-        self._header = header
-        self.update()
-
-    def paintEvent(self, QPaintEvent):
-        qp = QtGui.QPainter()
-        qp.begin(self)
-        qp.setRenderHint(QtGui.QPainter.Antialiasing)
-        pens = create_pens(self._doc, 3000, QtGui.QColor(0, 0, 0))
-        qp.fillRect(QPaintEvent.rect(), QColor(255, 255, 255))
-        half_width = self.width() / 2
-        half_height = self.height() / 2
-        center = Vertex(half_width, half_height)
-        if self._header is not None:
-            limits = self._header.get_limits()
-            header_width = limits[2] - limits[0]
-            header_height = limits[3] - limits[1]
-            scale_x = self.width() / header_width
-            scale_y = self.height() / header_height
-            scale = min(scale_x, scale_y)*0.9
-            offset = Vertex(-limits[0] - header_width/2, -limits[1] - header_height/2)
-            draw_sketch(qp, self._header, scale, offset, center, pens, {})
-        qp.end()

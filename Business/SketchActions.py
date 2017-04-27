@@ -22,6 +22,7 @@ def create_circle(doc, sketch, kp, radius_param):
     circle_edge.set_meta_data('r', radius_param.value)
     circle_edge.set_meta_data_parameter('r', radius_param)
 
+
 def create_fillet(doc, sketch, fillet_kp, radius_param):
     fillet_edge = sketch.create_fillet_edge(fillet_kp)
     fillet_edge.set_meta_data('r', radius_param.value)
@@ -31,8 +32,17 @@ def create_fillet(doc, sketch, fillet_kp, radius_param):
 def create_text(doc, sketch, kp, value, height):
     sketch.create_text(kp, value, height)
 
+
 def create_attribute(doc, sketch, kp, name, default_value, height):
     sketch.create_attribute(kp, name, default_value, height)
+
+
+def add_arc(document, sketch: Sketch, kp, radius_param, start_angle_param, end_angle_param):
+    arc_edge = sketch.create_arc_edge(kp, start_angle_param.value, end_angle_param.value, radius_param.value)
+    arc_edge.set_meta_data_parameter('r', radius_param)
+    arc_edge.set_meta_data_parameter('sa', start_angle_param)
+    arc_edge.set_meta_data_parameter('ea', end_angle_param)
+
 
 def set_similar_x(document: Document, sketch: Sketch, key_points: [], name):
     for e in key_points:

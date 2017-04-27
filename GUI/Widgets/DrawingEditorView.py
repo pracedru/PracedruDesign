@@ -18,7 +18,7 @@ from GUI import is_dark_theme
 from GUI.Widgets.Drawers import draw_sketch, create_pens
 
 
-class DrawingViewWidget(QWidget):
+class DrawingEditorViewWidget(QWidget):
     def __init__(self, parent, document, main_window):
         QWidget.__init__(self, parent)
         self._main_window = main_window

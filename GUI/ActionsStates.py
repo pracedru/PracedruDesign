@@ -17,3 +17,4 @@ class ActionStates(object):
         self.add_circle_edge = False
         self.add_attribute = False
         self.add_sketch = False
+        self.add_arc_edge = False
