@@ -8,6 +8,7 @@ from Data.Paper import Sizes
 from Data.Parameters import Parameters
 from Data.Part import Part
 from Data.Sketch import Sketch, Attribute
+from Data.Vertex import Vertex
 
 undo_stacks = {}
 
@@ -46,6 +47,9 @@ def create_add_sketch_to_document(document):
 
 def add_part(document):
     part = Part(document.get_parameters(), document)
+    part.create_plane_feature('XY', Vertex(0, 0, 0), Vertex(1, 0, 0), Vertex(0, 1, 0))
+    part.create_plane_feature('XZ', Vertex(0, 0, 0), Vertex(1, 0, 0), Vertex(0, 0, 1))
+    part.create_plane_feature('ZY', Vertex(0, 0, 0), Vertex(0, 0, 1), Vertex(0, 1, 0))
     document.get_geometries().add_geometry(part)
     document.get_geometries().add_child(part)
     return part

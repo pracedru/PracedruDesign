@@ -280,7 +280,7 @@ class Sketch(Geometry):
 
         for area_data_tuple in data.get('areas', {}).items():
             area_data = area_data_tuple[1]
-            area = Area.deserialize(area_data, self._doc)
+            area = Area.deserialize(area_data, self._doc, self)
             self._areas[area.uid] = area
             area.add_change_handler(self.on_area_changed)
 

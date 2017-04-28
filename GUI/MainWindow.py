@@ -373,6 +373,7 @@ class MainWindow(QMainWindow):
     def init_part_tab(self):
         part_tab = self._ribbon_widget.add_ribbon_tab("Part")
         insert_pane = part_tab.add_ribbon_pane("Insert")
+        insert_pane.add_ribbon_widget(RibbonButton(self, self._insert_sketch_action, True))
 
     def init_assembly_tab(self):
         pass

@@ -183,9 +183,9 @@ class Area(IdObject, ObservableObject):
         return edge_uids
 
     @staticmethod
-    def deserialize(data, doc):
+    def deserialize(data, doc, sketch):
         area = Area()
-        area.deserialize_data(data, doc)
+        area.deserialize_data(data, doc, sketch)
         return area
 
     def serialize_json(self):
@@ -196,11 +196,10 @@ class Area(IdObject, ObservableObject):
                 'name': self.name
             }
 
-    def deserialize_data(self, data, doc):
+    def deserialize_data(self, data, doc, sketch):
         IdObject.deserialize_data(self, data['uid'])
-        edges_object = doc.get_edges()
         for edge_uid in data['edges']:
-            edge = edges_object.get_edge(edge_uid)
+            edge = sketch.get_edge(edge_uid)
             self._edges.append(edge)
             edge.add_change_handler(self.on_edge_changed)
         self._name = data['name']

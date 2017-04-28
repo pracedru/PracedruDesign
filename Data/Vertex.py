@@ -6,7 +6,7 @@ __author__ = 'mamj'
 
 class Vertex(object):
     def __init__(self, x=0.0, y=0.0, z=0.0):
-        self.xyz = np.array([x, y, z])
+        self.xyz = np.array([float(x), float(y), float(z)])
 
     def distance(self, other):
         return np.linalg.norm(self.xyz - other.xyz)
