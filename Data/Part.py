@@ -95,16 +95,16 @@ class Part(Geometry):
     def deserialize_data(self, data):
         IdObject.deserialize_data(self, data['uid'])
         Parameters.deserialize_data(self, data['parameters'])
-        for feature_data in data.get('plane_features', []):
-            feature = Feature.deserialize(feature_data, self, self._doc)
+        for feature_data_tuple in data.get('plane_features', {}).items():
+            feature = Feature.deserialize(feature_data_tuple[1], self, self._doc)
             self._plane_features[feature.uid] = feature
             feature.add_change_handler(self.on_plane_feature_changed)
-        for feature_data in data.get('sketch_features', []):
-            feature = Feature.deserialize(feature_data, self, self._doc)
+        for feature_data_tuple in data.get('sketch_features', {}).items():
+            feature = Feature.deserialize(feature_data_tuple[1], self, self._doc)
             self._sketch_features[feature.uid] = feature
             feature.add_change_handler(self.on_sketch_feature_changed)
-        for feature_data in data.get('extrude_features', []):
-            feature = Feature.deserialize(feature_data, self, self._doc)
+        for feature_data_tuple in data.get('extrude_features', {}).items():
+            feature = Feature.deserialize(feature_data_tuple[1], self, self._doc)
             self._extrude_features[feature.uid] = feature
             feature.add_change_handler(self.on_extrude_feature_changed)
 
@@ -155,17 +155,17 @@ class Feature(NamedObservableObject, IdObject):
         }
 
     @staticmethod
-    def deserialize(data, param_parent, document):
+    def deserialize(data, feature_parent, document):
         feature = Feature(document)
         if data is not None:
-            feature.deserialize_data(data)
+            feature.deserialize_data(data, feature_parent)
         return feature
 
     def deserialize_data(self, data, feature_parent):
         IdObject.deserialize_data(self, data['uid'])
         NamedObservableObject.deserialize_data(self, data['name'])
         self._feature_type = data['type']
-        for vertex_data_tuple in data.get('vertexes', {}):
+        for vertex_data_tuple in data.get('vertexes', {}).items():
             vertex_data = vertex_data_tuple[1]
             vertex = Vertex.deserialize(vertex_data)
             self._vertexes[vertex_data_tuple[0]] = vertex

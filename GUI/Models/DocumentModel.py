@@ -196,6 +196,9 @@ class DocumentItemModel(QAbstractItemModel):
         for child in parent_item.children():
             if child.data == event.object:
                 child.setParent(None)
+            for childschild in child.children():
+                if childschild.data == event.object:
+                    childschild.setParent(None)
         self.layoutChanged.emit()
 
     def on_before_object_added(self, parent_item, object):

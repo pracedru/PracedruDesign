@@ -1,5 +1,6 @@
 import math
 
+import numpy as np
 from PyQt5.QtCore import QPoint
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QColor
@@ -15,10 +16,12 @@ from PyQt5.QtWidgets import QOpenGLWidget
 from PyQt5.QtWidgets import QWidget
 
 from Business.PartAction import *
+from Data import read_text_from_disk
 from Data.Vertex import Vertex
 
-PROGRAM_VERTEX_ATTRIBUTE = 0
-PROGRAM_TEXCOORD_ATTRIBUTE = 1
+PROGRAM_VERTEX_POS_ATTRIBUTE = 0
+PROGRAM_UV_ATTRIBUTE = 1
+PROGRAM_VERTEX_NORM_ATTRIBUTE = 2
 
 
 class PartViewWidget(QOpenGLWidget):
@@ -27,13 +30,13 @@ class PartViewWidget(QOpenGLWidget):
         self._document = document
         self._part = None
         self.object = 0
-        self.xRot = 0
-        self.yRot = 0
+        self.xRot = -45*16
+        self.yRot = 45*16
         self.zRot = 0
-        self._scale = 1.0
+        self._scale = 0.5
         self.lastPos = QPoint()
         self._mouse_position = None
-        self.part_color = QColor(150, 150, 150)
+        self.part_color = QColor(180, 180, 180, 255)
         self.plane_color = QColor(0, 150, 200, 25)
         self.plane_color_edge = QColor(0, 150, 200, 180)
         self.background_color = QColor(180, 180, 180)
@@ -52,7 +55,9 @@ class PartViewWidget(QOpenGLWidget):
             insert_sketch_in_part(self._document, self._part, sketch)
 
     def setXRotation(self, angle):
-        angle = self.normalizeAngle(angle)
+
+        angle = max(-90 * 16, angle)
+        angle = min(90 * 16, angle)
         if angle != self.xRot:
             self.xRot = angle
             # self.xRotationChanged.emit(angle)
@@ -86,31 +91,43 @@ class PartViewWidget(QOpenGLWidget):
         self.gl.glDepthFunc(self.gl.GL_LEQUAL)
         self.gl.glBlendFunc(self.gl.GL_SRC_ALPHA, self.gl.GL_ONE_MINUS_SRC_ALPHA)
         self.gl.glEnable(self.gl.GL_BLEND)
-        light_diffuse = [1.0, 1.0, 1.0, 1.0]
-        light_position = [2.0, 2.0, 2.0, 0.0]
-
+        self.gl.glEnable(self.gl.GL_NORMALIZE)
+        light_diffuse = [0.5, 0.5, 0.5, 1.0]
+        light_ambient = [0.5, 0.5, 0.5, 1.0]
         self.gl.glLightfv(self.gl.GL_LIGHT0, self.gl.GL_DIFFUSE, light_diffuse)
-        self.gl.glLightfv(self.gl.GL_LIGHT0, self.gl.GL_POSITION, light_position)
-        return
-        vshader = QOpenGLShader(QOpenGLShader.Vertex, self)
-        vshader.compileSourceFile("./GUI/Shaders/vertex_shader.c")
-        fshader = QOpenGLShader(QOpenGLShader.Fragment, self)
-        fshader.compileSourceFile("./GUI/Shaders/fragment_shader.c")
-        program = QOpenGLShaderProgram()
-        program.addShader(vshader)
-        program.addShader(fshader)
-        program.bindAttributeLocation("vertex", PROGRAM_VERTEX_ATTRIBUTE)
-        program.bindAttributeLocation("texCoord", PROGRAM_TEXCOORD_ATTRIBUTE)
-        program.link()
-        program.bind()
-        program.setUniformValue("texture", 0)
+        self.gl.glLightfv(self.gl.GL_LIGHT0, self.gl.GL_AMBIENT, light_ambient)
+        # return
+        # vshader = read_text_from_disk("./GUI/Shaders/vertex_shader.c")
+        # fshader = read_text_from_disk("./GUI/Shaders/fragment_shader.c")
+        # self.program = QOpenGLShaderProgram()
+        # self.program.addShaderFromSourceCode(QOpenGLShader.Vertex, vshader)
+        # self.program.addShaderFromSourceCode(QOpenGLShader.Fragment, fshader)
+        # self.program.link()
+        # self.program.bind()
+        # self.program.setUniformValue('texture', 0)
+        # self.program.enableAttributeArray(self.PROGRAM_VERTEX_ATTRIBUTE)
+        # self.program.enableAttributeArray(self.PROGRAM_TEXCOORD_ATTRIBUTE)
+        # self.program.setAttributeArray(self.PROGRAM_VERTEX_ATTRIBUTE, self.vertices)
+        # self.program.setAttributeArray(self.PROGRAM_TEXCOORD_ATTRIBUTE, self.texCoords)
 
     def paintGL(self):
         width = self.width()
         height = self.height()
-
+        light_position = [-0.7, 1.0, -1.0, 0.0]
         self.gl.glClear(self.gl.GL_COLOR_BUFFER_BIT | self.gl.GL_DEPTH_BUFFER_BIT)
         self.gl.glLoadIdentity()
+
+        self.gl.glBegin(self.gl.GL_QUADS)
+        self.gl.glColor3f(1.0, 0.0, 0.0)
+        self.gl.glVertex2f(-1.0, 1.0)
+        self.gl.glVertex2f(-1.0, -1.0)
+
+        self.gl.glColor3f(0.0, 0.0, 1.0)
+        self.gl.glVertex2f(1.0, -1.0)
+        self.gl.glVertex2f(1.0, 1.0)
+        self.gl.glEnd()
+
+        self.gl.glLightfv(self.gl.GL_LIGHT0, self.gl.GL_POSITION, light_position)
         self.gl.glTranslated(0.0, 0.0, -10.0)
         self.gl.glRotated(self.xRot / 16.0, 1.0, 0.0, 0.0)
         self.gl.glRotated(self.yRot / 16.0, 0.0, 1.0, 0.0)
@@ -123,7 +140,7 @@ class PartViewWidget(QOpenGLWidget):
         if side < 0:
             return
         self.gl.glViewport((width - side) // 2, (height - side) // 2, width, height)
-        #self.gl.glViewport(0, 0, 200, 400)
+        self.gl.glViewport(0, 0, 200, 400)
 
         self.gl.glMatrixMode(self.gl.GL_PROJECTION)
         self.gl.glLoadIdentity()
@@ -137,12 +154,12 @@ class PartViewWidget(QOpenGLWidget):
         dx = event.x() - self.lastPos.x()
         dy = event.y() - self.lastPos.y()
 
-        if event.buttons() & Qt.LeftButton:
+        if event.buttons() & Qt.RightButton:
             self.setXRotation(self.xRot - 8 * dy)
             self.setYRotation(self.yRot + 8 * dx)
-        elif event.buttons() & Qt.RightButton:
-            self.setXRotation(self.xRot + 8 * dy)
-            self.setZRotation(self.zRot + 8 * dx)
+        #elif event.buttons() & Qt.RightButton:
+        #    self.setXRotation(self.xRot + 8 * dy)
+        #    self.setZRotation(self.zRot + 8 * dx)
 
         self.lastPos = event.pos()
 
@@ -157,7 +174,6 @@ class PartViewWidget(QOpenGLWidget):
     def makeObject(self):
         genList = self.gl.glGenLists(1)
         self.gl.glNewList(genList, self.gl.GL_COMPILE)
-
         if self._part is not None:
             for plane in self._part.get_planes():
                 p = plane.get_vertex('p')
@@ -168,33 +184,39 @@ class PartViewWidget(QOpenGLWidget):
                 v2 = p.xyz * size - xd.xyz * size - yd.xyz * size
                 v3 = p.xyz * size + xd.xyz * size + yd.xyz * size
                 v4 = p.xyz * size + xd.xyz * size - yd.xyz * size
-
                 self.draw_feature_plane(v1, v2, v3, v4)
 
-        # self.gl.glEnable(self.gl.GL_LIGHT0)
-        # self.gl.glEnable(self.gl.GL_LIGHTING)
-        self.draw_cube(0.5)
-        # self.gl.glDisable(self.gl.GL_LIGHT0)
-        # self.gl.glDisable(self.gl.GL_LIGHTING)
+        self.gl.glEnable(self.gl.GL_LIGHT0)
+        self.gl.glEnable(self.gl.GL_LIGHTING)
+        self.draw_cube(1, Vertex())
+        self.gl.glDisable(self.gl.GL_LIGHT0)
+        self.gl.glDisable(self.gl.GL_LIGHTING)
         self.gl.glEndList()
 
         return genList
 
-    def draw_cube(self, s):
+    def draw_cube(self, size, position):
+        self.gl.glEnable(self.gl.GL_COLOR_MATERIAL)
         self.setColor(self.part_color)
+        self.gl.glMaterialfv(self.gl.GL_FRONT, self.gl.GL_DIFFUSE, [0.5, 0.5, 0.5, 0.5])
         self.gl.glBegin(self.gl.GL_TRIANGLES)
-        v1 = Vertex(s, s, s).xyz
-        v2 = Vertex(s, s, 0).xyz
-        v3 = Vertex(s, 0, s).xyz
-        v4 = Vertex(s, 0, 0).xyz
-        v5 = Vertex(0, s, s).xyz
-        v6 = Vertex(0, s, 0).xyz
-        v7 = Vertex(0, 0, s).xyz
-        v8 = Vertex(0, 0, 0).xyz
+        p = position
+        s = size/2
+        v1 = Vertex(p.x + s, p.y + s, p.z + s).xyz
+        v2 = Vertex(p.x + s, p.y + s, p.z - s).xyz
+        v3 = Vertex(p.x + s, p.y - s, p.z + s).xyz
+        v4 = Vertex(p.x + s, p.y - s, p.z - s).xyz
+        v5 = Vertex(p.x - s, p.y + s, p.z + s).xyz
+        v6 = Vertex(p.x - s, p.y + s, p.z - s).xyz
+        v7 = Vertex(p.x - s, p.y - s, p.z + s).xyz
+        v8 = Vertex(p.x - s, p.y - s, p.z - s).xyz
 
         self.double_sided_quad(v1, v2, v3, v4)
         self.double_sided_quad(v1, v2, v5, v6)
+        self.double_sided_quad(v1, v3, v5, v7)
+        self.double_sided_quad(v7, v8, v3, v4)
         self.double_sided_quad(v5, v6, v7, v8)
+
         self.gl.glEnd()
 
     def draw_feature_plane(self, v1, v2, v3, v4):
@@ -238,13 +260,22 @@ class PartViewWidget(QOpenGLWidget):
         self.double_sided_triangle(v4, v2, v3)
 
     def double_sided_triangle(self, v1, v2, v3):
+        cp = np.cross(v2-v1, v3-v1)
+        n = cp/np.linalg.norm(cp)
         self.gl.glVertex3d(v1[0], v1[1], v1[2])
+        self.gl.glNormal3d(n[0], n[1], n[2])
         self.gl.glVertex3d(v2[0], v2[1], v2[2])
+        self.gl.glNormal3d(n[0], n[1], n[2])
         self.gl.glVertex3d(v3[0], v3[1], v3[2])
+        self.gl.glNormal3d(n[0], n[1], n[2])
 
+        n = -n
         self.gl.glVertex3d(v3[0], v3[1], v3[2])
+        self.gl.glNormal3d(n[0], n[1], n[2])
         self.gl.glVertex3d(v2[0], v2[1], v2[2])
+        self.gl.glNormal3d(n[0], n[1], n[2])
         self.gl.glVertex3d(v1[0], v1[1], v1[2])
+        self.gl.glNormal3d(n[0], n[1], n[2])
 
     def revolve_edges(self, edges, angle, axis_position, axis_orientation):
         pass
@@ -269,4 +300,5 @@ class PartViewWidget(QOpenGLWidget):
 
     def setColor(self, c):
         self.gl.glColor4f(c.redF(), c.greenF(), c.blueF(), c.alphaF())
+
 

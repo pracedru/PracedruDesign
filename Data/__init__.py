@@ -18,6 +18,12 @@ def complex_handler(Obj):
         raise Exception('Object of type %s with value of %s is not JSON serializable' % (type(Obj), repr(Obj)))
 
 
+def read_text_from_disk(file_path):
+    with open(file_path) as data_file:
+        data = data_file.read()
+    return data
+
+
 def read_lines_from_disk(file_path):
     with open(file_path) as data_file:
         data = data_file.readlines()

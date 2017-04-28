@@ -207,6 +207,21 @@ class SketchEditorViewWidget(QWidget):
             create_all_areas(self._doc, self._sketch)
             self.update()
 
+    def on_create_area(self):
+        self.on_escape()
+        self._states.create_area = True
+        self._doc.set_status("Select edges for new area")
+        self._main_window.update_ribbon_state()
+
+    def check_edge_loop(self):
+        branches = find_all_areas(self._selected_edges)
+        for branch in branches:
+            if branch['enclosed']:
+                create_area(self._sketch, branch)
+                self.on_escape()
+                self.update()
+                break
+
     def mouseMoveEvent(self, q_mouse_event):
         position = q_mouse_event.pos()
         update_view = False
@@ -451,6 +466,9 @@ class SketchEditorViewWidget(QWidget):
             kp = create_key_point(self._doc, self._sketch, x, y, 0.0, coincident_threshold)
             create_attribute(self._doc, self._sketch, kp, "Attribute name", "Default value", 0.007)
             self.on_escape()
+
+        if self._states.create_area:
+            self.check_edge_loop()
 
     def wheelEvent(self, event):
         if self._mouse_position is not None:

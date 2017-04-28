@@ -154,6 +154,13 @@ def remove_edges(doc, sketch, edges):
     sketch.remove_edges(edges)
 
 
+def create_area(sketch, branch):
+    area = sketch.create_area()
+    for edge in branch['edges']:
+        area.add_edge(edge)
+    find_fillets(sketch, area)
+
+
 def create_all_areas(docs: Document, sketch: Sketch):
     edges = []
     for edge_tuple in sketch.get_edges():
