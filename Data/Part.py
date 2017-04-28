@@ -23,7 +23,12 @@ class Part(Geometry):
         self.changed(ChangeEvent(self, ChangeEvent.ObjectAdded, plane))
         return plane
 
-    def create_sketch_feature(self):
+    def create_sketch_feature(self, name, sketch, plane_feature):
+        sketch_feature = Feature(self._doc, SketchFeature, sketch.name)
+        sketch_feature.add_feature(plane_feature)
+
+
+    def create_extrude_feature(self, name, sketch_feature, area):
         pass
 
     def get_feature(self, uid):
