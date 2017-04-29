@@ -10,6 +10,8 @@ from PyQt5.QtWidgets import QInputDialog
 from PyQt5.QtWidgets import QOpenGLWidget
 
 from Business.PartAction import *
+from Data.Events import ChangeEvent
+from Data.Part import Part
 
 from GUI.Widgets.GlDrawable import GlPlaneDrawable, GlPartDrawable
 
@@ -37,7 +39,7 @@ class PartViewWidget(QOpenGLWidget):
         self.background_color = QColor(180, 180, 195, 25)
         self._gl = None
 
-    def set_part(self, part):
+    def set_part(self, part: Part):
         if self._part is not None:
             part.remove_change_handler(self.part_changed)
         self._part = part
@@ -53,7 +55,14 @@ class PartViewWidget(QOpenGLWidget):
         part.add_change_handler(self.part_changed)
 
     def part_changed(self, event):
-        pass
+        if event.type == ChangeEvent.ObjectAdded:
+            for drawable in self._drawables:
+                drawable.redraw(self._gl)
+            self.update()
+            limits = self._part.get_limits()
+            size = max(limits[1].x - limits[0].x, limits[1].y - limits[0].y)
+            size = max(size, limits[1].z - limits[0].z) * 0.7
+            self._scale = 0.5 / size
 
     def on_insert_sketch(self):
         sketches = []
@@ -62,7 +71,17 @@ class PartViewWidget(QOpenGLWidget):
         value = QInputDialog.getItem(self, "Select existing sketch or create new", "Sketch name:", sketches, 0, False)
         if value[1] == QDialog.Accepted:
             sketch = self._document.get_geometries().get_sketch_by_name(value[0])
-            insert_sketch_in_part(self._document, self._part, sketch)
+            plane = self._part.get_planes()[0]
+            insert_sketch_in_part(self._document, self._part, sketch, plane)
+            for drawable in self._drawables:
+                drawable.redraw(self._gl)
+            limits = self._part.get_limits()
+            size = max(limits[1].x - limits[0].x, limits[1].y - limits[0].y)
+            size = max(size, limits[1].z - limits[0].z) * 0.7
+            self._scale = 0.5 / size
+
+    def on_insert_extrude(self):
+        pass
 
     def setXRotation(self, angle):
         angle = max(-90 * 16, angle)
@@ -92,7 +111,7 @@ class PartViewWidget(QOpenGLWidget):
         p = QOpenGLVersionProfile(f)
         self._gl = c.versionFunctions(p)
         self._gl.initializeOpenGLFunctions()
-        self.setClearColor(self.background_color)
+        self.set_clear_color(self.background_color)
         self._gl.glShadeModel(self._gl.GL_FLAT)
         self._gl.glEnable(self._gl.GL_DEPTH_TEST)
         self._gl.glEnable(self._gl.GL_CULL_FACE)
@@ -164,7 +183,6 @@ class PartViewWidget(QOpenGLWidget):
         delta = event.angleDelta().y() * 0.01 / 8
         if self._scale + self._scale * (delta * 0.01) > 0:
             self._scale *= 1 + delta
-
         self.update()
 
     def normalizeAngle(self, angle):
@@ -174,10 +192,8 @@ class PartViewWidget(QOpenGLWidget):
             angle -= 360 * 16
         return angle
 
-    def setClearColor(self, c):
+    def set_clear_color(self, c):
         self._gl.glClearColor(c.redF(), c.greenF(), c.blueF(), c.alphaF())
 
-    def setColor(self, c):
-        self._gl.glColor4f(c.redF(), c.greenF(), c.blueF(), c.alphaF())
 
 

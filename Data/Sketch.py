@@ -117,12 +117,14 @@ class Sketch(Geometry):
             key_point.add_change_handler(self.on_kp_changed)
         return key_point
 
-    def create_circle_edge(self, kp):
+    def create_circle_edge(self, kp, radius_param):
         circle_edge = None
         if kp.uid in self._key_points:
             circle_edge = Edge(self, Edge.CircleEdge)
             circle_edge.name = "Edge" + str(self.edge_naming_index)
             circle_edge.add_key_point(kp)
+            circle_edge.set_meta_data('r', radius_param.value)
+            circle_edge.set_meta_data_parameter('r', radius_param)
             self.edge_naming_index += 1
             self.changed(ChangeEvent(self, ChangeEvent.BeforeObjectAdded, circle_edge))
             self._edges[circle_edge.uid] = circle_edge
@@ -130,12 +132,14 @@ class Sketch(Geometry):
             circle_edge.add_change_handler(self.on_edge_changed)
         return circle_edge
 
-    def create_fillet_edge(self, kp):
+    def create_fillet_edge(self, kp, radius_param):
         fillet_edge = None
         if kp.uid in self._key_points:
             fillet_edge = Edge(self, Edge.FilletLineEdge)
             fillet_edge.name = "Edge" + str(self.edge_naming_index)
             fillet_edge.add_key_point(kp)
+            fillet_edge.set_meta_data('r', radius_param.value)
+            fillet_edge.set_meta_data_parameter('r', radius_param)
             self.edge_naming_index += 1
             self.changed(ChangeEvent(self, ChangeEvent.BeforeObjectAdded, fillet_edge))
             self._edges[fillet_edge.uid] = fillet_edge

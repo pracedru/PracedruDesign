@@ -19,3 +19,4 @@ class ActionStates(object):
         self.add_attribute = False
         self.add_sketch = False
         self.add_arc_edge = False
+        self.create_area = False

@@ -313,6 +313,7 @@ class MainWindow(QMainWindow):
         self._add_circle_action.setChecked(self._states.add_circle_edge)
         self._add_attribute_action.setChecked(self._states.add_attribute)
         self._add_text_action.setChecked(self._states.add_text)
+        self._create_area_action.setChecked(self._states.create_area)
 
     def init_ribbon(self):
         self.init_home_tab()

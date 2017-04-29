@@ -73,7 +73,7 @@ class GlPlaneDrawable(GlDrawable):
     def __init__(self, gen_list_index, plane_feature: Feature):
         GlDrawable.__init__(self, gen_list_index)
         self._plane_feature = plane_feature
-        self._plane_color = QColor(0, 150, 200, 25)
+        self._plane_color = QColor(0, 150, 200, 15)
         self._plane_color_edge = QColor(0, 150, 200, 180)
 
     def redraw(self, gl):
@@ -83,7 +83,10 @@ class GlPlaneDrawable(GlDrawable):
         p = self._plane_feature.get_vertex('p')
         xd = self._plane_feature.get_vertex('xd')
         yd = self._plane_feature.get_vertex('yd')
-        size = 1
+        parent = self._plane_feature.get_feature_parent()
+        limits = parent.get_limits()
+        size = max(limits[1].x-limits[0].x, limits[1].y-limits[0].y)
+        size = max(size, limits[1].z - limits[0].z)*0.7
         v1 = p.xyz * size - xd.xyz * size + yd.xyz * size
         v2 = p.xyz * size - xd.xyz * size - yd.xyz * size
         v3 = p.xyz * size + xd.xyz * size + yd.xyz * size
@@ -125,18 +128,34 @@ class GlPlaneDrawable(GlDrawable):
         gl.glEnd()
 
 
+def draw_lines(gl, lines):
+    gl.glLineWidth(2.0)
+    gl.glBegin(gl.GL_LINES)
+    for line in lines:
+        gl.glVertex3d(line[0], -line[1], line[2])
+    gl.glEnd()
+
+
 class GlPartDrawable(GlDrawable):
     def __init__(self, gen_list_index, part):
         GlDrawable.__init__(self, gen_list_index)
         self._part = part
         self._part_color = QColor(180, 180, 180, 255)
+        self._part_color_edge = QColor(120, 120, 120, 255)
 
     def redraw(self, gl):
         gl.glNewList(self._gen_list_index, gl.GL_COMPILE)
         gl.glEnable(gl.GL_COLOR_MATERIAL)
         set_color(gl, self._part_color)
         gl.glMaterialfv(gl.GL_FRONT, gl.GL_DIFFUSE, [0.5, 0.5, 0.5, 0.5])
+        lines = self._part.get_lines()
+
+        set_color(gl, self._part_color_edge)
+        gl.glDisable(gl.GL_LIGHT0)
+        gl.glDisable(gl.GL_LIGHTING)
+        draw_lines(gl, lines)
+
         gl.glEnable(gl.GL_LIGHT0)
         gl.glEnable(gl.GL_LIGHTING)
-        draw_cube(gl, 1, Vertex(3,0,0))
+        draw_cube(gl, 1, Vertex(3, 0, 0))
         gl.glEndList()

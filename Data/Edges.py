@@ -274,6 +274,8 @@ class Edge(IdObject, NamedObservableObject):
             edge_data["rect"] = rect
             edge_data["sa"] = start_angle
             edge_data["span"] = span
+            edge_data["r"] = radius
+            edge_data["c"] = Vertex(cx, cy)
         elif self.type == Edge.FilletLineEdge:
             kp = key_points[0]
             edges_list = kp.get_edges()
@@ -323,6 +325,18 @@ class Edge(IdObject, NamedObservableObject):
                 edge_data["rect"] = rect
                 edge_data["sa"] = start_angle
                 edge_data["span"] = span
+                edge_data["r"] = radius
+                edge_data["c"] = Vertex(cx, cy)
+        elif self.type == Edge.CircleEdge:
+            kp = key_points[0]
+            cx = key_points[0].x
+            cy = key_points[0].y
+            radius = self.get_meta_data("r")
+            rect = [cx - radius, cy - radius, radius * 2, radius * 2]
+            edge_data["type"] = 3
+            edge_data["rect"] = rect
+            edge_data["r"] = radius
+            edge_data["c"] = Vertex(cx, cy)
         return edge_data
 
     def angle(self, kp=None):
