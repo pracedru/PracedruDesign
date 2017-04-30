@@ -1,3 +1,5 @@
+from math import *
+
 from PyQt5.QtCore import QPoint
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QColor
@@ -12,8 +14,10 @@ from PyQt5.QtWidgets import QOpenGLWidget
 from Business.PartAction import *
 from Data.Events import ChangeEvent
 from Data.Part import Part
+from Data.Vertex import Vertex
 
 from GUI.Widgets.GlDrawable import GlPlaneDrawable, GlPartDrawable
+from GUI.Widgets.SimpleDialogs import SketchDialog, ExtrudeDialog
 
 PROGRAM_VERTEX_POS_ATTRIBUTE = 0
 PROGRAM_UV_ATTRIBUTE = 1
@@ -27,11 +31,12 @@ class PartViewWidget(QOpenGLWidget):
         self._part = None
         self._gen_lists_start = 0
         self._drawables = []
-        self.xRot = -45*16
+        self.xRot = 135*16
         self.yRot = 45*16
         self.zRot = 0
         self._scale = 0.5
         self.lastPos = QPoint()
+        self._offset = Vertex()
         self._mouse_position = None
         self.part_color = QColor(180, 180, 180, 255)
         self.plane_color = QColor(0, 150, 200, 25)
@@ -48,44 +53,77 @@ class PartViewWidget(QOpenGLWidget):
         for plane_feature in part.get_planes():
             drawable = GlPlaneDrawable(len(self._drawables)+self._gen_lists_start, plane_feature)
             self._drawables.append(drawable)
-            drawable.redraw(self._gl)
         part_drawable = GlPartDrawable(len(self._drawables)+self._gen_lists_start, part)
-        part_drawable.redraw(self._gl)
         self._drawables.append(part_drawable)
+        for drawable in self._drawables:
+            drawable.redraw(self._gl)
         part.add_change_handler(self.part_changed)
+        self.scale_to_content()
+
+    def scale_to_content(self):
+        limits = self._part.get_limits()
+        size = max(limits[1].x - limits[0].x, limits[1].y - limits[0].y)
+        size = max(size, limits[1].z - limits[0].z) * 0.7
+        self._scale = 0.5 / size
 
     def part_changed(self, event):
         if event.type == ChangeEvent.ObjectAdded:
             for drawable in self._drawables:
                 drawable.redraw(self._gl)
             self.update()
-            limits = self._part.get_limits()
-            size = max(limits[1].x - limits[0].x, limits[1].y - limits[0].y)
-            size = max(size, limits[1].z - limits[0].z) * 0.7
-            self._scale = 0.5 / size
+            self.scale_to_content()
+
+    def on_create_add_sketch_to_part(self):
+        planes = []
+        for plane_feature in self._part.get_planes():
+            planes.append(plane_feature.name)
+        value = QInputDialog.getItem(self, "Select plane for sketch", "plane name:", planes, 0, False)
+        if value[1] == QDialog.Accepted:
+            for plane_feature in self._part.get_planes():
+                if plane_feature.name == value[0]:
+                    create_add_sketch_to_part(self._document, self._part, plane_feature)
 
     def on_insert_sketch(self):
         sketches = []
-        for sketch in self._document.get_geometries().get_sketches():
-            sketches.append(sketch.name)
-        value = QInputDialog.getItem(self, "Select existing sketch or create new", "Sketch name:", sketches, 0, False)
-        if value[1] == QDialog.Accepted:
-            sketch = self._document.get_geometries().get_sketch_by_name(value[0])
-            plane = self._part.get_planes()[0]
+        #for sketch in self._document.get_geometries().get_sketches():
+        #    sketches.append(sketch.name)
+        #value = QInputDialog.getItem(self, "Select existing sketch or create new", "Sketch name:", sketches, 0, False)
+        sketch_dialog = SketchDialog(self, self._document, self._part)
+        value = sketch_dialog.exec_()
+        if value == QDialog.Accepted:
+            sketch_name = sketch_dialog.sketch()
+            plane_name = sketch_dialog.plane()
+            sketch = self._document.get_geometries().get_sketch_by_name(sketch_name)
+            for plane in self._part.get_planes():
+                if plane.name == plane_name:
+                    break
             insert_sketch_in_part(self._document, self._part, sketch, plane)
             for drawable in self._drawables:
                 drawable.redraw(self._gl)
-            limits = self._part.get_limits()
-            size = max(limits[1].x - limits[0].x, limits[1].y - limits[0].y)
-            size = max(size, limits[1].z - limits[0].z) * 0.7
-            self._scale = 0.5 / size
+            self.scale_to_content()
 
     def on_insert_extrude(self):
+        extrude_dialog = ExtrudeDialog(self, self._document, self._part)
+        result = extrude_dialog.exec_()
+        if result == QDialog.Accepted:
+            sketch_feature = extrude_dialog.sketch_feature
+            area = extrude_dialog.area
+            direction = extrude_dialog
+            if direction == ExtrudeDialog.Forward:
+                length = [extrude_dialog.length, 0]
+            elif direction == ExtrudeDialog.Backward:
+                length = [0, -extrude_dialog.length]
+            else:
+                length = [extrude_dialog.length/2, -extrude_dialog.length/2]
+            if area is not None:
+                add_extrude_in_part(self._document, self._part, sketch_feature, area, length)
+
+    def on_revolve_area(self):
         pass
 
     def setXRotation(self, angle):
-        angle = max(-90 * 16, angle)
-        angle = min(90 * 16, angle)
+        angle = max(90 * 16, angle)
+        angle = min(270 * 16, angle)
         if angle != self.xRot:
             self.xRot = angle
             # self.xRotationChanged.emit(angle)
@@ -141,15 +179,20 @@ class PartViewWidget(QOpenGLWidget):
         # self.program.setAttributeArray(self.PROGRAM_TEXCOORD_ATTRIBUTE, self.texCoords)
 
     def paintGL(self):
+        if self._part is not None:
+            if self._part.update_needed:
+                self._part.update_geometry()
+                for drawable in self._drawables:
+                    drawable.redraw(self._gl)
         light_position = [-0.7, 1.0, -1.0, 0.0]
         self._gl.glClear(self._gl.GL_COLOR_BUFFER_BIT | self._gl.GL_DEPTH_BUFFER_BIT)
         self._gl.glLoadIdentity()
-
         self._gl.glLightfv(self._gl.GL_LIGHT0, self._gl.GL_POSITION, light_position)
-        self._gl.glTranslated(0.0, 0.0, -10.0)
+        self._gl.glTranslated(0, 0, -10.0)
         self._gl.glRotated(self.xRot / 16.0, 1.0, 0.0, 0.0)
         self._gl.glRotated(self.yRot / 16.0, 0.0, 1.0, 0.0)
         self._gl.glRotated(self.zRot / 16.0, 0.0, 0.0, 1.0)
+        self._gl.glTranslated(self._offset.x, self._offset.y, self._offset.z)
         self._gl.glScalef(self._scale, self._scale, self._scale)
         for drawable in self._drawables:
             self._gl.glCallList(drawable.get_gen_list)
@@ -175,7 +218,14 @@ class PartViewWidget(QOpenGLWidget):
 
         if event.buttons() & Qt.RightButton:
             self.setXRotation(self.xRot - 8 * dy)
-            self.setYRotation(self.yRot + 8 * dx)
+            self.setYRotation(self.yRot - 8 * dx)
+        elif event.buttons() & Qt.MiddleButton:
+            yangle = self.yRot*pi/(180*16)
+            xangle = self.xRot * pi / (180 * 16)
+            self._offset.x += dx*0.001 * cos(yangle) + dy*0.001 * sin(xangle) * sin(yangle)
+            self._offset.y += dy*0.001 * cos(xangle)
+            self._offset.z += dx*0.001 * sin(yangle) - dy*0.001 * sin(xangle) * cos(yangle)
+            self.update()
 
         self.lastPos = event.pos()
 
@@ -183,6 +233,9 @@ class PartViewWidget(QOpenGLWidget):
         delta = event.angleDelta().y() * 0.01 / 8
         if self._scale + self._scale * (delta * 0.01) > 0:
             self._scale *= 1 + delta
+            self._offset.x *= 1 + delta
+            self._offset.y *= 1 + delta
+            self._offset.z *= 1 + delta
         self.update()
 
     def normalizeAngle(self, angle):

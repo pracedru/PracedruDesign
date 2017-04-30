@@ -28,6 +28,23 @@ def create_empty_header(document):
     pnt1 = header.create_key_point(0, 0, 0, ts)
     pnt2 = header.create_key_point(width, 0, 0, ts)
     pnt3 = header.create_key_point(width, height, 0, ts)
+    pnt4 = header.create_key_point(0, height, 0, ts)
+
+    header.create_line_edge(pnt1, pnt2).style_name = "border"
+    header.create_line_edge(pnt2, pnt3).style_name = "border"
+    header.create_line_edge(pnt3, pnt4).style_name = "border"
+    header.create_line_edge(pnt4, pnt1).style_name = "border"
+    return header
+
+
+def create_default_header(document):
+    header = document.get_drawings().create_header()
+    width = 0.15
+    height = 0.12
+    ts = 0.001
+    pnt1 = header.create_key_point(0, 0, 0, ts)
+    pnt2 = header.create_key_point(width, 0, 0, ts)
+    pnt3 = header.create_key_point(width, height, 0, ts)
     pnt4 = header.create_key_point(0,height, 0, ts)
     pnt5 = header.create_key_point(0, height/2, 0, ts)
     pnt6 = header.create_key_point(width, height/2, 0, ts)
@@ -52,7 +69,7 @@ def create_empty_header(document):
         pnta = header.create_key_point(width, height / 2 + i * 0.01, 0, ts)
         pntb = header.create_key_point(0, height / 2 + i * 0.01, 0, ts)
         header.create_line_edge(pnta, pntb)
-
+    return header
 
 def add_field_to_drawing(doc, drawing):
     counter = 1
@@ -64,4 +81,7 @@ def add_field_to_drawing(doc, drawing):
 
 
 def add_sketch_to_drawing(document, drawing, sketch, scale, offset):
-    drawing.create_sketch_view(sketch, scale, offset)
+    return drawing.create_sketch_view(sketch, scale, offset)
+
+def create_add_sketch_to_drawing(document, drawing, sketch, scale, offset):
+    pass

@@ -14,8 +14,8 @@ class SketchViewWidget(QWidget):
         self.setMinimumHeight(250)
         self.setMinimumWidth(250)
 
-    def set_header(self, header):
-        self._header = header
+    def set_sketch(self, sketch):
+        self._header = sketch
         self.update()
 
     def paintEvent(self, event):

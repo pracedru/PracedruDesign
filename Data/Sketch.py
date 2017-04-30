@@ -217,6 +217,8 @@ class Sketch(Geometry):
 
     def on_kp_changed(self, event):
         self.changed(ChangeEvent(self, ChangeEvent.ObjectChanged, event.sender))
+        if event.type == ChangeEvent.Deleted:
+            self._key_points.pop(event.sender.uid)
 
     def on_text_changed(self, event):
         self.changed(ChangeEvent(self, ChangeEvent.ObjectChanged, event.sender))

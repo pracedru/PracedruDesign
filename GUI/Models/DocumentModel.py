@@ -9,7 +9,7 @@ from Data.Drawings import Drawing, Drawings, Field, SketchView
 from Data.Events import ChangeEvent
 from Data.Geometry import Geometry
 from Data.Parameters import Parameters, Parameter
-from Data.Part import Part
+from Data.Part import Part, Feature, PlaneFeature
 from Data.Point3d import KeyPoint
 from Data.Sketch import Sketch, Edge, Text, Attribute
 from Data.Style import EdgeStyle
@@ -185,6 +185,9 @@ class DocumentItemModel(QAbstractItemModel):
             default_flags = default_flags | Qt.ItemIsEditable
         return default_flags
 
+    def on_object_deleted(self, item):
+        item.setParent(None)
+
     def on_document_changed(self, event):
         self.layoutAboutToBeChanged.emit()
         self.layoutChanged.emit()
@@ -206,10 +209,12 @@ class DocumentItemModel(QAbstractItemModel):
 
     def on_object_added(self, parent_item, object):
         item = self.create_model_item(parent_item, object)
-        self.on_new_item_added(item)
+        if item is not None:
+            self.on_new_item_added(item)
         self.layoutChanged.emit()
 
     def create_model_item(self, parent_item, object):
+        new_item = None
         if type(parent_item.data) is Sketch:
             if type(object) is Parameter:
                 parameters_item = parent_item.children()[0]
@@ -234,6 +239,13 @@ class DocumentItemModel(QAbstractItemModel):
         elif type(parent_item.data) is Drawing and type(object) is Field:
                 fields_item = parent_item.children()[0]
                 new_item = DocumentModelItem(object, self, fields_item)
+        elif type(parent_item.data) is Part:
+            if type(object) is Feature:
+                if object.feature_type == PlaneFeature:
+                    planes_item = parent_item.children()[0]
+                    new_item = DocumentModelItem(object, self, planes_item)
+                else:
+                    new_item = DocumentModelItem(object, self, parent_item)
         else:
             new_item = DocumentModelItem(object, self, parent_item)
             if type(object) is Sketch:
@@ -247,6 +259,8 @@ class DocumentItemModel(QAbstractItemModel):
             if type(object) is Drawing:
                 DocumentModelItem(None, self, new_item, "Fields")
                 self.populate_sketch(object.header_sketch, new_item)
+            if type(object) is Part:
+                DocumentModelItem(None, self, new_item, "Planes")
 
         return new_item
 
@@ -289,3 +303,5 @@ class DocumentModelItem(QObject):
         elif event.type == ChangeEvent.ObjectRemoved:
             event.object.remove_change_handler(self.data_changed)
             self._model.on_object_removed(self, event)
+        elif event.type == ChangeEvent.Deleted:
+            self._model.on_object_deleted(self)

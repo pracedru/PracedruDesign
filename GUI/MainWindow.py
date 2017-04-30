@@ -16,11 +16,11 @@ from PyQt5.QtWidgets import QProgressBar
 from PyQt5.QtWidgets import QToolBar
 
 import Business
-from Business.DrawingActions import create_empty_header
+from Business.DrawingActions import create_default_header
 from Data.Document import Document
 from Data.Drawings import Drawing
 from Data.Parameters import Parameters
-from Data.Part import Part
+from Data.Part import Part, Feature, SketchFeature
 from Data.Point3d import KeyPoint
 from Data.Sketch import Sketch
 from GUI import *
@@ -72,6 +72,8 @@ class MainWindow(QMainWindow):
         self._add_attribute_action = self.add_action("Insert\nattribute", "addattribute", "Insert attribute in sketch", True, self.on_insert_attribute, checkable=True)
         self._add_circle_action = self.add_action("Insert\ncircle", "addcircle", "Insert circle in sketch", True, self.on_add_circle, checkable=True)
 
+        self._create_sketch_action = self.add_action("Create\nSketch", "addsketch", "Create Sketch", True, self.on_create_sketch)
+
         self._create_areas_action = self.add_action("Create\nAreas", "createareas", "Create areas from existing edges", True, self.on_create_areas)
         self._create_area_action = self.add_action("Create\nArea", "createarea", "Create area from existing edges", True, self.on_create_area, checkable=True)
         self._show_area_names_action = self.add_action("Show area\nNames", "showareanames", "Show area names", True, self.on_show_area_names, checkable=True)
@@ -80,8 +82,11 @@ class MainWindow(QMainWindow):
         self._pattern_selected_action = self.add_action("Pattern", "pattern", "Pattern selected items", True, self.on_pattern_selected)
         self._show_key_points_action = self.add_action("Show key\npoints", "showkeypoints", "Show keypoints as circles", True, self.on_show_key_points, checkable=True)
 
-        self._insert_sketch_action = self.add_action("Insert\nsketch", "addsketchview", "Insert sketch in drawing", True, self.on_insert_sketch)
+        self._insert_sketch_in_action = self.add_action("Insert\nsketch", "addsketch", "Insert sketch ", True, self.on_insert_sketch)
+        self._insert_sketch_in_drawing_action = self.add_action("Insert\nsketch", "addsketchview", "Insert sketch in drawing", True, self.on_insert_sketch)
         self._insert_part_action = self.add_action("Insert\npart", "addpartview", "Insert part in drawing", True, self.on_insert_part_in_drawing)
+        self._add_revolve_action = self.add_action("Revolve\nArea", "revolve", "Revolve an area on this part", True, self.on_revolve_area)
+        self._add_extrude_action = self.add_action("Extrude\nArea", "extrude", "Extrude an area on this part", True, self.on_extrude_area)
 
         self._add_field_action = self.add_action("Insert\nfield", "addfield", "Insert field on drawing", True, self.on_add_field)
 
@@ -171,6 +176,12 @@ class MainWindow(QMainWindow):
     def on_insert_part_in_drawing(self):
         pass
 
+    def on_revolve_area(self):
+        self._viewWidget.part_view.on_revolve_area()
+
+    def on_extrude_area(self):
+        self._viewWidget.part_view.on_insert_extrude()
+
     def on_add_field(self):
         self._viewWidget.drawing_view.on_add_field()
 
@@ -207,6 +218,9 @@ class MainWindow(QMainWindow):
     def on_add_sketch_to_document(self):
         Business.create_add_sketch_to_document(self._document)
 
+    def on_create_sketch(self):
+        self._viewWidget.on_create_sketch()
+
     def on_tree_selection_changed(self, selection):
         if len(selection) == 1:
             if type(selection[0]) is Sketch:
@@ -223,6 +237,13 @@ class MainWindow(QMainWindow):
             if type(selection[0]) is Part:
                 self._viewWidget.set_part_view(selection[0])
                 self._ribbon_widget.setCurrentIndex(2)
+            if type(selection[0]) is Feature:
+                if selection[0].feature_type == SketchFeature:
+                    sketch = selection[0].get_objects()[0]
+                    self._viewWidget.set_sketch_view(sketch)
+                    self._geometry_dock.set_sketch(sketch)
+                    self._ribbon_widget.setCurrentIndex(1)
+                    self.parameters_widget.set_parameters(sketch)
             self._properties_dock.set_item(selection[0])
 
     def on_kp_selection_changed_in_table(self, selected_key_points):
@@ -374,7 +395,10 @@ class MainWindow(QMainWindow):
     def init_part_tab(self):
         part_tab = self._ribbon_widget.add_ribbon_tab("Part")
         insert_pane = part_tab.add_ribbon_pane("Insert")
-        insert_pane.add_ribbon_widget(RibbonButton(self, self._insert_sketch_action, True))
+        insert_pane.add_ribbon_widget(RibbonButton(self, self._insert_sketch_in_action, True))
+        insert_pane.add_ribbon_widget(RibbonButton(self, self._create_sketch_action, True))
+        insert_pane.add_ribbon_widget(RibbonButton(self, self._add_extrude_action, True))
+        insert_pane.add_ribbon_widget(RibbonButton(self, self._add_revolve_action, True))
 
     def init_assembly_tab(self):
         pass
@@ -382,7 +406,7 @@ class MainWindow(QMainWindow):
     def init_drawing_tab(self):
         drawing_tab = self._ribbon_widget.add_ribbon_tab("Drawing")
         insert_pane = drawing_tab.add_ribbon_pane("Insert")
-        insert_pane.add_ribbon_widget(RibbonButton(self, self._insert_sketch_action, True))
+        insert_pane.add_ribbon_widget(RibbonButton(self, self._insert_sketch_in_drawing_action, True))
         insert_pane.add_ribbon_widget(RibbonButton(self, self._insert_part_action, True))
         annotation_pane = drawing_tab.add_ribbon_pane("Annotation")
         edit_pane = drawing_tab.add_ribbon_pane("Edit")
@@ -406,7 +430,7 @@ class MainWindow(QMainWindow):
 
     def on_add_drawing(self):
         if len(self._document.get_drawings().get_headers()) == 0:
-            create_empty_header(self._document)
+            create_default_header(self._document)
         new_dwg_widget = NewDrawingViewWidget(self, self._document)
         result = new_dwg_widget.exec_()
         if result == QDialog.Accepted:

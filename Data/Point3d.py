@@ -45,6 +45,9 @@ class KeyPoint(Point3d, ObservableObject):
         self._parameters = parameters
         self._edges = []
 
+    def delete(self):
+        self.changed(ChangeEvent(self, ChangeEvent.Deleted, self))
+
     def get_edges(self):
         return list(self._edges)
 

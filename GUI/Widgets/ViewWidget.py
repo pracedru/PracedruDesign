@@ -1,5 +1,6 @@
 from PyQt5.QtWidgets import QStackedWidget
 
+from Business import create_add_sketch_to_document
 from GUI.Widgets.DrawingEditorView import DrawingEditorViewWidget
 from GUI.Widgets.PartView import PartViewWidget
 from GUI.Widgets.SketchEditorView import SketchEditorViewWidget
@@ -25,6 +26,10 @@ class ViewWidget(QStackedWidget):
     @property
     def drawing_view(self):
         return self._drawingView
+
+    @property
+    def part_view(self):
+        return self._partView
 
     def set_sketch_view(self, sketch):
         self.setCurrentIndex(0)
@@ -84,4 +89,11 @@ class ViewWidget(QStackedWidget):
         if self.currentIndex() == 1:
             self._partView.on_insert_sketch()
 
+    def on_create_sketch(self):
+        if self.currentIndex() == 0:
+            create_add_sketch_to_document(self._document)
+        elif self.currentIndex() == 1:
+            self._partView.on_create_add_sketch_to_part()
+        elif self.currentIndex() == 2:
+            self._drawingView.on_create_add_sketch_to_drawing()
 

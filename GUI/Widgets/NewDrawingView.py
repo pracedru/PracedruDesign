@@ -68,7 +68,13 @@ class NewDrawingViewWidget(QDialog):
         content_widget.layout().addWidget(controls_widget)
         self._header_view = SketchViewWidget(self, None, self._doc)
         content_widget.layout().addWidget(self._header_view)
-        self._header_view.set_header(self.header)
+        self._header_view.set_sketch(self.header)
+        self._headers.currentTextChanged.connect(self.on_sketch_selection_changed)
+
+    def on_sketch_selection_changed(self):
+        sketch_name = self._sketch_combo_box.currentText()
+        sketch = self._doc.get_geometries().get_sketch_by_name(sketch_name)
+        self._header_view.set_sketch(sketch)
 
     @property
     def header(self):

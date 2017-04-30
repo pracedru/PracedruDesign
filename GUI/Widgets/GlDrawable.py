@@ -33,6 +33,14 @@ def set_color(gl, c):
     gl.glColor4f(c.redF(), c.greenF(), c.blueF(), c.alphaF())
 
 
+def draw_surfaces(gl, surfaces):
+    gl.glBegin(gl.GL_TRIANGLES)
+    for surface in surfaces:
+        for triangle in surface.get_triangles():
+            double_sided_triangle(gl, triangle[0], triangle[1], triangle[2])
+    gl.glEnd()
+
+
 def draw_cube(gl, size, position):
     gl.glBegin(gl.GL_TRIANGLES)
     p = position
@@ -132,7 +140,7 @@ def draw_lines(gl, lines):
     gl.glLineWidth(2.0)
     gl.glBegin(gl.GL_LINES)
     for line in lines:
-        gl.glVertex3d(line[0], -line[1], line[2])
+        gl.glVertex3d(line[0], line[1], line[2])
     gl.glEnd()
 
 
@@ -157,5 +165,7 @@ class GlPartDrawable(GlDrawable):
 
         gl.glEnable(gl.GL_LIGHT0)
         gl.glEnable(gl.GL_LIGHTING)
+        surfaces = self._part.get_surfaces()
+        draw_surfaces(gl, surfaces)
         draw_cube(gl, 1, Vertex(3, 0, 0))
         gl.glEndList()

@@ -72,6 +72,12 @@ class DrawingEditorViewWidget(QWidget):
         self._states.add_sketch = True
         self._main_window.update_ribbon_state()
 
+    def on_create_header(self):
+        create_empty_header()
+
+    def on_create_add_sketch_to_drawing(self):
+        pass
+
     def eventFilter(self, obj, event):
         if event.type() == QEvent.KeyPress:
             if event.key() == Qt.Key_Delete:
