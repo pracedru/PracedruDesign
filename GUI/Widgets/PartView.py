@@ -59,6 +59,7 @@ class PartViewWidget(QOpenGLWidget):
             drawable.redraw(self._gl)
         part.add_change_handler(self.part_changed)
         self.scale_to_content()
+        self.update()
 
     def scale_to_content(self):
         limits = self._part.get_limits()
@@ -108,7 +109,7 @@ class PartViewWidget(QOpenGLWidget):
         if result == QDialog.Accepted:
             sketch_feature = extrude_dialog.sketch_feature
             area = extrude_dialog.area
-            direction = extrude_dialog
+            direction = extrude_dialog.direction
             if direction == ExtrudeDialog.Forward:
                 length = [extrude_dialog.length, 0]
             elif direction == ExtrudeDialog.Backward:
@@ -151,6 +152,7 @@ class PartViewWidget(QOpenGLWidget):
         self._gl.initializeOpenGLFunctions()
         self.set_clear_color(self.background_color)
         self._gl.glShadeModel(self._gl.GL_FLAT)
+        # self._gl.glShadeModel(self._gl.GL_SMOOTH)
         self._gl.glEnable(self._gl.GL_DEPTH_TEST)
         self._gl.glEnable(self._gl.GL_CULL_FACE)
         self._gl.glDepthFunc(self._gl.GL_LEQUAL)

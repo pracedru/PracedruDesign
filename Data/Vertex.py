@@ -94,11 +94,9 @@ class Vertex(object):
         v2 = kp2.xyz - self.xyz
         x_axis = v1 / np.linalg.norm(v1)
         cp = np.cross(v1, norm)
-        y_axis = cp / np.linalg.norm(cp)
+        y_axis = cp / abs(np.linalg.norm(cp))
         z_axis = norm
         m = np.array([x_axis, y_axis, z_axis])
         proj = m.dot(v2)
         angle = atan2(proj[1], proj[0])
-
-
         return angle

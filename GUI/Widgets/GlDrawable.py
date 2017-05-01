@@ -93,8 +93,9 @@ class GlPlaneDrawable(GlDrawable):
         yd = self._plane_feature.get_vertex('yd')
         parent = self._plane_feature.get_feature_parent()
         limits = parent.get_limits()
-        size = max(limits[1].x-limits[0].x, limits[1].y-limits[0].y)
-        size = max(size, limits[1].z - limits[0].z)*0.7
+        size1 = max(np.absolute(limits[0].xyz))
+        size2 = max(np.absolute(limits[1].xyz))
+        size = max(size1, size2) * 1.2
         v1 = p.xyz * size - xd.xyz * size + yd.xyz * size
         v2 = p.xyz * size - xd.xyz * size - yd.xyz * size
         v3 = p.xyz * size + xd.xyz * size + yd.xyz * size
@@ -148,8 +149,9 @@ class GlPartDrawable(GlDrawable):
     def __init__(self, gen_list_index, part):
         GlDrawable.__init__(self, gen_list_index)
         self._part = part
-        self._part_color = QColor(180, 180, 180, 255)
-        self._part_color_edge = QColor(120, 120, 120, 255)
+        self._part_color = QColor(160, 160, 160, 255)
+        self._part_color_edge = QColor(140, 140, 140, 255)
+        # self._part_color_edge = QColor(10, 10, 10, 255)
 
     def redraw(self, gl):
         gl.glNewList(self._gen_list_index, gl.GL_COMPILE)
@@ -158,14 +160,16 @@ class GlPartDrawable(GlDrawable):
         gl.glMaterialfv(gl.GL_FRONT, gl.GL_DIFFUSE, [0.5, 0.5, 0.5, 0.5])
         lines = self._part.get_lines()
 
+        set_color(gl, self._part_color)
+        gl.glEnable(gl.GL_LIGHT0)
+        gl.glEnable(gl.GL_LIGHTING)
+        surfaces = self._part.get_surfaces()
+        draw_surfaces(gl, surfaces)
+        # draw_cube(gl, 1, Vertex(3, 0, 0))
+
         set_color(gl, self._part_color_edge)
         gl.glDisable(gl.GL_LIGHT0)
         gl.glDisable(gl.GL_LIGHTING)
         draw_lines(gl, lines)
 
-        gl.glEnable(gl.GL_LIGHT0)
-        gl.glEnable(gl.GL_LIGHTING)
-        surfaces = self._part.get_surfaces()
-        draw_surfaces(gl, surfaces)
-        draw_cube(gl, 1, Vertex(3, 0, 0))
         gl.glEndList()

@@ -7,6 +7,7 @@ from Data.Events import ChangeEvent
 from Data.Geometry import Geometry
 from Data.Objects import IdObject, NamedObservableObject, ObservableObject
 from Data.Parameters import Parameters
+from Data.Plane import Plane
 from Data.Point3d import KeyPoint
 from Data.Vertex import Vertex
 
@@ -99,11 +100,11 @@ class Part(Geometry):
         self._update_needed = True
         self._cal_limits()
 
-    def get_create_key_point(self, x, y, z):
+    def create_key_point(self, x, y, z):
         key_point = None
         for p_tuple in self._key_points.items():
             p = p_tuple[1]
-            ts = 0.00001
+            ts = 0.000001
             if abs(p.x - x) <= ts and abs(p.y - y) <= ts and abs(p.z - z) <= ts:
                 key_point = p
                 break
@@ -111,6 +112,16 @@ class Part(Geometry):
             key_point = KeyPoint(self, x, y, z)
             self._key_points[key_point.uid] = key_point
         return key_point
+
+    def create_arc_edge(self, center, r, sa, span, plane):
+        arc_edge = Edge(self, Edge.ArcEdge)
+        arc_edge.name = "edge"
+        arc_edge.add_key_point(center)
+        arc_edge.set_meta_data('sa', sa)
+        arc_edge.set_meta_data('ea', sa+span)
+        arc_edge.set_meta_data('r', r)
+        self._edges[arc_edge.uid] = arc_edge
+        return arc_edge
 
     def create_line_edge(self, key_point1, key_point2):
         line_edge = Edge(self, Edge.LineEdge)
@@ -134,6 +145,7 @@ class Part(Geometry):
                 p = plane_feature.get_vertex('p')
                 xd = plane_feature.get_vertex('xd')
                 yd = plane_feature.get_vertex('yd')
+
                 cp = np.cross(xd.xyz, yd.xyz)
                 n = cp / np.linalg.norm(cp)
                 pm = np.array([xd.xyz, yd.xyz, n])
@@ -141,6 +153,7 @@ class Part(Geometry):
                 area = feature.get_objects()[0]
                 p1 = p.xyz + n * extrusion_lengths.x
                 p2 = p.xyz + n * extrusion_lengths.y
+
                 front_edges = []
                 back_edges = []
                 for edge in area.get_edges():
@@ -149,14 +162,14 @@ class Part(Geometry):
                         c = draw_data['coords']
                         c1 = p1 + pm.dot(c[0].xyz)
                         c2 = p1 + pm.dot(c[1].xyz)
-                        kp1 = self.get_create_key_point(c1[0], c1[1], c1[2])
-                        kp2 = self.get_create_key_point(c2[0], c2[1], c2[2])
+                        kp1 = self.create_key_point(c1[0], c1[1], c1[2])
+                        kp2 = self.create_key_point(c2[0], c2[1], c2[2])
                         edge1 = self.create_line_edge(kp1, kp2)
                         front_edges.append(edge1)
-                        c1 = p2 + pm.dot(c[0].xyz)
-                        c2 = p2 + pm.dot(c[1].xyz)
-                        kp3 = self.get_create_key_point(c1[0], c1[1], c1[2])
-                        kp4 = self.get_create_key_point(c2[0], c2[1], c2[2])
+                        c3 = p2 + pm.dot(c[0].xyz)
+                        c4 = p2 + pm.dot(c[1].xyz)
+                        kp3 = self.create_key_point(c3[0], c3[1], c3[2])
+                        kp4 = self.create_key_point(c4[0], c4[1], c4[2])
                         edge2 = self.create_line_edge(kp3, kp4)
                         back_edges.append(edge2)
                         edge3 = self.create_line_edge(kp1, kp3)
@@ -164,6 +177,28 @@ class Part(Geometry):
                         surface = Surface(FlatSurface)
                         surface.set_main_edges([edge1, edge2, edge3, edge4])
                         self._surfaces[surface.uid] = surface
+                    elif edge.type == Edge.ArcEdge or edge.type == Edge.FilletLineEdge:
+                        plane = Plane(xd, yd)
+                        c = draw_data['c']
+                        r = draw_data['r']
+                        sa = draw_data['sa'] * pi / (180*16)
+                        span = draw_data['span'] * pi / (180*16)
+                        center1 = p1 + pm.dot(c.xyz)
+                        center_kp = self.create_key_point(center1[0], center1[1], center1[2])
+                        edge1 = self.create_arc_edge(center_kp, r, sa, span, plane)
+                        front_edges.append(edge1)
+                        kps1 = edge1.get_end_key_points()
+                        center2 = p2 + pm.dot(c.xyz)
+                        center_kp = self.create_key_point(center2[0], center2[1], center2[2])
+                        edge2 = self.create_arc_edge(center_kp, r, sa, span, plane)
+                        back_edges.append(edge2)
+                        kps2 = edge2.get_end_key_points()
+                        edge3 = self.create_line_edge(kps1[0], kps2[0])
+                        edge4 = self.create_line_edge(kps1[1], kps2[1])
+                        surface = Surface(SweepSurface)
+                        surface.set_main_edges([edge1, edge2, edge3, edge4])
+                        self._surfaces[surface.uid] = surface
+
                 surface = Surface(FlatSurface)
                 surface.set_main_edges(front_edges)
                 self._surfaces[surface.uid] = surface
@@ -372,6 +407,8 @@ class Feature(NamedObservableObject, IdObject):
 
     def on_object_changed(self, event):
         self.changed(ChangeEvent(self, ChangeEvent.ObjectChanged, event.sender))
+        if event.type == ChangeEvent.Deleted:
+            self.changed(ChangeEvent(self, ChangeEvent.Deleted, self))
 
     def get_objects(self):
         if len(self._feature_objects_late_bind) > 0:
@@ -419,7 +456,13 @@ class Feature(NamedObservableObject, IdObject):
         self.changed(ChangeEvent(self, ChangeEvent.ObjectChanged, event.sender))
 
     def on_feature_changed(self, event):
-        self.changed(ChangeEvent(self, ChangeEvent.ObjectChanged, event))
+        if event.type == ChangeEvent.Deleted:
+            self.changed(ChangeEvent(self, ChangeEvent.BeforeObjectRemoved, event.sender))
+            self._features.remove(event.sender)
+            self.changed(ChangeEvent(self, ChangeEvent.ObjectRemoved, event.sender))
+            self.changed(ChangeEvent(self, ChangeEvent.Deleted, self))
+        else:
+            self.changed(ChangeEvent(self, ChangeEvent.ObjectChanged, event.sender))
 
     def _get_edge_uids(self):
         uids = []
@@ -494,15 +537,25 @@ class Surface(ObservableObject, IdObject):
         angles = []
         total_angle = 0
         angles.append(kps[0].angle_between3d_planar(kps[1], kps[len(kps) - 1], norm))
-        total_angle += angles[0]
+        if angles[0] < 0:
+            total_angle += 2 * pi + angles[0]
+        else:
+            total_angle += angles[0]
         for i in range(1, len(kps) - 1):
             angle = kps[i].angle_between3d_planar(kps[i + 1], kps[i - 1], norm)
             angles.append(angle)
-            total_angle += angle
+            if angle < 0:
+                total_angle += 2*pi+angle
+            else:
+                total_angle += angle
         angle = kps[len(kps) - 1].angle_between3d_planar(kps[0], kps[len(kps) - 2], norm)
         angles.append(angle)
-        total_angle += angle
-        is_positive = total_angle >= 0
+        if angle < 0:
+            total_angle += 2 * pi + angle
+        else:
+            total_angle += angle
+        sss = total_angle / (len(kps)-2)
+        is_positive = abs(sss)-pi<0.001
         concaves = []
         for i in range(len(angles)):
             angle = angles[i]
@@ -528,6 +581,109 @@ class Surface(ObservableObject, IdObject):
             triangles.append([p1, p2, p3])
 
     def get_triangles(self):
+        if self._surface_type == FlatSurface:
+            return self.get_flat_surface_triangles()
+        else:
+            return self.get_sweep_surface_triangles()
+
+    def get_divisions_of_edge(self, edge):
+        if edge.type == Edge.ArcEdge:
+            sa = edge.get_meta_data('sa')
+            ea = edge.get_meta_data('ea')
+            span = ea-sa
+            return int(abs(span*20))
+        return 1
+
+    def get_position_on_edge(self, edge, relative):
+        if edge.type == Edge.LineEdge:
+            kps = edge.get_end_key_points()
+            diff = kps[1].xyz - kps[0].xyz
+            p = kps[0].xyz + diff * relative
+            x = p[0]
+            y = p[1]
+            z = p[2]
+        if edge.type == Edge.ArcEdge:
+            plane = edge.plane
+            r = edge.get_meta_data('r')
+            sa = edge.get_meta_data('sa')
+            ea = edge.get_meta_data('ea')
+            span = ea - sa
+            c = edge.get_key_points()[0]
+            divisions = int(abs(span * 10))
+            x = cos(sa + span * relative) * r
+            y = sin(sa + span * relative) * r
+            z = 0
+            cc = c.xyz + plane.get_global_xyz(x, y, z)
+            x = cc[0]
+            y = cc[1]
+            z = cc[2]
+        return Vertex(x, y, z)
+
+    def get_sweep_surface_triangles(self):
+        triangles = []
+        kps = []
+        edges = []
+        remaining_edges = list(self._main_edge_loop)
+        first_edge = self._main_edge_loop[0]
+        first_kp = first_edge.get_end_key_points()[0]
+        next_kp = first_edge.get_end_key_points()[1]
+        kps.append(first_kp)
+        kps.append(next_kp)
+        edges.append(first_edge)
+        remaining_edges.remove(first_edge)
+        while len(remaining_edges) > 0:
+            edge_found = None
+            for edge in remaining_edges:
+                ekps = edge.get_end_key_points()
+                if abs(np.linalg.norm(ekps[0].xyz - next_kp.xyz))<0.0000001:
+                    next_kp = ekps[1]
+                    edge_found = edge
+                    break
+                elif abs(np.linalg.norm(ekps[1].xyz - next_kp.xyz))<0.0000001:
+                    next_kp = ekps[0]
+                    edge_found = edge
+                    break
+            if edge_found is None:
+                next_kp = ekps[1]
+            else:
+                edges.append(edge)
+            remaining_edges.remove(edge)
+            if next_kp is not first_kp:
+                kps.append(next_kp)
+
+        divisions = [1, 1]
+        divisions[0] = self.get_divisions_of_edge(edges[0])
+        divisions[1] = self.get_divisions_of_edge(edges[1])
+        divisions[0] = max(self.get_divisions_of_edge(edges[2]), divisions[0])
+        divisions[1] = max(self.get_divisions_of_edge(edges[3]), divisions[1])
+
+        v11 = self.get_position_on_edge(edges[0], 0)
+        v21 = self.get_position_on_edge(edges[2], 0)
+        ri_old = 0
+        for i in range(1, divisions[0]+1):
+            ri = i / divisions[0]
+            v12 = self.get_position_on_edge(edges[0], ri)
+            v22 = self.get_position_on_edge(edges[2], ri)
+            v31 = self.get_position_on_edge(edges[1], 0)
+            v41 = self.get_position_on_edge(edges[3], 0)
+            triangles.append([v11.xyz, v21.xyz, v12.xyz])
+            triangles.append([v21.xyz, v12.xyz, v22.xyz])
+            rj_old = 0
+            for j in range(1, divisions[1]):
+                rj = j / divisions[1]
+                v32 = self.get_position_on_edge(edges[1], rj)
+                v42 = self.get_position_on_edge(edges[3], rj)
+                triangles.append([(v11.xyz+v31.xyz)/2, (v21.xyz+v41.xyz)/1, (v22.xyz+v32.xyz)/2])
+                triangles.append([(v21.xyz+v41.xyz)/1, (v22.xyz+v32.xyz)/2, (v12.xyz+v42.xyz)/2])
+                v31 = v32
+                v41 = v42
+                rj_old = rj
+            v11 = v12
+            v21 = v22
+            ri_old = ri
+        return triangles
+
+    def get_flat_surface_triangles(self):
         triangles = []
         kps = []
         if len(self._main_edge_loop) == 0:
@@ -543,21 +699,54 @@ class Surface(ObservableObject, IdObject):
             edge_found = None
             for edge in remaining_edges:
                 ekps = edge.get_end_key_points()
-                if ekps[0] == next_kp:
+                if abs(np.linalg.norm(ekps[0].xyz-next_kp.xyz)) < 0.000001:
                     next_kp = ekps[1]
                     edge_found = edge
                     break
-                elif ekps[1] == next_kp:
+                elif abs(np.linalg.norm(ekps[1].xyz-next_kp.xyz)) < 0.000001:
                     next_kp = ekps[0]
                     edge_found = edge
                     break
             if edge_found is None:
-                break
+                next_kp = ekps[1]
             remaining_edges.remove(edge)
-            if next_kp is not first_kp:
-                kps.append(next_kp)
+            if edge.type is Edge.ArcEdge:
+                plane = edge.plane
+                r = edge.get_meta_data('r')
+                sa = edge.get_meta_data('sa')
+                ea = edge.get_meta_data('ea')
+                c = edge.get_key_points()[0]
+                cc = c.xyz + plane.get_global_xyz(cos(sa) * r, sin(sa) * r, 0)
+                ln1 = np.linalg.norm(kps[len(kps)-1].xyz-cc)
+                cc = c.xyz + plane.get_global_xyz(cos(ea) * r, sin(ea) * r, 0)
+                ln2 = np.linalg.norm(kps[len(kps)-1].xyz-cc)
+                if ln1 > ln2:
+                    dum = ea
+                    ea = sa
+                    sa = dum
+                span = ea-sa
+                divisions = int(abs(span * 10))
+                increment = span/divisions
+                for i in range(divisions+1):
+                    x = cos(sa+increment*i)*r
+                    y = sin(sa+increment*i)*r
+                    z = 0
+                    cc = c.xyz + plane.get_global_xyz(x, y, z)
+                    x = cc[0]
+                    y = cc[1]
+                    z = cc[2]
+                    kps.append(Vertex(x, y, z))
+                next_kp = kps[len(kps)-1]
+            elif abs(np.linalg.norm(next_kp.xyz-first_kp.xyz)) > 0.000001: # next_kp is not first_kp:
+                if abs(np.linalg.norm(next_kp.xyz-kps[len(kps)-1].xyz)) > 0.000001:
+                    kps.append(next_kp)
         v1 = kps[0].xyz - kps[1].xyz
-        v2 = kps[2].xyz - kps[1].xyz
+        try:
+            v2 = kps[2].xyz - kps[1].xyz
+        except IndexError as e:
+            print("weeeeaaaaargfh")
+        if len(kps) < 3:
+            return triangles
         cp = np.cross(v1, v2)
         norm = cp / np.linalg.norm(cp)
 
@@ -587,7 +776,8 @@ class Surface(ObservableObject, IdObject):
             remaining_kps.pop(m)
             angles, concaves, total_angle = self.find_angles(remaining_kps, norm)
 
-        self.get_triangles_of_convex(remaining_kps, triangles)
+        if len(remaining_kps) > 2:
+            self.get_triangles_of_convex(remaining_kps, triangles)
 
         return triangles
 
