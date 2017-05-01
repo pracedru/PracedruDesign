@@ -237,7 +237,7 @@ class Part(Geometry):
         return features
 
     def _cal_limits(self):
-        limits = [Vertex(-1, -1, -1), Vertex(1, 1, 1)]
+        limits = [Vertex(-0.001, -0.001, -0.001), Vertex(0.001, 0.001, 0.001)]
         lines = self.get_lines()
         for line in lines:
             limits[0].x = min(limits[0].x, line[0])
@@ -303,6 +303,21 @@ class Part(Geometry):
             if edge.type == Edge.LineEdge:
                 lines.append(kps[0].xyz)
                 lines.append(kps[1].xyz)
+            if edge.type == Edge.ArcEdge:
+                radius = edge.get_meta_data("r")
+                c = edge.get_key_points()[0]
+                start_angle = edge.get_meta_data("sa")
+                end_angle = edge.get_meta_data("ea")
+                span = end_angle-start_angle
+                pm = edge.plane.get_projection_matrix()
+                divisions = abs(int(span * 20))
+                for i in range(divisions):
+                    cx = cos(start_angle + span * i / divisions) * radius
+                    cy = sin(start_angle + span * i / divisions) * radius
+                    lines.append(c.xyz + pm.dot(np.array([cx, cy, 0])))
+                    cx = cos(start_angle + span * (i + 1) / divisions) * radius
+                    cy = sin(start_angle + span * (i + 1) / divisions) * radius
+                    lines.append(c.xyz + pm.dot(np.array([cx, cy, 0])))
 
         return lines
 
