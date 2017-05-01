@@ -3,7 +3,10 @@ from math import *
 from PyQt5.QtCore import QPoint
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QColor
-from OpenGL import GL
+try:
+    from OpenGL import GL
+except:
+    pass
 
 from PyQt5.QtGui import QOpenGLVersionProfile
 from PyQt5.QtGui import QSurfaceFormat
