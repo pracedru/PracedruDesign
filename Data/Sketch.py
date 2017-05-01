@@ -189,11 +189,26 @@ class Sketch(Geometry):
         arc_edge.add_change_handler(self.on_edge_changed)
         return arc_edge
 
+    def get_new_unique_area_name(self, name):
+        unique = False
+        counter = 1
+        new_name = name
+        while not unique:
+            found = False
+            for area_tuple in self._areas.items():
+                if area_tuple[1].name == new_name:
+                    found = True
+                    new_name = name + str(counter)
+                    counter += 1
+            if not found:
+                unique = True
+        return new_name
+
     def create_area(self):
         self.changed(ChangeEvent(self, ChangeEvent.BeforeObjectAdded, None))
         area = Area()
         self._areas[area.uid] = area
-        area.name = "New Area"
+        area.name = self.get_new_unique_area_name("New Area")
         self.changed(ChangeEvent(self, ChangeEvent.ObjectAdded, area))
         area.add_change_handler(self.on_area_changed)
         return area

@@ -50,7 +50,7 @@ class PartViewWidget(QOpenGLWidget):
         self._part = part
         self._drawables = []
 
-        for plane_feature in part.get_planes():
+        for plane_feature in part.get_plane_features():
             drawable = GlPlaneDrawable(len(self._drawables)+self._gen_lists_start, plane_feature)
             self._drawables.append(drawable)
         part_drawable = GlPartDrawable(len(self._drawables)+self._gen_lists_start, part)
@@ -75,11 +75,11 @@ class PartViewWidget(QOpenGLWidget):
 
     def on_create_add_sketch_to_part(self):
         planes = []
-        for plane_feature in self._part.get_planes():
+        for plane_feature in self._part.get_plane_features():
             planes.append(plane_feature.name)
         value = QInputDialog.getItem(self, "Select plane for sketch", "plane name:", planes, 0, False)
         if value[1] == QDialog.Accepted:
-            for plane_feature in self._part.get_planes():
+            for plane_feature in self._part.get_plane_features():
                 if plane_feature.name == value[0]:
                     create_add_sketch_to_part(self._document, self._part, plane_feature)
 
@@ -94,7 +94,7 @@ class PartViewWidget(QOpenGLWidget):
             sketch_name = sketch_dialog.sketch()
             plane_name = sketch_dialog.plane()
             sketch = self._document.get_geometries().get_sketch_by_name(sketch_name)
-            for plane in self._part.get_planes():
+            for plane in self._part.get_plane_features():
                 if plane.name == plane_name:
                     break
             insert_sketch_in_part(self._document, self._part, sketch, plane)

@@ -1,4 +1,4 @@
-from math import sqrt, atan2, pi
+from math import sqrt, atan2, pi, acos
 import numpy as np
 
 __author__ = 'mamj'
@@ -76,4 +76,29 @@ class Vertex(object):
         angle = abs(self.angle_between(kp1, kp2))
         if angle > pi:
             angle = 2*pi-angle
+        return angle
+
+    def angle_between3d_p(self, kp1, kp2):
+        x = kp1.xyz - self.xyz
+        y = kp2.xyz - self.xyz
+        lx = np.linalg.norm(x)
+        ly = np.linalg.norm(y)
+        try:
+            angle = acos(x.dot(y)/(lx*ly))
+        except ValueError as e:
+            print (str(e))
+        return angle
+
+    def angle_between3d_planar(self, kp1, kp2, norm):
+        v1 = kp1.xyz - self.xyz
+        v2 = kp2.xyz - self.xyz
+        x_axis = v1 / np.linalg.norm(v1)
+        cp = np.cross(v1, norm)
+        y_axis = cp / np.linalg.norm(cp)
+        z_axis = norm
+        m = np.array([x_axis, y_axis, z_axis])
+        proj = m.dot(v2)
+        angle = atan2(proj[1], proj[0])
+
+
         return angle

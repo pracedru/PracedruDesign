@@ -20,7 +20,7 @@ class SketchDialog(QDialog):
         for sketch in document.get_geometries().get_sketches():
             self._sketches.append(sketch.name)
         self._sketches.sort()
-        for plane in part.get_planes():
+        for plane in part.get_plane_features():
             self._planes.append(plane.name)
         self._planes.sort()
         self.setLayout(QVBoxLayout())

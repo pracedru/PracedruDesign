@@ -9,7 +9,7 @@ from Data.Drawings import Drawing, Drawings, Field, SketchView
 from Data.Events import ChangeEvent
 from Data.Geometry import Geometry
 from Data.Parameters import Parameters, Parameter
-from Data.Part import Part, Feature, PlaneFeature
+from Data.Part import Part, Feature, PlaneFeature, SketchFeature
 from Data.Point3d import KeyPoint
 from Data.Sketch import Sketch, Edge, Text, Attribute
 from Data.Style import EdgeStyle
@@ -47,7 +47,8 @@ class DocumentItemModel(QAbstractItemModel):
             if type(geom) is Sketch:
                 self.populate_sketch(geom, geoms_item)
             if type(geom) is Part:
-                DocumentModelItem(geom, self, geoms_item)
+                self.populate_part(geom, geoms_item)
+                # DocumentModelItem(geom, self, geoms_item)
 
         DocumentModelItem(None, self, self._root_item, "Analyses")
         self.populate_drawings()
@@ -72,6 +73,13 @@ class DocumentItemModel(QAbstractItemModel):
         for view in drawing.get_views():
             view_item = DocumentModelItem(view, self, drawing_item)
         return drawing_item
+
+    def populate_part(self, part, parent_item):
+        geom_item = self.create_model_item(parent_item, part)
+        for feature_key in part.get_feature_progression():
+            feature = part.get_feature(feature_key)
+            self.create_model_item(geom_item, feature)
+        return geom_item
 
     def populate_drawings(self):
         drawings = self._doc.get_drawings()
@@ -155,6 +163,9 @@ class DocumentItemModel(QAbstractItemModel):
                 return get_icon("area")
             elif type(model_item.data) is Part:
                 return get_icon("part")
+            elif type(model_item.data) is Feature:
+                if model_item.data.feature_type == SketchFeature:
+                    return get_icon("sketch")
             return get_icon("default")
         return None
 
@@ -182,6 +193,8 @@ class DocumentItemModel(QAbstractItemModel):
         if isinstance(model_item.data, Parameter):
             default_flags = default_flags | Qt.ItemIsEditable
         if isinstance(model_item.data, Drawing):
+            default_flags = default_flags | Qt.ItemIsEditable
+        if isinstance(model_item.data, Feature):
             default_flags = default_flags | Qt.ItemIsEditable
         return default_flags
 

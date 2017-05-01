@@ -15,9 +15,7 @@ class Part(Geometry):
     def __init__(self, parameters_parent, document, name="New part"):
         Geometry.__init__(self, parameters_parent, name, Geometry.Part)
         self._doc = document
-        self._plane_features = {}
-        self._sketch_features = {}
-        self._extrude_features = {}
+        self._features = {}
         self._feature_progression = []
         self._limits = None # [Vertex(-1, -1, -1), Vertex(1, 1, 1)]
         self._update_needed = True
@@ -47,37 +45,55 @@ class Part(Geometry):
             surfaces.append(surface_tuple[1])
         return surfaces
 
+    def get_new_unique_feature_name(self, name):
+        unique = False
+        counter = 1
+        new_name = name
+        while not unique:
+            found = False
+            for feaure_tuple in self._features.items():
+                if feaure_tuple[1].name == new_name:
+                    found = True
+                    new_name = name + str(counter)
+                    counter += 1
+            if not found:
+                unique = True
+        return new_name
+
     def _add_feature(self, feature):
         self.changed(ChangeEvent(self, ChangeEvent.BeforeObjectAdded, feature))
-        self._feature_progression.append(feature)
+        self._feature_progression.append(feature.uid)
         self.changed(ChangeEvent(self, ChangeEvent.ObjectAdded, feature))
 
     def create_plane_feature(self, name, position, x_direction, y_direction):
+        name = self.get_new_unique_feature_name(name)
         plane_feature = Feature(self._doc, self, PlaneFeature, name)
         plane_feature.add_vertex('p', position)
         plane_feature.add_vertex('xd', x_direction)
         plane_feature.add_vertex('yd', y_direction)
-        self._plane_features[plane_feature.uid] = plane_feature
+        self._features[plane_feature.uid] = plane_feature
         self._add_feature(plane_feature)
         plane_feature.add_change_handler(self.on_plane_feature_changed)
         return plane_feature
 
     def create_sketch_feature(self, sketch, plane_feature):
-        sketch_feature = Feature(self._doc, self, SketchFeature, sketch.name)
+        name = self.get_new_unique_feature_name(sketch.name)
+        sketch_feature = Feature(self._doc, self, SketchFeature, name)
         sketch_feature.add_feature(plane_feature)
         sketch_feature.add_object(sketch)
-        self._sketch_features[sketch_feature.uid] = sketch_feature
+        self._features[sketch_feature.uid] = sketch_feature
         self._add_feature(sketch_feature)
         sketch_feature.add_change_handler(self.on_sketch_feature_changed)
         self._cal_limits()
         return sketch_feature
 
     def create_extrude_feature(self, name, sketch_feature, area, length):
+        name = self.get_new_unique_feature_name(name)
         extrude_feature = Feature(self._doc, self, ExtrudeFeature, name)
         extrude_feature.add_feature(sketch_feature)
         extrude_feature.add_object(area)
         extrude_feature.add_vertex('ex_ls', Vertex(length[0], length[1]))
-        self._extrude_features[extrude_feature.uid] = extrude_feature
+        self._features[extrude_feature.uid] = extrude_feature
         self._add_feature(extrude_feature)
         extrude_feature.add_change_handler(self.on_extrude_feature_changed)
         self._update_needed = True
@@ -94,38 +110,23 @@ class Part(Geometry):
         if key_point is None:
             key_point = KeyPoint(self, x, y, z)
             self._key_points[key_point.uid] = key_point
-            key_point.add_change_handler(self.on_key_point_changed)
         return key_point
-
-    def on_key_point_changed(self, event):
-        if event.type == ChangeEvent.Deleted:
-            if event.sender.uid in self._key_points:
-                self._key_points.pop(event.sender.uid)
-
-    def on_edge_changed(self, event):
-        if event.type == ChangeEvent.Deleted:
-            if event.sender.uid in self._edges:
-                self._edges.pop(event.sender.uid)
 
     def create_line_edge(self, key_point1, key_point2):
         line_edge = Edge(self, Edge.LineEdge)
         line_edge.name = "Edge"
         line_edge.add_key_point(key_point1)
         line_edge.add_key_point(key_point2)
-        self.changed(ChangeEvent(self, ChangeEvent.BeforeObjectAdded, line_edge))
         self._edges[line_edge.uid] = line_edge
-        self.changed(ChangeEvent(self, ChangeEvent.ObjectAdded, line_edge))
-        line_edge.add_change_handler(self.on_edge_changed)
         return line_edge
 
     def update_geometry(self):
-        oldkps = []
-        for kp_tuple in self._key_points.items():
-            oldkps.append(kp_tuple[1])
-        for kp in oldkps:
-            kp.delete()
         self._surfaces.clear()
-        for feature in self._feature_progression:
+        self._edges.clear()
+        self._key_points.clear()
+        self._surfaces.clear()
+        for feature_key in self._feature_progression:
+            feature = self._features[feature_key]
             if feature.feature_type == ExtrudeFeature:
                 extrusion_lengths = feature.get_vertex('ex_ls')
                 sketch_feature = feature.get_features()[0]
@@ -160,47 +161,44 @@ class Part(Geometry):
                         back_edges.append(edge2)
                         edge3 = self.create_line_edge(kp1, kp3)
                         edge4 = self.create_line_edge(kp2, kp4)
-                        surface = Surface()
+                        surface = Surface(FlatSurface)
                         surface.set_main_edges([edge1, edge2, edge3, edge4])
                         self._surfaces[surface.uid] = surface
-                surface = Surface()
+                surface = Surface(FlatSurface)
                 surface.set_main_edges(front_edges)
                 self._surfaces[surface.uid] = surface
-                surface = Surface()
+                surface = Surface(FlatSurface)
                 surface.set_main_edges(back_edges)
                 self._surfaces[surface.uid] = surface
         self._update_needed = False
 
     def get_feature(self, uid):
-        if uid in self._plane_features:
-            return self._plane_features[uid]
-        if uid in self._sketch_features:
-            return self._sketch_features[uid]
-        if uid in self._extrude_features:
-            return self._extrude_features[uid]
+        if uid in self._features:
+            return self._features[uid]
+
         return None
 
-    def get_planes(self):
+    def get_feature_progression(self):
+        return self._feature_progression
+
+    def get_plane_features(self):
         planes = []
-        for feature in self._plane_features.items():
-            planes.append(feature[1])
+        for feature in self._features.items():
+            if feature[1].feature_type == PlaneFeature:
+                planes.append(feature[1])
         return planes
 
-    @property
-    def get_features(self):
+    def get_features_list(self):
         features = []
-        for feature_tuple in self._plane_features.items():
-            features.append(feature_tuple[1])
-        for feature_tuple in self._sketch_features.items():
-            features.append(feature_tuple[1])
-        for feature_tuple in self._extrude_features.items():
+        for feature_tuple in self._features.items():
             features.append(feature_tuple[1])
         return features
 
     def get_sketch_features(self):
         features = []
-        for feature_tuple in self._sketch_features.items():
-            features.append(feature_tuple[1])
+        for feature_tuple in self._features.items():
+            if feature_tuple[1].feature_type == SketchFeature:
+                features.append(feature_tuple[1])
         return features
 
     def _cal_limits(self):
@@ -222,8 +220,7 @@ class Part(Geometry):
 
     def get_lines(self):
         lines = []
-        for sketch_feature_tuple in self._sketch_features.items():
-            sketch_feature = sketch_feature_tuple[1]
+        for sketch_feature in self.get_sketch_features():
             plane_feature = sketch_feature.get_features()[0]
             p = plane_feature.get_vertex('p')
             xd = plane_feature.get_vertex('xd')
@@ -278,7 +275,8 @@ class Part(Geometry):
         self.changed(ChangeEvent(self, ChangeEvent.ObjectChanged, event.sender))
         if event.type == ChangeEvent.Deleted:
             self.changed(ChangeEvent(self, ChangeEvent.BeforeObjectRemoved, event.sender))
-            self._plane_features.pop(event.sender.uid)
+            self._features.pop(event.sender.uid)
+            self._feature_progression.remove(event.sender.uid)
             self.changed(ChangeEvent(self, ChangeEvent.ObjectRemoved, event.sender))
             event.sender.remove_change_handler(self.on_plane_feature_changed)
 
@@ -286,7 +284,8 @@ class Part(Geometry):
         self.changed(ChangeEvent(self, ChangeEvent.ObjectChanged, event.sender))
         if event.type == ChangeEvent.Deleted:
             self.changed(ChangeEvent(self, ChangeEvent.BeforeObjectRemoved, event.sender))
-            self._sketch_features.pop(event.sender.uid)
+            self._features.pop(event.sender.uid)
+            self._feature_progression.remove(event.sender.uid)
             self.changed(ChangeEvent(self, ChangeEvent.ObjectRemoved, event.sender))
             event.sender.remove_change_handler(self.on_sketch_feature_changed)
         self._cal_limits()
@@ -295,7 +294,8 @@ class Part(Geometry):
         self.changed(ChangeEvent(self, ChangeEvent.ObjectChanged, event.sender))
         if event.type == ChangeEvent.Deleted:
             self.changed(ChangeEvent(self, ChangeEvent.BeforeObjectRemoved, event.sender))
-            self._extrude_features.pop(event.sender.uid)
+            self._features.pop(event.sender.uid)
+            self._feature_progression.remove(event.sender.uid)
             self.changed(ChangeEvent(self, ChangeEvent.ObjectRemoved, event.sender))
             event.sender.remove_change_handler(self.on_extrude_feature_changed)
         self._update_needed = True
@@ -308,13 +308,9 @@ class Part(Geometry):
         return {
             'uid': IdObject.serialize_json(self),
             'parameters': Parameters.serialize_json(self),
-            'plane_features': self._plane_features,
-            'sketch_features': self._sketch_features,
-            'extrude_features': self._extrude_features,
+            'features': self._features,
             'feature_progression': self._feature_progression,
-            'type': self._geometry_type,
-            'edges': self._edges,
-            'surfaces': self._surfaces
+            'type': self._geometry_type
         }
 
     @staticmethod
@@ -327,18 +323,18 @@ class Part(Geometry):
     def deserialize_data(self, data):
         IdObject.deserialize_data(self, data['uid'])
         Parameters.deserialize_data(self, data['parameters'])
-        for feature_data_tuple in data.get('plane_features', {}).items():
+        for feature_data_tuple in data.get('features', {}).items():
             feature = Feature.deserialize(feature_data_tuple[1], self, self._doc)
-            self._plane_features[feature.uid] = feature
-            feature.add_change_handler(self.on_plane_feature_changed)
-        for feature_data_tuple in data.get('sketch_features', {}).items():
-            feature = Feature.deserialize(feature_data_tuple[1], self, self._doc)
-            self._sketch_features[feature.uid] = feature
-            feature.add_change_handler(self.on_sketch_feature_changed)
-        for feature_data_tuple in data.get('extrude_features', {}).items():
-            feature = Feature.deserialize(feature_data_tuple[1], self, self._doc)
-            self._extrude_features[feature.uid] = feature
-            feature.add_change_handler(self.on_extrude_feature_changed)
+            self._features[feature.uid] = feature
+            if feature.feature_type == PlaneFeature:
+                feature.add_change_handler(self.on_plane_feature_changed)
+            elif feature.feature_type == PlaneFeature:
+                feature.add_change_handler(self.on_sketch_feature_changed)
+            elif feature.feature_type == ExtrudeFeature:
+                feature.add_change_handler(self.on_extrude_feature_changed)
+        self._feature_progression = data.get('feature_progression', [])
+
+        self._update_needed = True
 
 
 ExtrudeFeature = 0
@@ -383,6 +379,11 @@ class Feature(NamedObservableObject, IdObject):
                 feature_object = None
                 if self._feature_type == SketchFeature:
                     feature_object = self._doc.get_geometries().get_geometry(feature_object_uid)
+                if self._feature_type == ExtrudeFeature:
+                    for sketch in self._doc.get_geometries().get_sketches():
+                        feature_object = sketch.get_area(feature_object_uid)
+                        if feature_object is not None:
+                            break
                 if feature_object is not None:
                     self.add_object(feature_object)
             self._feature_objects_late_bind.clear()
@@ -477,13 +478,54 @@ class Feature(NamedObservableObject, IdObject):
         for feature_object_uid in data.get('objects', []):
             self._feature_objects_late_bind.append(feature_object_uid)
 
+FlatSurface = 0
+SweepSurface = 1
+
 
 class Surface(ObservableObject, IdObject):
-    def __init__(self):
+    def __init__(self, surface_type):
         IdObject.__init__(self)
         ObservableObject.__init__(self)
         self._main_edge_loop = []
         self._cutting_edges_loops = []
+        self._surface_type = surface_type
+
+    def find_angles(self, kps, norm):
+        angles = []
+        total_angle = 0
+        angles.append(kps[0].angle_between3d_planar(kps[1], kps[len(kps) - 1], norm))
+        total_angle += angles[0]
+        for i in range(1, len(kps) - 1):
+            angle = kps[i].angle_between3d_planar(kps[i + 1], kps[i - 1], norm)
+            angles.append(angle)
+            total_angle += angle
+        angle = kps[len(kps) - 1].angle_between3d_planar(kps[0], kps[len(kps) - 2], norm)
+        angles.append(angle)
+        total_angle += angle
+        is_positive = total_angle >= 0
+        concaves = []
+        for i in range(len(angles)):
+            angle = angles[i]
+            is_p_a = angle >= 0
+            if is_p_a != is_positive:
+                concaves.append(i)
+        return angles, concaves, total_angle
+
+    def get_triangles_of_convex(self, kps, triangles):
+        sw = True
+        st_c = 0
+        en_c = len(kps) - 1
+        while st_c - en_c <= 1:
+            p1 = kps[st_c].xyz
+            p2 = kps[en_c].xyz
+            if sw:
+                st_c += 1
+                p3 = kps[st_c].xyz
+            else:
+                en_c -= 1
+                p3 = kps[en_c].xyz
+            sw = not sw
+            triangles.append([p1, p2, p3])
 
     def get_triangles(self):
         triangles = []
@@ -512,22 +554,40 @@ class Surface(ObservableObject, IdObject):
             if edge_found is None:
                 break
             remaining_edges.remove(edge)
-            if next_kp != first_edge:
+            if next_kp is not first_kp:
                 kps.append(next_kp)
-        sw = True
-        st_c = 0
-        en_c = len(kps) - 1
-        while st_c - en_c <= 1:
-            p1 = kps[st_c].xyz
-            p2 = kps[en_c].xyz
-            if sw:
-                st_c += 1
-                p3 = kps[st_c].xyz
+        v1 = kps[0].xyz - kps[1].xyz
+        v2 = kps[2].xyz - kps[1].xyz
+        cp = np.cross(v1, v2)
+        norm = cp / np.linalg.norm(cp)
+
+        angles, concaves, total_angle = self.find_angles(kps, norm)
+
+        remaining_kps = list(kps)
+        while len(concaves) > 0:
+            sharpest_convex = 1e10
+            for i in range(len(angles)):
+                if i not in concaves:
+                    if abs(sharpest_convex) > abs(angles[i]):
+                        sharpest_convex = angles[i]
+                        m = i
+            p1 = remaining_kps[m].xyz
+            if m < 1:
+                o = len(remaining_kps)-1
             else:
-                en_c -= 1
-                p3 = kps[en_c].xyz
-            sw = not sw
+                o = m - 1
+            p2 = remaining_kps[o].xyz
+            if m + 1 >= len(remaining_kps):
+                n = 0
+            else:
+                n = m + 1
+            p3 = remaining_kps[n].xyz
+            # if n not in concaves and o not in concaves:
             triangles.append([p1, p2, p3])
+            remaining_kps.pop(m)
+            angles, concaves, total_angle = self.find_angles(remaining_kps, norm)
+
+        self.get_triangles_of_convex(remaining_kps, triangles)
 
         return triangles
 
