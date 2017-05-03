@@ -1,3 +1,4 @@
+from Data.Axis import Axis
 from Data.Components import Components
 from Data.Drawings import Drawings
 from Data.Geometries import Geometries
@@ -21,6 +22,7 @@ class Document(IdObject, ObservableObject):
         self._parameters = Parameters("Global Parameters")
         self._styles = Styles()
         self._geometries = Geometries(self)
+        self._axes = {}
         self._margins = Margins(self)
         self._materials = Materials(self)
         self._components = Components(self)
@@ -43,6 +45,9 @@ class Document(IdObject, ObservableObject):
         self._mesh.add_change_handler(self.on_object_changed)
         self._sweeps.add_change_handler(self.on_object_changed)
         self._drawings.add_change_handler(self.on_object_changed)
+
+    def get_axes(self):
+        return self._axes
 
     def get_styles(self):
         return self._styles
@@ -109,6 +114,7 @@ class Document(IdObject, ObservableObject):
                 'styles': self._styles,
                 'params': self._parameters,
                 'geoms': self._geometries,
+                'axes': self._axes,
                 'name': self.name,
                 'materials': self._materials,
                 'components': self._components,
@@ -130,6 +136,9 @@ class Document(IdObject, ObservableObject):
         self._parameters = Parameters.deserialize(data.get('params', None), None)
         self._styles = Styles.deserialize(data.get('styles', None))
         self._geometries = Geometries.deserialize(data.get('geoms', None), self)
+        for axis_tuple in data.get('axes', {}).items():
+            axis = Axis.deserialize(axis_tuple[1], self)
+            self._axes[axis.uid] = axis
         self._materials = Materials.deserialize(data.get('materials'), self)
         self._components = Components.deserialize(data.get('components'), self)
         self._margins = Margins.deserialize(data.get('margins'), self)

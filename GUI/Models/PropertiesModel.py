@@ -45,7 +45,7 @@ rows_by_type = {
     "Drawing": [
         ['Name', 'name'],
         ['Size', 'size'],
-        ['Orientation', 'orientation_name'],
+        ['Orientation', 'orientation', {'choices': ['Landscape', 'Portrait']}],
         ['Header', 'header'],
         ['Margins', 'margins']],
     "EdgeStyle": [
@@ -53,10 +53,17 @@ rows_by_type = {
         ['Thickness', 'thickness'],
         ['Color', 'color'],
         ['Line type', 'line_type']],
+    "Feature": [
+        ['Name', 'name'],
+        ['Type', 'feature_type', {'choices': ['Extrude', 'Revolve', 'Fillet', 'Plane', 'Sketch']}],
+        ['Length', 'distance', {'condition': ['feature_type', 0]}],
+        ['Angles', 'distance', {'condition': ['feature_type', 1]}],
+        ['Plane', 'plane', {'condition': ['feature_type', 4]}]],
+    "Part": [
+        ['Name', 'name']],
     "Field": [
         ['Name', 'name'],
-        ['Value', 'value']
-    ],
+        ['Value', 'value']],
     "SketchView": [
         ['Name', 'name'],
         ['Scale', 'scale'],
@@ -81,7 +88,20 @@ class PropertiesModel(QAbstractTableModel):
         self._item = item
         type_name = type(item).__name__
         if type_name in rows_by_type:
-            self._rows = rows_by_type[type_name]
+            self._rows = list(rows_by_type[type_name])
+            rows_to_remove = []
+            for row in self._rows:
+                if len(row) > 2:
+                    row_spec = row[2]
+                    if 'condition' in row_spec:
+                        cond = row_spec['condition']
+                        name = cond[0]
+                        value = cond[1]
+                        if getattr(self._item, name) != value:
+                            rows_to_remove.append(row)
+            for row in rows_to_remove:
+                self._rows.remove(row)
+
         else:
             self._rows = []
         self.layoutChanged.emit()
@@ -109,6 +129,14 @@ class PropertiesModel(QAbstractTableModel):
                 data = float(data)
             if type(data) is float:
                 data = QLocale().toString(data)
+            if type(data) is int:
+                if len(self._rows[row]) > 2:
+                    row_spec = self._rows[row][2]
+                    if 'choices' in row_spec:
+                        return row_spec['choices'][data]
+                else:
+                    return data
+
             data = str(data)
         elif int_role == Qt.EditRole:
             data = getattr(self._item, self._rows[row][1])
@@ -131,6 +159,11 @@ class PropertiesModel(QAbstractTableModel):
                     value = numpy.float64(QLocale().toFloat(value)[0])
                 if origin_type is int:
                     value = QLocale().toInt(value)[0]
+                    if len(self._rows[row]) > 2:
+                        row_spec = self._rows[row][2]
+                        if 'choices' in row_spec:
+                            if len(row_spec['choices']) <= value:
+                                return False
                 if origin_type is list:
                     value = eval(value)
                 setattr(self._item, self._rows[row][1], value)

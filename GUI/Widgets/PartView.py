@@ -16,11 +16,11 @@ from PyQt5.QtWidgets import QOpenGLWidget
 
 from Business.PartAction import *
 from Data.Events import ChangeEvent
-from Data.Part import Part
+from Data.Part import Part, Feature
 from Data.Vertex import Vertex
 
 from GUI.Widgets.GlDrawable import GlPlaneDrawable, GlPartDrawable
-from GUI.Widgets.SimpleDialogs import SketchDialog, ExtrudeDialog
+from GUI.Widgets.SimpleDialogs import SketchDialog, ExtrudeDialog, RevolveDialog
 
 PROGRAM_VERTEX_POS_ATTRIBUTE = 0
 PROGRAM_UV_ATTRIBUTE = 1
@@ -88,10 +88,6 @@ class PartViewWidget(QOpenGLWidget):
                     create_add_sketch_to_part(self._document, self._part, plane_feature)
 
     def on_insert_sketch(self):
-        sketches = []
-        #for sketch in self._document.get_geometries().get_sketches():
-        #    sketches.append(sketch.name)
-        #value = QInputDialog.getItem(self, "Select existing sketch or create new", "Sketch name:", sketches, 0, False)
         sketch_dialog = SketchDialog(self, self._document, self._part)
         value = sketch_dialog.exec_()
         if value == QDialog.Accepted:
@@ -113,9 +109,9 @@ class PartViewWidget(QOpenGLWidget):
             sketch_feature = extrude_dialog.sketch_feature
             area = extrude_dialog.area
             direction = extrude_dialog.direction
-            if direction == ExtrudeDialog.Forward:
+            if direction == Feature.Forward:
                 length = [extrude_dialog.length, 0]
-            elif direction == ExtrudeDialog.Backward:
+            elif direction == Feature.Backward:
                 length = [0, -extrude_dialog.length]
             else:
                 length = [extrude_dialog.length/2, -extrude_dialog.length/2]
@@ -123,7 +119,21 @@ class PartViewWidget(QOpenGLWidget):
                 add_extrude_in_part(self._document, self._part, sketch_feature, area, length)
 
     def on_revolve_area(self):
-        pass
+        revolve_dialog = RevolveDialog(self, self._document, self._part)
+        result = revolve_dialog.exec_()
+        if result == QDialog.Accepted:
+            sketch_feature = revolve_dialog.sketch_feature
+            area = revolve_dialog.area
+            revolve_axis = revolve_dialog.get_axis()
+            direction = revolve_dialog.direction
+            if direction == Feature.Forward:
+                length = [revolve_dialog.length, 0]
+            elif direction == Feature.Backward:
+                length = [0, -revolve_dialog.length]
+            else:
+                length = [revolve_dialog.length/2, -revolve_dialog.length/2]
+            if area is not None and revolve_axis is not None:
+                add_revolve_in_part(self._document, self._part, sketch_feature, area, length, revolve_axis)
 
     def setXRotation(self, angle):
         angle = max(90 * 16, angle)

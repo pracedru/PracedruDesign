@@ -9,7 +9,7 @@ from Data.Drawings import Drawing, Drawings, Field, SketchView
 from Data.Events import ChangeEvent
 from Data.Geometry import Geometry
 from Data.Parameters import Parameters, Parameter
-from Data.Part import Part, Feature, PlaneFeature, SketchFeature
+from Data.Part import Part, Feature
 from Data.Point3d import KeyPoint
 from Data.Sketch import Sketch, Edge, Text, Attribute
 from Data.Style import EdgeStyle
@@ -164,7 +164,7 @@ class DocumentItemModel(QAbstractItemModel):
             elif type(model_item.data) is Part:
                 return get_icon("part")
             elif type(model_item.data) is Feature:
-                if model_item.data.feature_type == SketchFeature:
+                if model_item.data.feature_type == Feature.SketchFeature:
                     return get_icon("sketch")
             return get_icon("default")
         return None
@@ -254,7 +254,7 @@ class DocumentItemModel(QAbstractItemModel):
                 new_item = DocumentModelItem(object, self, fields_item)
         elif type(parent_item.data) is Part:
             if type(object) is Feature:
-                if object.feature_type == PlaneFeature:
+                if object.feature_type == Feature.PlaneFeature:
                     planes_item = parent_item.children()[0]
                     new_item = DocumentModelItem(object, self, planes_item)
                 else:

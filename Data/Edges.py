@@ -99,10 +99,10 @@ class Edge(IdObject, NamedObservableObject):
                 start_kp = self._geometry.get_key_point(self._meta_data['start_kp'])
             else:
                 pm = self._plane.get_projection_matrix()
-                x = ckp.x + cos(self._meta_data['sa'])*self._meta_data['r']
-                y = ckp.y + sin(self._meta_data['sa'])*self._meta_data['r']
-                z = ckp.z
-                pc1 = pm.dot(np.array([x, y, z]))
+                x = cos(self._meta_data['sa'])*self._meta_data['r']
+                y = sin(self._meta_data['sa'])*self._meta_data['r']
+                z = 0
+                pc1 = ckp.xyz + pm.dot(np.array([x, y, z]))
                 start_kp = self._geometry.create_key_point(pc1[0], pc1[1], pc1[2])
                 start_kp.add_edge(self)
                 start_kp.add_change_handler(self.on_key_point_changed)
@@ -111,10 +111,10 @@ class Edge(IdObject, NamedObservableObject):
                 end_kp = self._geometry.get_key_point(self._meta_data['end_kp'])
             else:
                 pm = self._plane.get_projection_matrix()
-                x = ckp.x + cos(self._meta_data['ea'])*self._meta_data['r']
-                y = ckp.y + sin(self._meta_data['ea'])*self._meta_data['r']
-                z = ckp.z
-                pc1 = pm.dot(np.array([x, y, z]))
+                x = cos(self._meta_data['ea'])*self._meta_data['r']
+                y = sin(self._meta_data['ea'])*self._meta_data['r']
+                z = 0
+                pc1 = ckp.xyz + pm.dot(np.array([x, y, z]))
                 end_kp = self._geometry.create_key_point(pc1[0], pc1[1], pc1[2])
                 end_kp.add_edge(self)
                 end_kp.add_change_handler(self.on_key_point_changed)
@@ -157,19 +157,19 @@ class Edge(IdObject, NamedObservableObject):
     def update_linked_kps(self, ckp):
         if self._type == Edge.ArcEdge:
             pm = self._plane.get_projection_matrix()
-            x = ckp.x + cos(self._meta_data['ea']) * self._meta_data['r']
-            y = ckp.y + sin(self._meta_data['ea']) * self._meta_data['r']
-            z = ckp.z
+            x = cos(self._meta_data['ea']) * self._meta_data['r']
+            y = sin(self._meta_data['ea']) * self._meta_data['r']
+            z = 0
             end_kp = self._geometry.get_key_point(self._meta_data['end_kp'])
-            pc1 = pm.dot(np.array([x, y, z]))
+            pc1 = ckp.xyz + pm.dot(np.array([x, y, z]))
             end_kp.x = pc1[0]
             end_kp.y = pc1[1]
             end_kp.z = pc1[2]
             start_kp = self._geometry.get_key_point(self._meta_data['start_kp'])
-            x = ckp.x + cos(self._meta_data['sa']) * self._meta_data['r']
-            y = ckp.y + sin(self._meta_data['sa']) * self._meta_data['r']
-            z = ckp.z
-            pc1 = pm.dot(np.array([x, y, z]))
+            x = cos(self._meta_data['sa']) * self._meta_data['r']
+            y = sin(self._meta_data['sa']) * self._meta_data['r']
+            z = 0
+            pc1 = ckp.xyz + pm.dot(np.array([x, y, z]))
             start_kp.x = pc1[0]
             start_kp.y = pc1[1]
             start_kp.z = pc1[2]

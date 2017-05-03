@@ -11,6 +11,7 @@ class Plane(NamedObservableObject, IdObject):
         self._position = position
         self._x_axis = x_axis
         self._y_axis = y_axis
+        self._pm = None
 
     @property
     def normal(self):
@@ -19,9 +20,13 @@ class Plane(NamedObservableObject, IdObject):
         return Vertex(n[0], n[1], n[2])
 
     def get_projection_matrix(self):
-        n = self.normal
-        pm = np.array([self._x_axis.xyz, self._y_axis.xyz, n.xyz])
-        return pm
+        if self._pm is None:
+            v1 = self._x_axis.xyz / np.linalg.norm(self._x_axis.xyz)
+            v2 = self._y_axis.xyz / np.linalg.norm(self._y_axis.xyz)
+            v3 = self.normal.xyz
+            pm = np.array([v1, v2, v3])
+            self._pm = pm.transpose()
+        return self._pm
 
     def get_global_vertex(self, vertex: Vertex):
         pm = self.get_projection_matrix()
@@ -32,6 +37,7 @@ class Plane(NamedObservableObject, IdObject):
         pm = self.get_projection_matrix()
         c = self._position.xyz + pm.dot(np.array([x, y, z]))
         return c
+
 
     def serialize_json(self):
         return {

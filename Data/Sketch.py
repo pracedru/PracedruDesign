@@ -56,6 +56,12 @@ class Sketch(Geometry):
         else:
             return None
 
+    def get_edge_by_name(self, name):
+        for edge in self._edges.items():
+            if edge[1].name == name:
+                return edge[1]
+        return None
+
     def get_key_point(self, uid):
         try:
             return self._key_points[uid]
@@ -233,7 +239,8 @@ class Sketch(Geometry):
     def on_kp_changed(self, event):
         self.changed(ChangeEvent(self, ChangeEvent.ObjectChanged, event.sender))
         if event.type == ChangeEvent.Deleted:
-            self._key_points.pop(event.sender.uid)
+            if event.sender.uid in self._key_points:
+                self._key_points.pop(event.sender.uid)
 
     def on_text_changed(self, event):
         self.changed(ChangeEvent(self, ChangeEvent.ObjectChanged, event.sender))
@@ -252,7 +259,7 @@ class Sketch(Geometry):
             self._areas.pop(event.object.uid)
             self.changed(ChangeEvent(self, ChangeEvent.ObjectRemoved, event.sender))
             event.object.remove_change_handler(self.on_area_changed)
-        self.changed(event)
+        self.changed(ChangeEvent(self, ChangeEvent.ObjectRemoved, event.sender))
 
     def serialize_json(self):
         return {

@@ -1,4 +1,4 @@
-from Data.Part import SketchFeature, Part
+from Data.Part import Part
 from Data.Sketch import Sketch
 
 
@@ -6,8 +6,9 @@ def insert_sketch_in_part(document, part, sketch, plane_feature):
     return part.create_sketch_feature(sketch, plane_feature)
 
 
-def add_revolve_in_part(document, part, sketch_feature, area):
-    return part.create_revolve_feature()
+def add_revolve_in_part(document, part, sketch_feature, area, length, revolve_axis):
+    document.get_axes()[revolve_axis.uid] = revolve_axis
+    return part.create_revolve_feature("Revolve", sketch_feature, area, length, revolve_axis)
 
 
 def add_extrude_in_part(document, part: Part, sketch_feature, area, length):

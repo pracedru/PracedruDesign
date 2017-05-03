@@ -47,6 +47,10 @@ class Vertex(object):
         return {'xyz': self.xyz.tolist()}
 
     @staticmethod
+    def from_xyz(xyz):
+        return Vertex(xyz[0], xyz[1], xyz[2])
+
+    @staticmethod
     def deserialize(data):
         vertex = Vertex()
         if data is not None:
