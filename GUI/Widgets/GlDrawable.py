@@ -8,20 +8,16 @@ from Data.Vertex import Vertex
 def double_sided_triangle(gl, v1, v2, v3):
     cp = np.cross(v2 - v1, v3 - v1)
     n = cp / np.linalg.norm(cp)
-    gl.glVertex3d(v1[0], v1[1], v1[2])
-    gl.glNormal3d(n[0], n[1], n[2])
-    gl.glVertex3d(v2[0], v2[1], v2[2])
-    gl.glNormal3d(n[0], n[1], n[2])
-    gl.glVertex3d(v3[0], v3[1], v3[2])
-    gl.glNormal3d(n[0], n[1], n[2])
+    gl.glNormal3f(n[0], n[1], n[2])
+    gl.glVertex3f(v1[0], v1[1], v1[2])
+    gl.glVertex3f(v2[0], v2[1], v2[2])
+    gl.glVertex3f(v3[0], v3[1], v3[2])
 
     n = -n
-    gl.glVertex3d(v3[0], v3[1], v3[2])
-    gl.glNormal3d(n[0], n[1], n[2])
-    gl.glVertex3d(v2[0], v2[1], v2[2])
-    gl.glNormal3d(n[0], n[1], n[2])
-    gl.glVertex3d(v1[0], v1[1], v1[2])
-    gl.glNormal3d(n[0], n[1], n[2])
+    gl.glNormal3f(n[0], n[1], n[2])
+    gl.glVertex3f(v3[0], v3[1], v3[2])
+    gl.glVertex3f(v2[0], v2[1], v2[2])
+    gl.glVertex3f(v1[0], v1[1], v1[2])
 
 
 def double_sided_quad(gl, v1, v2, v3, v4):

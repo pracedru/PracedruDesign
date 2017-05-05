@@ -504,5 +504,7 @@ class MainWindow(QMainWindow):
         settings.setValue("docks", self.saveState(1))
 
     def on_status_changed(self, text, progress):
+        print(text + " " + str(progress))
         self.statusBar().showMessage(text)
         self.progress_bar.setValue(progress)
+        QApplication.processEvents()

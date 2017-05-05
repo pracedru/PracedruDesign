@@ -88,24 +88,27 @@ class KeyPoint(Point3d, ObservableObject):
 
     @x.setter
     def x(self, x):
-        new_value = x
-        old_value = self.xyz[0]
-        self.xyz[0] = x
-        self.changed(ChangeEvent(self, ChangeEvent.ValueChanged, {'new value': new_value, 'old value': old_value, 'name': 'x'}))
+        if x != self.xyz[0]:
+            new_value = x
+            old_value = self.xyz[0]
+            self.xyz[0] = x
+            self.changed(ChangeEvent(self, ChangeEvent.ValueChanged, {'new value': new_value, 'old value': old_value, 'name': 'x'}))
 
     @y.setter
     def y(self, y):
-        new_value = y
-        old_value = self.xyz[1]
-        self.xyz[1] = y
-        self.changed(ChangeEvent(self, ChangeEvent.ValueChanged, {'new value': new_value, 'old value': old_value, 'name': 'y'}))
+        if y != self.xyz[1]:
+            new_value = y
+            old_value = self.xyz[1]
+            self.xyz[1] = y
+            self.changed(ChangeEvent(self, ChangeEvent.ValueChanged, {'new value': new_value, 'old value': old_value, 'name': 'y'}))
 
     @z.setter
     def z(self, z):
-        new_value = z
-        old_value = self.xyz[2]
-        self.xyz[2] = z
-        self.changed(ChangeEvent(self, ChangeEvent.ValueChanged, {'new value': new_value, 'old value': old_value, 'name': 'z'}))
+        if z != self.xyz[2]:
+            new_value = z
+            old_value = self.xyz[2]
+            self.xyz[2] = z
+            self.changed(ChangeEvent(self, ChangeEvent.ValueChanged, {'new value': new_value, 'old value': old_value, 'name': 'z'}))
 
     def set_x_parameter(self, x_param_uid):
         if self._x_param is not None:

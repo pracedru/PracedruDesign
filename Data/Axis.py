@@ -14,7 +14,7 @@ class Axis(NamedObservableObject, IdObject):
         self._doc = document
         self._sketch = None
         self._edge = None
-
+        self._pm = None
         self._origo = Vertex()
         self._direction = Vertex(1, 1, 1)
 
@@ -35,6 +35,7 @@ class Axis(NamedObservableObject, IdObject):
         self._direction.xyz = kps[1].xyz - kps[0].xyz
         self.changed(ChangeEvent(self, ChangeEvent.ObjectChanged, event.sender))
         self.changed(ValueChangeEvent(self, 'origo', old_value, self._origo))
+        self._pm = None
         if event.type == ChangeEvent.Deleted:
             event.sender.remove_change_handler(self.on_edge_changed)
             self._sketch = None
@@ -52,19 +53,23 @@ class Axis(NamedObservableObject, IdObject):
         self._edge.add_change_handler(self.on_edge_changed)
 
     def get_projection_matrix(self):
-        if self._direction.z == 0:
-            angle = atan2(self._direction.y, self._direction.x) + pi / 2
-        elif self._direction.x == 0:
-            angle = atan2(self._direction.y, self._direction.z) + pi / 2
+        if self._pm is None:
+            if self._direction.z == 0:
+                angle = atan2(self._direction.y, self._direction.x) + pi / 2
+            elif self._direction.x == 0:
+                angle = atan2(self._direction.y, self._direction.z) + pi / 2
+            else:
+                angle = atan2(self._direction.x, self._direction.z) + pi / 2
+            d2 = np.array([cos(angle), sin(angle), self._direction.z])
+            cp = np.cross(self._direction.xyz, d2)
+            d2 = cp / np.linalg.norm(cp)
+            cp = np.cross(self._direction.xyz, d2)
+            d3 = cp / np.linalg.norm(cp)
+            d1 = self._direction.xyz / np.linalg.norm(self._direction.xyz)
+            pm = np.array([d1, d2, d3])
+            self._pm = pm
         else:
-            angle = atan2(self._direction.x, self._direction.z) + pi / 2
-        d2 = np.array([cos(angle), sin(angle), self._direction.z])
-        cp = np.cross(self._direction.xyz, d2)
-        d2 = cp / np.linalg.norm(cp)
-        cp = np.cross(self._direction.xyz, d2)
-        d3 = cp / np.linalg.norm(cp)
-        d1 = self._direction.xyz / np.linalg.norm(self._direction.xyz)
-        pm = np.array([d1, d2, d3])
+            pm = self._pm
         return pm
 
     def distance(self, point):

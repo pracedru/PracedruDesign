@@ -49,6 +49,8 @@ class PartViewWidget(QOpenGLWidget):
         self.show_surfaces = True
 
     def set_part(self, part: Part):
+        if self._part == part:
+            return
         if self._part is not None:
             part.remove_change_handler(self.part_changed)
         self._part = part
@@ -59,11 +61,21 @@ class PartViewWidget(QOpenGLWidget):
             self._drawables.append(drawable)
         part_drawable = GlPartDrawable(len(self._drawables)+self._gen_lists_start, part)
         self._drawables.append(part_drawable)
-        for drawable in self._drawables:
-            drawable.redraw(self._gl, self.show_surfaces)
+        self.redraw_drawables()
         part.add_change_handler(self.part_changed)
         self.scale_to_content()
         self.update()
+
+    def redraw_drawables(self, show_messages=True):
+        if self._part.update_needed:
+            self._part.update_geometry()
+        count = len(self._drawables)
+        counter = 1
+        for drawable in self._drawables:
+            drawable.redraw(self._gl, self.show_surfaces)
+            if show_messages:
+                self._document.set_status("Drawing surfaces %d" % counter, 100*counter/count)
+            counter += 1
 
     def scale_to_content(self):
         limits = self._part.get_limits()
@@ -73,8 +85,7 @@ class PartViewWidget(QOpenGLWidget):
 
     def part_changed(self, event):
         if event.type == ChangeEvent.ObjectAdded:
-            for drawable in self._drawables:
-                drawable.redraw(self._gl, self.show_surfaces)
+            self.redraw_drawables()
             self.update()
             self.scale_to_content()
 
@@ -99,8 +110,7 @@ class PartViewWidget(QOpenGLWidget):
                 if plane.name == plane_name:
                     break
             insert_sketch_in_part(self._document, self._part, sketch, plane)
-            for drawable in self._drawables:
-                drawable.redraw(self._gl, self.show_surfaces)
+            self.redraw_drawables()
             self.scale_to_content()
 
     def on_insert_extrude(self):
@@ -165,8 +175,8 @@ class PartViewWidget(QOpenGLWidget):
         self._gl = c.versionFunctions(p)
         self._gl.initializeOpenGLFunctions()
         self.set_clear_color(self.background_color)
-        self._gl.glShadeModel(self._gl.GL_FLAT)
-        # self._gl.glShadeModel(self._gl.GL_SMOOTH)
+        # self._gl.glShadeModel(self._gl.GL_FLAT)
+        self._gl.glShadeModel(self._gl.GL_SMOOTH)
         self._gl.glEnable(self._gl.GL_DEPTH_TEST)
         self._gl.glEnable(self._gl.GL_CULL_FACE)
         self._gl.glDepthFunc(self._gl.GL_LEQUAL)
@@ -197,9 +207,7 @@ class PartViewWidget(QOpenGLWidget):
     def paintGL(self):
         if self._part is not None:
             if self._part.update_needed:
-                self._part.update_geometry()
-                for drawable in self._drawables:
-                    drawable.redraw(self._gl, self.show_surfaces)
+                self.redraw_drawables(False)
         light_position = [-0.7, 1.0, -1.0, 0.0]
         self._gl.glClear(self._gl.GL_COLOR_BUFFER_BIT | self._gl.GL_DEPTH_BUFFER_BIT)
         self._gl.glLoadIdentity()
@@ -218,11 +226,14 @@ class PartViewWidget(QOpenGLWidget):
         if side < 0:
             return
         self._gl.glViewport((width - side) // 2, (height - side) // 2, width, height)
-        self._gl.glViewport(0, 0, 200, 400)
+        aspectRatio =  width / height
 
         self._gl.glMatrixMode(self._gl.GL_PROJECTION)
         self._gl.glLoadIdentity()
-        self._gl.glOrtho(-0.5, +0.5, +0.5, -0.5, 4.0, 15.0)
+        if (width <= height):
+            self._gl.glOrtho(-0.5, +0.5, +0.5/aspectRatio, -0.5/aspectRatio, 4.0, 15.0)
+        else:
+            self._gl.glOrtho(-0.5*aspectRatio, +0.5*aspectRatio, +0.5, -0.5, 4.0, 15.0)
         self._gl.glMatrixMode(self._gl.GL_MODELVIEW)
 
     def mousePressEvent(self, event):

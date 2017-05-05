@@ -19,9 +19,11 @@ class Surface(ObservableObject, IdObject):
         self._cutting_edges_loops = []
         self._surface_type = surface_type
         self._sweep_axis = None
+        self._triangles = None
 
     def set_sweep_axis(self, axis):
         self._sweep_axis = axis
+        axis.add_change_handler(self.on_edge_changed)
 
     def find_angles(self, kps, norm):
         angles = []
@@ -71,12 +73,14 @@ class Surface(ObservableObject, IdObject):
             triangles.append([p1, p2, p3])
 
     def get_triangles(self):
-        if self._surface_type == Surface.FlatSurface:
-            return self.get_flat_surface_triangles()
-        elif self._surface_type == Surface.SweepSurface:
-            return self.get_sweep_surface_triangles()
-        else:
-            return self.get_double_sweep_surface_triangles()
+        if self._triangles is None:
+            if self._surface_type == Surface.FlatSurface:
+                self._triangles = self.get_flat_surface_triangles()
+            elif self._surface_type == Surface.SweepSurface:
+                self._triangles = self.get_sweep_surface_triangles()
+            else:
+                self._triangles = self.get_double_sweep_surface_triangles()
+        return self._triangles
 
     def get_divisions_of_edge(self, edge):
         if edge.type == Edge.ArcEdge:
@@ -86,7 +90,34 @@ class Surface(ObservableObject, IdObject):
             return int(abs(span * 20))
         return 1
 
-    def get_position_on_double_edge(self, edge1, relative1, edge2, relative2):
+    def get_double_surface_center_and_radius(self, edge2, relative2):
+        plane2 = edge2.plane
+        c2 = edge2.get_key_points()[0]
+        r2 = edge2.get_meta_data('r')
+        sa2 = edge2.get_meta_data('sa')
+        ea2 = edge2.get_meta_data('ea')
+        span2 = ea2 - sa2
+        angle2 = span2 * relative2
+        x = cos(sa2 + angle2) * r2
+        y = sin(sa2 + angle2) * r2
+        z = 0
+        p1 = c2.xyz + plane2.get_global_xyz(x, y, z)
+        r1 = self._sweep_axis.distance_xyz(p1)
+        c1 = self._sweep_axis.project_point_xyz(p1)
+        return c1, r1
+
+    def get_position_on_double_edge(self, edge1, relative1, c1, r1):
+        plane1 = edge1.plane
+        sa1 = edge1.get_meta_data('sa')
+        ea1 = edge1.get_meta_data('ea')
+        span1 = ea1 - sa1
+        x = cos(sa1 + span1 * relative1) * r1
+        y = sin(sa1 + span1 * relative1) * r1
+        z = 0
+        cc = c1 + plane1.get_global_xyz(x, y, z)
+        return cc
+
+    def get_position_on_double_edge_old(self, edge1, relative1, edge2, relative2):
         if edge1.type == Edge.LineEdge:
             kps = edge1.get_end_key_points()
             diff = kps[1].xyz - kps[0].xyz
@@ -135,37 +166,7 @@ class Surface(ObservableObject, IdObject):
 
     def get_double_sweep_surface_triangles(self):
         triangles = []
-        kps = []
-        edges = []
-        remaining_edges = list(self._main_edge_loop)
-        first_edge = self._main_edge_loop[0]
-        first_kp = first_edge.get_end_key_points()[0]
-        next_kp = first_edge.get_end_key_points()[1]
-        kps.append(first_kp)
-        kps.append(next_kp)
-        edges.append(first_edge)
-        remaining_edges.remove(first_edge)
-        while len(remaining_edges) > 0:
-            edge_found = None
-            for edge in remaining_edges:
-                ekps = edge.get_end_key_points()
-                if abs(np.linalg.norm(ekps[0].xyz - next_kp.xyz)) < 0.0000001:
-                    next_kp = ekps[1]
-                    edge_found = edge
-                    break
-                elif abs(np.linalg.norm(ekps[1].xyz - next_kp.xyz)) < 0.0000001:
-                    next_kp = ekps[0]
-                    edge_found = edge
-                    break
-            if edge_found is None:
-                next_kp = ekps[1]
-                edges.append(edge)
-            else:
-                edges.append(edge)
-            remaining_edges.remove(edge)
-            if next_kp is not first_kp:
-                kps.append(next_kp)
-
+        edges = self._main_edge_loop
         divisions = [1, 1]
         divisions[0] = self.get_divisions_of_edge(edges[0])
         divisions[1] = self.get_divisions_of_edge(edges[1])
@@ -175,12 +176,14 @@ class Surface(ObservableObject, IdObject):
         for j in range(0, divisions[1] + 1):
             rj = j / divisions[1]
             rj1 = (j+1) / divisions[1]
-            v11 = self.get_position_on_double_edge(edges[0], 0, edges[1], rj)
-            v21 = self.get_position_on_double_edge(edges[0], 0, edges[1], rj1)
+            c11, r11 = self.get_double_surface_center_and_radius(edges[1], rj)
+            c12, r12 = self.get_double_surface_center_and_radius(edges[1], rj1)
+            v11 = self.get_position_on_double_edge(edges[0], 0, c11, r11)
+            v21 = self.get_position_on_double_edge(edges[0], 0, c12, r12)
             for i in range(0, divisions[0] + 1):
                 ri = i / divisions[0]
-                v12 = self.get_position_on_double_edge(edges[0], ri, edges[1], rj)
-                v22 = self.get_position_on_double_edge(edges[0], ri, edges[1], rj1)
+                v12 = self.get_position_on_double_edge(edges[0], ri, c11, r11)
+                v22 = self.get_position_on_double_edge(edges[0], ri, c12, r12)
                 triangles.append([v11, v21, v12])
                 triangles.append([v21, v12, v22])
                 v11 = v12
@@ -190,42 +193,9 @@ class Surface(ObservableObject, IdObject):
 
     def get_sweep_surface_triangles(self):
         triangles = []
-        kps = []
-        edges = []
-        remaining_edges = list(self._main_edge_loop)
-        first_edge = self._main_edge_loop[0]
-        first_kp = first_edge.get_end_key_points()[0]
-        next_kp = first_edge.get_end_key_points()[1]
-        kps.append(first_kp)
-        kps.append(next_kp)
-        edges.append(first_edge)
-        remaining_edges.remove(first_edge)
-        while len(remaining_edges) > 0:
-            edge_found = None
-            for edge in remaining_edges:
-                ekps = edge.get_end_key_points()
-                if abs(np.linalg.norm(ekps[0].xyz - next_kp.xyz)) < 0.0000001:
-                    next_kp = ekps[1]
-                    edge_found = edge
-                    break
-                elif abs(np.linalg.norm(ekps[1].xyz - next_kp.xyz)) < 0.0000001:
-                    next_kp = ekps[0]
-                    edge_found = edge
-                    break
-            if edge_found is None:
-                next_kp = ekps[1]
-                edges.append(edge)
-            else:
-                edges.append(edge)
-            remaining_edges.remove(edge)
-            if next_kp is not first_kp:
-                kps.append(next_kp)
-
+        edges = self._main_edge_loop
         divisions = [1, 1]
         divisions[0] = self.get_divisions_of_edge(edges[0])
-        divisions[1] = self.get_divisions_of_edge(edges[1])
-        divisions[0] = max(self.get_divisions_of_edge(edges[2]), divisions[0])
-        divisions[1] = max(self.get_divisions_of_edge(edges[3]), divisions[1])
 
         v11 = self.get_position_on_edge(edges[0], 0)
         v21 = self.get_position_on_edge(edges[2], 0)
@@ -373,9 +343,13 @@ class Surface(ObservableObject, IdObject):
                     print(str(kps[1].xyz))
             else:
                 rem_ed.remove(edge)
-
+            for edge in self._main_edge_loop:
+                edge.add_change_handler(self.on_edge_changed)
 
         self.changed(ChangeEvent(self, ChangeEvent.ObjectChanged, self))
+
+    def on_edge_changed(self, event):
+        self._triangles = None
 
     def add_cutting_edges_loop(self, cutting_edges_loop):
         self._cutting_edges_loops.append(cutting_edges_loop)

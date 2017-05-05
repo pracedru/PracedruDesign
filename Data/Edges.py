@@ -119,7 +119,6 @@ class Edge(IdObject, NamedObservableObject):
                 end_kp.add_edge(self)
                 end_kp.add_change_handler(self.on_key_point_changed)
                 self._meta_data['end_kp'] = end_kp.uid
-            self.update_linked_kps(ckp)
             return [start_kp, end_kp]
         elif self.type == Edge.CircleEdge:
             return self.get_key_points()
