@@ -226,14 +226,13 @@ class PartViewWidget(QOpenGLWidget):
         if side < 0:
             return
         self._gl.glViewport((width - side) // 2, (height - side) // 2, width, height)
-        aspectRatio =  width / height
-
+        aspect_ratio = width / height
         self._gl.glMatrixMode(self._gl.GL_PROJECTION)
         self._gl.glLoadIdentity()
-        if (width <= height):
-            self._gl.glOrtho(-0.5, +0.5, +0.5/aspectRatio, -0.5/aspectRatio, 4.0, 15.0)
+        if width <= height:
+            self._gl.glOrtho(-0.5, +0.5, +0.5/aspect_ratio, -0.5/aspect_ratio, 4.0, 15.0)
         else:
-            self._gl.glOrtho(-0.5*aspectRatio, +0.5*aspectRatio, +0.5, -0.5, 4.0, 15.0)
+            self._gl.glOrtho(-0.5*aspect_ratio, +0.5*aspect_ratio, +0.5, -0.5, 4.0, 15.0)
         self._gl.glMatrixMode(self._gl.GL_MODELVIEW)
 
     def mousePressEvent(self, event):

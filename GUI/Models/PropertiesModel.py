@@ -136,7 +136,6 @@ class PropertiesModel(QAbstractTableModel):
                         return row_spec['choices'][data]
                 else:
                     return data
-
             data = str(data)
         elif int_role == Qt.EditRole:
             data = getattr(self._item, self._rows[row][1])

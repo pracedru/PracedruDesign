@@ -42,7 +42,7 @@ class Feature(NamedObservableObject, IdObject):
     @property
     def distance(self):
         if self._feature_type == Feature.ExtrudeFeature:
-            return [self._vertexes['ex_ls'].x, self._vertexes['ex_ls'].y]
+            return "[%.6f,%.6f]" % (round(self._vertexes['ex_ls'].x, 6), round(self._vertexes['ex_ls'].y, 6))
         if self._feature_type == Feature.RevolveFeature:
             return [round(self._vertexes['ex_ls'].x*180/pi, 2), round(self._vertexes['ex_ls'].y*180/pi, 2)]
         return None
