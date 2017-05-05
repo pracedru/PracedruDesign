@@ -46,6 +46,7 @@ class PartViewWidget(QOpenGLWidget):
         self.plane_color_edge = QColor(0, 150, 200, 180)
         self.background_color = QColor(180, 180, 195, 25)
         self._gl = None
+        self.show_surfaces = True
 
     def set_part(self, part: Part):
         if self._part is not None:
@@ -59,7 +60,7 @@ class PartViewWidget(QOpenGLWidget):
         part_drawable = GlPartDrawable(len(self._drawables)+self._gen_lists_start, part)
         self._drawables.append(part_drawable)
         for drawable in self._drawables:
-            drawable.redraw(self._gl)
+            drawable.redraw(self._gl, self.show_surfaces)
         part.add_change_handler(self.part_changed)
         self.scale_to_content()
         self.update()
@@ -73,7 +74,7 @@ class PartViewWidget(QOpenGLWidget):
     def part_changed(self, event):
         if event.type == ChangeEvent.ObjectAdded:
             for drawable in self._drawables:
-                drawable.redraw(self._gl)
+                drawable.redraw(self._gl, self.show_surfaces)
             self.update()
             self.scale_to_content()
 
@@ -99,7 +100,7 @@ class PartViewWidget(QOpenGLWidget):
                     break
             insert_sketch_in_part(self._document, self._part, sketch, plane)
             for drawable in self._drawables:
-                drawable.redraw(self._gl)
+                drawable.redraw(self._gl, self.show_surfaces)
             self.scale_to_content()
 
     def on_insert_extrude(self):
@@ -198,7 +199,7 @@ class PartViewWidget(QOpenGLWidget):
             if self._part.update_needed:
                 self._part.update_geometry()
                 for drawable in self._drawables:
-                    drawable.redraw(self._gl)
+                    drawable.redraw(self._gl, self.show_surfaces)
         light_position = [-0.7, 1.0, -1.0, 0.0]
         self._gl.glClear(self._gl.GL_COLOR_BUFFER_BIT | self._gl.GL_DEPTH_BUFFER_BIT)
         self._gl.glLoadIdentity()

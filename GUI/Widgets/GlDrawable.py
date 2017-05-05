@@ -69,7 +69,7 @@ class GlDrawable(object):
     def feature_changed(self, event):
         self.redraw()
 
-    def redraw(self, gl):
+    def redraw(self, gl, show_surfaces):
         pass
 
     @property
@@ -84,7 +84,7 @@ class GlPlaneDrawable(GlDrawable):
         self._plane_color = QColor(0, 150, 200, 15)
         self._plane_color_edge = QColor(0, 150, 200, 180)
 
-    def redraw(self, gl):
+    def redraw(self, gl, show_surfaces):
         gl.glNewList(self._gen_list_index, gl.GL_COMPILE)
         gl.glDisable(gl.GL_LIGHT0)
         gl.glDisable(gl.GL_LIGHTING)
@@ -153,18 +153,20 @@ class GlPartDrawable(GlDrawable):
         self._part_color_edge = QColor(140, 140, 140, 255)
         # self._part_color_edge = QColor(10, 10, 10, 255)
 
-    def redraw(self, gl):
+    def redraw(self, gl, show_surfaces):
         gl.glNewList(self._gen_list_index, gl.GL_COMPILE)
         gl.glEnable(gl.GL_COLOR_MATERIAL)
         set_color(gl, self._part_color)
         gl.glMaterialfv(gl.GL_FRONT, gl.GL_DIFFUSE, [0.5, 0.5, 0.5, 0.5])
         lines = self._part.get_lines()
 
-        set_color(gl, self._part_color)
-        gl.glEnable(gl.GL_LIGHT0)
-        gl.glEnable(gl.GL_LIGHTING)
-        surfaces = self._part.get_surfaces()
-        draw_surfaces(gl, surfaces)
+        if show_surfaces:
+            set_color(gl, self._part_color)
+            gl.glEnable(gl.GL_LIGHT0)
+            gl.glEnable(gl.GL_LIGHTING)
+            surfaces = self._part.get_surfaces()
+            draw_surfaces(gl, surfaces)
+
         # draw_cube(gl, 1, Vertex(3, 0, 0))
 
         set_color(gl, self._part_color_edge)

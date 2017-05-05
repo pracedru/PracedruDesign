@@ -75,9 +75,22 @@ class Axis(NamedObservableObject, IdObject):
         distance = np.linalg.norm(newp)
         return distance
 
+    def distance_xyz(self, point):
+        p1 = self._origo.xyz
+        pm = self.get_projection_matrix()
+        newp = pm.dot(point-p1)
+        newp[0] = 0.0
+        distance = np.linalg.norm(newp)
+        return distance
+
     def project_point(self, point):
         pm = self.get_projection_matrix()
         newp = pm.dot(point.xyz - self._origo.xyz)
+        return newp[0]*pm[0]+self._origo.xyz
+
+    def project_point_xyz(self, point):
+        pm = self.get_projection_matrix()
+        newp = pm.dot(point - self._origo.xyz)
         return newp[0]*pm[0]+self._origo.xyz
 
     @property

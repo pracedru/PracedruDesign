@@ -57,7 +57,7 @@ class EdgesModel(QAbstractTableModel):
         row = model_index.row()
         edge_item = self._sketch.get_edge(self._rows[row])
         if col == 0:
-            edge_item.name = value
+            # edge_item.name = value
             return True
 
         return False

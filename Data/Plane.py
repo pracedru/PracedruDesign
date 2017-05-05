@@ -1,5 +1,5 @@
 import numpy as np
-
+from math import *
 from Data.Objects import NamedObservableObject, IdObject
 from Data.Vertex import Vertex
 
@@ -33,11 +33,23 @@ class Plane(NamedObservableObject, IdObject):
         c = self._position.xyz + pm.dot(vertex.xyz)
         return Vertex(c[0], c[1], c[2])
 
+    def get_global_xyz_array(self, xyz):
+        pm = self.get_projection_matrix()
+        c = self._position.xyz + pm.dot(np.array(xyz))
+        return c
+
     def get_global_xyz(self, x, y, z):
         pm = self.get_projection_matrix()
         c = self._position.xyz + pm.dot(np.array([x, y, z]))
         return c
 
+    def get_z_rotated_plane(self, rz):
+        newx = self.get_global_xyz(cos(rz), sin(rz), 0)
+        newx = newx/np.linalg.norm(newx)
+        cp = np.cross(newx, -self.normal.xyz)
+        newy = cp / np.linalg.norm(cp)
+        newplane = Plane(Vertex.from_xyz(newx), Vertex.from_xyz(newy), self._position)
+        return newplane
 
     def serialize_json(self):
         return {

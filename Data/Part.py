@@ -2,6 +2,7 @@ from math import *
 
 import numpy as np
 
+from Data.Axis import Axis
 from Data.Edges import Edge
 from Data.Events import ChangeEvent, ValueChangeEvent
 from Data.Feature import Feature
@@ -170,15 +171,10 @@ class Part(Geometry):
         local_axis_angle = atan2(local_axis_dir.y, local_axis_dir.x)
         local_axis_perp_angle = local_axis_angle + pi/2
         local_axis_perp_dir = Vertex(cos(local_axis_perp_angle), sin(local_axis_perp_angle))
-        local_normal = Vertex(0, 0, 1)
-        local_pm = np.array([local_axis_dir.xyz, local_axis_perp_dir.xyz, local_normal])
+        local_axis_plane = Plane(local_axis_dir, local_axis_perp_dir)
 
-        local_normal1 = Vertex(0, -sin(ex_angle1), -cos(ex_angle1))
-        local_normal2 = Vertex(0, -sin(ex_angle2), -cos(ex_angle2))
-        cp = np.cross(local_axis_dir.xyz, local_normal1.xyz)
-        local_axis_perp_dir1 = cp / np.linalg.norm(cp)
-        cp = np.cross(local_axis_dir.xyz, local_normal2.xyz)
-        local_axis_perp_dir2 = cp / np.linalg.norm(cp)
+        local_axis_perp_dir1 = local_axis_plane.get_global_xyz(0, cos(ex_angle1), sin(ex_angle1))
+        local_axis_perp_dir2 = local_axis_plane.get_global_xyz(0, cos(ex_angle2), sin(ex_angle2))
 
         global_axis_origo = p.xyz + pm.dot(local_axis_origo.xyz)
         global_axis_dir = pm.dot(local_axis_dir.xyz)
@@ -187,9 +183,15 @@ class Part(Geometry):
         global_axis_perp_dir2 = pm.dot(local_axis_perp_dir2)
         cp = np.cross(global_axis_dir, global_axis_perp_dir1)
         global_norm1 = cp / np.linalg.norm(cp)
+        global_axis1 = Axis(self._doc)
+        global_axis1.origo.xyz = global_axis_origo
+        global_axis1.direction.xyz = global_axis_dir
 
-        plane1 = Plane(Vertex.from_xyz(global_axis_dir), Vertex.from_xyz(global_axis_perp_dir1), Vertex.from_xyz(global_axis_origo))
-        plane2 = Plane(Vertex.from_xyz(global_axis_dir), Vertex.from_xyz(global_axis_perp_dir2), Vertex.from_xyz(global_axis_origo))
+        plane1 = Plane(Vertex.from_xyz(global_axis_dir), Vertex.from_xyz(global_axis_perp_dir1))# , Vertex.from_xyz(global_axis_origo))
+        plane2 = Plane(Vertex.from_xyz(global_axis_dir), Vertex.from_xyz(global_axis_perp_dir2))# , Vertex.from_xyz(global_axis_origo))
+
+        plane1 = plane1.get_z_rotated_plane(-local_axis_angle)
+        plane2 = plane2.get_z_rotated_plane(-local_axis_angle)
 
         cpm = Plane(Vertex.from_xyz(global_axis_perp_dir1), Vertex.from_xyz(global_norm1))
         front_edges = []
@@ -203,14 +205,14 @@ class Part(Geometry):
                 c = axis.project_point(kp)
                 c = pm.dot(c)
                 kp = self.create_key_point(c[0], c[1], c[2])
-                edge1 = self.create_arc_edge(kp, r, 0, -span, cpm)
+                edge1 = self.create_arc_edge(kp, r, 0, span, cpm)
 
                 kp = kps[1]
                 r = axis.distance(kp)
                 c = axis.project_point(kp)
                 c = pm.dot(c)
                 kp = self.create_key_point(c[0], c[1], c[2])
-                edge2 = self.create_arc_edge(kp, r, 0, -span, cpm)
+                edge2 = self.create_arc_edge(kp, r, 0, span, cpm)
 
                 kps1 = edge1.get_end_key_points()
                 kps2 = edge2.get_end_key_points()
@@ -224,22 +226,36 @@ class Part(Geometry):
                     front_edges.append(edge3)
                     back_edges.append(edge4)
             elif edge.type == Edge.ArcEdge or edge.type == Edge.FilletLineEdge:
-                c = draw_data['c']
+                c = draw_data['c'].xyz - local_axis_origo.xyz
                 r = draw_data['r']
                 sa = draw_data['sa'] * pi / (180 * 16)
                 sp = draw_data['span'] * pi / (180 * 16)
-                gc = plane1.get_global_vertex(c)
-                kp = self.create_key_point(gc.x, gc.y, gc.z)
+                gc = global_axis_origo + plane1.get_global_xyz_array(c)
+                kp = self.create_key_point(gc[0], gc[1], gc[2])
                 edge1 = self.create_arc_edge(kp, r, sa, sp, plane1)
 
-                gc = plane2.get_global_vertex(c)
-                kp = self.create_key_point(gc.x, gc.y, gc.z)
+                gc = global_axis_origo + plane2.get_global_xyz_array(c)
+                kp = self.create_key_point(gc[0], gc[1], gc[2])
                 edge2 = self.create_arc_edge(kp, r, sa, sp, plane2)
                 if abs(span) < 2 * pi:
                     front_edges.append(edge1)
                     back_edges.append(edge2)
 
-        if span < 2 * pi:
+                surface = Surface(Surface.DoubleSweepSurface)
+                kps1 = edge1.get_end_key_points()
+                r1 = global_axis1.distance(kps1[0])
+                c1 = global_axis1.project_point(kps1[0])
+                kp1 = self.create_key_point(c1[0], c1[1], c1[2])
+                edge3 = self.create_arc_edge(kp1, r1, 0, span, cpm)
+                r2 = global_axis1.distance(kps1[1])
+                c2 = global_axis1.project_point(kps1[1])
+                kp2 = self.create_key_point(c2[0], c2[1], c2[2])
+                edge4 = self.create_arc_edge(kp2, r2, 0, span, cpm)
+                surface.set_main_edges([edge3, edge4, edge1, edge2])
+                surface.set_sweep_axis(global_axis1)
+                surfaces.append(surface)
+
+        if abs(span) < 2 * pi:
             surface = Surface(Surface.FlatSurface)
             surface.set_main_edges(front_edges)
             surfaces.append(surface)
