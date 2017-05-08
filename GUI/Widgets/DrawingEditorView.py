@@ -61,6 +61,7 @@ class DrawingEditorViewWidget(QWidget):
 
     def on_escape(self):
         self._states.add_sketch = False
+        self._states.add_part = False
         self.setCursor(Qt.ArrowCursor)
         self._main_window.update_ribbon_state()
 
@@ -77,6 +78,14 @@ class DrawingEditorViewWidget(QWidget):
 
     def on_create_add_sketch_to_drawing(self):
         pass
+
+    def on_insert_part(self):
+        self.on_escape()
+        if self._drawing is None:
+            return
+        self.setCursor(Qt.CrossCursor)
+        self._states.add_part = True
+        self._main_window.update_ribbon_state()
 
     def eventFilter(self, obj, event):
         if event.type() == QEvent.KeyPress:
@@ -122,12 +131,22 @@ class DrawingEditorViewWidget(QWidget):
         if self._states.add_sketch:
             offset = Vertex(x, y)
             scale = 1
-            sketches = []
+            parts = []
             for sketch in self._doc.get_geometries().get_sketches():
-                sketches.append(sketch.name)
-            value = QInputDialog.getItem(self, "Select sketch", "sketch:", sketches, 0, True)
+                parts.append(sketch.name)
+            value = QInputDialog.getItem(self, "Select sketch", "sketch:", parts, 0, True)
             sketch = self._doc.get_geometries().get_sketch_by_name(value[0])
             add_sketch_to_drawing(self._doc, self._drawing, sketch, scale, offset)
+            self.on_escape()
+        if self._states.add_part:
+            offset = Vertex(x, y)
+            scale = 1
+            parts = []
+            for part in self._doc.get_geometries().get_parts():
+                parts.append(part.name)
+            value = QInputDialog.getItem(self, "Select part", "parts:", parts, 0, True)
+            part = self._doc.get_geometries().get_part_by_name(value[0])
+            add_part_to_drawing(self._doc, self._drawing, part, scale, offset)
             self.on_escape()
 
 

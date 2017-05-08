@@ -98,7 +98,7 @@ class Edge(IdObject, NamedObservableObject):
             if 'start_kp' in self._meta_data:
                 start_kp = self._geometry.get_key_point(self._meta_data['start_kp'])
             else:
-                pm = self._plane.get_projection_matrix()
+                pm = self._plane.get_global_projection_matrix()
                 x = cos(self._meta_data['sa'])*self._meta_data['r']
                 y = sin(self._meta_data['sa'])*self._meta_data['r']
                 z = 0
@@ -110,7 +110,7 @@ class Edge(IdObject, NamedObservableObject):
             if 'end_kp' in self._meta_data:
                 end_kp = self._geometry.get_key_point(self._meta_data['end_kp'])
             else:
-                pm = self._plane.get_projection_matrix()
+                pm = self._plane.get_global_projection_matrix()
                 x = cos(self._meta_data['ea'])*self._meta_data['r']
                 y = sin(self._meta_data['ea'])*self._meta_data['r']
                 z = 0
@@ -155,7 +155,7 @@ class Edge(IdObject, NamedObservableObject):
 
     def update_linked_kps(self, ckp):
         if self._type == Edge.ArcEdge:
-            pm = self._plane.get_projection_matrix()
+            pm = self._plane.get_global_projection_matrix()
             x = cos(self._meta_data['ea']) * self._meta_data['r']
             y = sin(self._meta_data['ea']) * self._meta_data['r']
             z = 0

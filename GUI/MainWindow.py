@@ -59,7 +59,6 @@ class MainWindow(QMainWindow):
         self.add_sketch_to_document_action = self.add_action("Add\nSketch", "addsketch", "Add Sketch to the document", True, self.on_add_sketch_to_document)
         self.add_drawing_action = self.add_action("Add\nDrawing", "adddrawing", "Add drawing to the document", True, self.on_add_drawing)
         self.add_part_action = self.add_action("Add\nPart", "addpart", "Add part to the document", True, self.on_add_part)
-
         self._show_hidden_params_action = self.add_action("Show hidden\nparameters", "hideparams", "Show hidden parameters", True, self.on_show_hidden_parameters, checkable=True)
         self._set_sim_x_action = self.add_action("Set simil.\nx coords", "setsimx", "Set similar x coordinate values", True, self.on_set_sim_x, checkable=True)
         self._set_sim_y_action = self.add_action("Set simil.\ny coords", "setsimy", "Set similar y coordinate values", True, self.on_set_sim_y, checkable=True)
@@ -71,31 +70,23 @@ class MainWindow(QMainWindow):
         self._add_text_action = self.add_action("Insert\ntext", "addtext", "Insert text in sketch", True, self.on_insert_text, checkable=True)
         self._add_attribute_action = self.add_action("Insert\nattribute", "addattribute", "Insert attribute in sketch", True, self.on_insert_attribute, checkable=True)
         self._add_circle_action = self.add_action("Insert\ncircle", "addcircle", "Insert circle in sketch", True, self.on_add_circle, checkable=True)
-
         self._create_sketch_action = self.add_action("Create\nSketch", "addsketch", "Create Sketch", True, self.on_create_sketch)
-
         self._create_areas_action = self.add_action("Create\nAreas", "createareas", "Create areas from existing edges", True, self.on_create_areas)
         self._create_area_action = self.add_action("Create\nArea", "createarea", "Create area from existing edges", True, self.on_create_area, checkable=True)
         self._show_area_names_action = self.add_action("Show area\nNames", "showareanames", "Show area names", True, self.on_show_area_names, checkable=True)
-
         self._scale_selected_action = self.add_action("Scale", "scale", "Scale selected items", True, self.on_scale_selected)
         self._pattern_selected_action = self.add_action("Pattern", "pattern", "Pattern selected items", True, self.on_pattern_selected)
         self._show_key_points_action = self.add_action("Show key\npoints", "showkeypoints", "Show keypoints as circles", True, self.on_show_key_points, checkable=True)
-
         self._insert_sketch_in_action = self.add_action("Insert\nsketch", "addsketch", "Insert sketch ", True, self.on_insert_sketch)
         self._insert_sketch_in_drawing_action = self.add_action("Insert\nsketch", "addsketchview", "Insert sketch in drawing", True, self.on_insert_sketch)
         self._insert_part_action = self.add_action("Insert\npart", "addpartview", "Insert part in drawing", True, self.on_insert_part_in_drawing)
         self._add_revolve_action = self.add_action("Revolve\nArea", "revolve", "Revolve an area on this part", True, self.on_revolve_area)
         self._add_extrude_action = self.add_action("Extrude\nArea", "extrude", "Extrude an area on this part", True, self.on_extrude_area)
         self._show_surfs_action = self.add_action("Show\nSurfs", "showsurfs", "Show surfaces", True, self.on_show_surfs, checkable=True)
-
         self._add_field_action = self.add_action("Insert\nfield", "addfield", "Insert field on drawing", True, self.on_add_field)
-
         self._about_action = self.add_action("About", "about", "About this programme", True, self.on_about)
+
         # Ribbon initialization
-
-
-
         self._ribbon = QToolBar(self)
         if is_dark_theme():
             self._ribbon.setStyleSheet(get_stylesheet("ribbon_dark"))
@@ -112,26 +103,20 @@ class MainWindow(QMainWindow):
 
 
         # Views
-
         self._treeViewDock = TreeViewDock(self, self._document)
         self.addDockWidget(Qt.LeftDockWidgetArea, self._treeViewDock)
-
         self._viewWidget = ViewWidget(self, self._document)
         self.setCentralWidget(self._viewWidget)
-
         self._parameters_dock_widget = QDockWidget(self)
         self._parameters_dock_widget.setObjectName("paramsDock")
         self.parameters_widget = ParametersWidget(self, self._document)
         self._parameters_dock_widget.setWidget(self.parameters_widget)
         self._parameters_dock_widget.setWindowTitle("Parameters")
         self.addDockWidget(Qt.LeftDockWidgetArea, self._parameters_dock_widget)
-
         self._geometry_dock = GeometryDock(self, self._document)
         self.addDockWidget(Qt.LeftDockWidgetArea, self._geometry_dock)
-
         self._properties_dock = PropertiesDock(self, document)
         self.addDockWidget(Qt.RightDockWidgetArea, self._properties_dock)
-
         self.read_settings()
         self.statusBar().showMessage("Ready")
         self.progress_bar = QProgressBar()
@@ -176,7 +161,7 @@ class MainWindow(QMainWindow):
         self._viewWidget.on_insert_sketch()
 
     def on_insert_part_in_drawing(self):
-        pass
+        self._viewWidget.drawing_view.on_insert_part()
 
     def on_revolve_area(self):
         self._viewWidget.part_view.on_revolve_area()
@@ -504,7 +489,7 @@ class MainWindow(QMainWindow):
         settings.setValue("docks", self.saveState(1))
 
     def on_status_changed(self, text, progress):
-        print(text + " " + str(progress))
+        # print(text + " " + str(progress))
         self.statusBar().showMessage(text)
         self.progress_bar.setValue(progress)
         QApplication.processEvents()

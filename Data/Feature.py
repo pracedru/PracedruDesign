@@ -35,6 +35,13 @@ class Feature(NamedObservableObject, IdObject):
         self._feature_objects = []
         self._feature_objects_late_bind = []
         self._operation_type = Feature.AddOperation
+        self.add_change_handler(self.on_value_changed)
+
+    def on_value_changed(self, event):
+        if event.type == ChangeEvent.ValueChanged:
+            if event.object == 'name':
+                if self._feature_type == Feature.SketchFeature:
+                    self.get_objects()[0].name = self.name
 
     def get_feature_parent(self):
         return self._feature_parent

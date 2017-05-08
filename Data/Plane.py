@@ -19,37 +19,66 @@ class Plane(NamedObservableObject, IdObject):
         n = cp / np.linalg.norm(cp)
         return Vertex(n[0], n[1], n[2])
 
-    def get_projection_matrix(self):
+    def get_local_projection_matrix(self):
         if self._pm is None:
             v1 = self._x_axis.xyz / np.linalg.norm(self._x_axis.xyz)
             v2 = self._y_axis.xyz / np.linalg.norm(self._y_axis.xyz)
             v3 = self.normal.xyz
             pm = np.array([v1, v2, v3])
-            self._pm = pm.transpose()
-        return self._pm
+            self._pm = pm
+        else:
+            pm = self._pm
+        return pm
+
+    def get_global_projection_matrix(self):
+        return self.get_local_projection_matrix().transpose()
 
     def get_global_vertex(self, vertex: Vertex):
-        pm = self.get_projection_matrix()
+        pm = self.get_global_projection_matrix()
         c = self._position.xyz + pm.dot(vertex.xyz)
         return Vertex(c[0], c[1], c[2])
 
     def get_global_xyz_array(self, xyz):
-        pm = self.get_projection_matrix()
+        pm = self.get_global_projection_matrix()
         c = self._position.xyz + pm.dot(np.array(xyz))
         return c
 
     def get_global_xyz(self, x, y, z):
-        pm = self.get_projection_matrix()
+        pm = self.get_global_projection_matrix()
         c = self._position.xyz + pm.dot(np.array([x, y, z]))
         return c
 
     def get_z_rotated_plane(self, rz):
-        newx = self.get_global_xyz(cos(rz), sin(rz), 0)
-        newx = newx/np.linalg.norm(newx)
-        cp = np.cross(newx, -self.normal.xyz)
-        newy = cp / np.linalg.norm(cp)
-        newplane = Plane(Vertex.from_xyz(newx), Vertex.from_xyz(newy), self._position)
-        return newplane
+        new_x = self.get_global_xyz(cos(rz), sin(rz), 0)
+        new_x = new_x/np.linalg.norm(new_x)
+        cp = np.cross(new_x, -self.normal.xyz)
+        new_y = cp / np.linalg.norm(cp)
+        new_plane = Plane(Vertex.from_xyz(new_x), Vertex.from_xyz(new_y), self._position)
+        return new_plane
+
+    def get_local_vertex(self, global_vertex):
+        pm = self.get_local_projection_matrix()
+        c = pm.dot(global_vertex.xyz-self._position.xyz)
+        return Vertex(c[0], c[1], c[2])
+
+    def get_local_xyz(self, x, y, z):
+        pm = self.get_local_projection_matrix()
+        c = pm.dot(np.array([x, y, z])-self._position.xyz)
+        return c
+
+    def get_local_xyz_array(self, xyz):
+        pm = self.get_local_projection_matrix()
+        c = pm.dot(xyz-self._position.xyz)
+        return c
+
+    def distance_vertex(self, global_vertex):
+        return abs(self.get_local_vertex(global_vertex).z)
+
+    def distance_xyz(self, x, y, z):
+        return abs(self.get_local_xyz(x, y, z)[2])
+
+    def distance_xyz_array(self, xyz):
+        return abs(self.get_local_xyz(xyz)[2])
 
     def serialize_json(self):
         return {

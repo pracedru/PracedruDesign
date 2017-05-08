@@ -49,6 +49,12 @@ class Part(Geometry):
             surfaces.append(surface_tuple[1])
         return surfaces
 
+    def get_edges(self):
+        return self._edges.items()
+
+    def get_texts(self):
+        return {}
+
     def get_new_unique_feature_name(self, name):
         unique = False
         counter = 1
@@ -221,6 +227,7 @@ class Part(Geometry):
                 edge4 = self.create_line_edge(kps1[1], kps2[1])
                 surface = Surface(Surface.SweepSurface)
                 surface.set_main_edges([edge1, edge2, edge3, edge4])
+                surface.set_sweep_axis(global_axis1)
                 surfaces.append(surface)
                 if abs(span) < 2*pi:
                     front_edges.append(edge3)
@@ -456,7 +463,7 @@ class Part(Geometry):
                 start_angle = edge.get_meta_data("sa")
                 end_angle = edge.get_meta_data("ea")
                 span = end_angle - start_angle
-                pm = edge.plane.get_projection_matrix()
+                pm = edge.plane.get_global_projection_matrix()
                 divisions = abs(int(span * 20))
                 for i in range(divisions):
                     cx = cos(start_angle + span * i / divisions) * radius

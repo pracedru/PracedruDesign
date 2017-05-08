@@ -7,6 +7,15 @@ from Data.Vertex import Vertex
 from Data.Objects import *
 
 
+def fsign(value):
+    if value < 0:
+        return -1.0
+    elif value > 0:
+        return 1.0
+    else:
+        return 0.0
+
+
 class Surface(ObservableObject, IdObject):
     FlatSurface = 0
     SweepSurface = 1
@@ -20,6 +29,35 @@ class Surface(ObservableObject, IdObject):
         self._surface_type = surface_type
         self._sweep_axis = None
         self._triangles = None
+
+    def get_section_by_plane(self, plane):
+        pm = plane.get_local_projection_matrix()
+        section_data = {}
+        if self._surface_type == Surface.FlatSurface:
+            kps = []
+            for edge in self._main_edge_loop:
+                kps = edge.get_end_key_points()
+                p1 = pm.dot(kps[0].xyz)
+                p2 = pm.dot(kps[1].xyz)
+                if fsign(p1[2]) != fsign(p2[2]):
+                    kps.append(edge.get_point_on_plane())
+            if len(kps):
+                section_data['type'] = 1
+                section_data['coords'] = [Vertex.from_xyz(p1), Vertex.from_xyz(p2)]
+        elif self._surface_type == Surface.SweepSurface:
+            kps = []
+            for edge in self._main_edge_loop:
+                kps = edge.get_end_key_points()
+                p1 = pm.dot(kps[0].xyz)
+                p2 = pm.dot(kps[1].xyz)
+                if fsign(p1[2]) != fsign(p2[2]):
+                    kps.append(edge.get_point_on_plane())
+            if len(kps):
+                section_data['type'] = 1
+                section_data['coords'] = [Vertex.from_xyz(p1), Vertex.from_xyz(p2)]
+        else:
+            return None
+        return section_data
 
     def set_sweep_axis(self, axis):
         self._sweep_axis = axis

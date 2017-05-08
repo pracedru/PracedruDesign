@@ -83,5 +83,10 @@ def add_field_to_drawing(doc, drawing):
 def add_sketch_to_drawing(document, drawing, sketch, scale, offset):
     return drawing.create_sketch_view(sketch, scale, offset)
 
+
 def create_add_sketch_to_drawing(document, drawing, sketch, scale, offset):
     pass
+
+
+def add_part_to_drawing(doc, drawing, part, scale, offset):
+    return drawing.create_part_view(part, scale, offset)

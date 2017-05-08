@@ -5,7 +5,7 @@ from PyQt5.QtCore import Qt
 
 from Data.Areas import Area
 from Data.Document import Document
-from Data.Drawings import Drawing, Drawings, Field, SketchView
+from Data.Drawings import Drawing, Drawings, Field, SketchView, PartView
 from Data.Events import ChangeEvent
 from Data.Geometry import Geometry
 from Data.Parameters import Parameters, Parameter
@@ -159,6 +159,8 @@ class DocumentItemModel(QAbstractItemModel):
                 return get_icon("field")
             elif type(model_item.data) is SketchView:
                 return get_icon("sketchview")
+            elif type(model_item.data) is PartView:
+                return get_icon("partview")
             elif type(model_item.data) is Area:
                 return get_icon("area")
             elif type(model_item.data) is Part:

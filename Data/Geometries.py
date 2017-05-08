@@ -54,10 +54,24 @@ class Geometries(ObservableObject):
                 sketches.append(geometry)
         return sketches
 
+    def get_parts(self):
+        parts = []
+        for geometry_tuple in self._geometries.items():
+            geometry = geometry_tuple[1]
+            if type(geometry) is Part:
+                parts.append(geometry)
+        return parts
+
     def get_sketch_by_name(self, name):
         for sketch in self.get_sketches():
             if sketch.name == name:
                 return sketch
+        return None
+
+    def get_part_by_name(self, name):
+        for part in self.get_parts():
+            if part.name == name:
+                return part
         return None
 
     def items(self):

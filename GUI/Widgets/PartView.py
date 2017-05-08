@@ -46,7 +46,17 @@ class PartViewWidget(QOpenGLWidget):
         self.plane_color_edge = QColor(0, 150, 200, 180)
         self.background_color = QColor(180, 180, 195, 25)
         self._gl = None
-        self.show_surfaces = True
+        self._show_surfaces = True
+
+    @property
+    def show_surfaces(self):
+        return self._show_surfaces
+
+    @show_surfaces.setter
+    def show_surfaces(self, value):
+        self._show_surfaces = value
+        self.redraw_drawables()
+        self.update()
 
     def set_part(self, part: Part):
         if self._part == part:

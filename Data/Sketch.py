@@ -30,6 +30,7 @@ class Sketch(Geometry):
     def clear(self):
         self._key_points.clear()
         self._edges.clear()
+        self._areas.clear()
         self.edge_naming_index = 1
         self.changed(ChangeEvent(self, ChangeEvent.Cleared, self))
 
