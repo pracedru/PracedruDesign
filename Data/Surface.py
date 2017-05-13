@@ -142,7 +142,7 @@ class Surface(ObservableObject, IdObject):
             sa = edge.get_meta_data('sa')
             ea = edge.get_meta_data('ea')
             span = ea - sa
-            return int(abs(span * 10))
+            return int(abs(span * 15))
         return 1
 
     def get_double_surface_center_and_radius(self, edge2, relative2):
@@ -190,6 +190,15 @@ class Surface(ObservableObject, IdObject):
             cc = c.xyz + plane.get_global_xyz(x, y, z)
         return cc
 
+    def calc_norm(self, v1, v2, v3):
+        cp = np.cross(v2 - v1, v3 - v1)
+        nm = np.linalg.norm(cp)
+        if nm != 0:
+            n = cp / nm
+        else:
+            n = cp
+        return n
+
     def get_double_sweep_surface_triangles(self):
         triangles = []
         normals = []
@@ -199,41 +208,36 @@ class Surface(ObservableObject, IdObject):
         divisions[1] = self.get_divisions_of_edge(edges[1])
         divisions[0] = max(self.get_divisions_of_edge(edges[2]), divisions[0])
         divisions[1] = max(self.get_divisions_of_edge(edges[3]), divisions[1])
-
-        for j in range(0, divisions[1] + 1):
+        n11 = None
+        n21 = None
+        n12 = None
+        for j in range(0, divisions[1]):
             rj = j / divisions[1]
             rj1 = (j+1) / divisions[1]
             c11, r11 = self.get_double_surface_center_and_radius(edges[1], rj)
             c12, r12 = self.get_double_surface_center_and_radius(edges[1], rj1)
             v11 = self.get_position_on_double_edge(edges[0], 0, c11, r11)
             v21 = self.get_position_on_double_edge(edges[0], 0, c12, r12)
-            for i in range(0, divisions[0] + 1):
+            for i in range(1, divisions[0] + 1):
                 ri = i / divisions[0]
                 v12 = self.get_position_on_double_edge(edges[0], ri, c11, r11)
                 v22 = self.get_position_on_double_edge(edges[0], ri, c12, r12)
                 triangles.extend([v11, v21, v12])
                 triangles.extend([v21, v22, v12])
+                n22 = self.calc_norm(v11, v21, v12)
+                if i == 1:
+                    n21 = n22
+                if j == 0:
+                    n11 = n21
+                    n12 = n22
+                else:
+                    n11 = normals[divisions[0] * (j - 1) * 6 + i * 6-3]
+                    n12 = normals[divisions[0] * (j - 1) * 6 + i * 6-2]
+                normals.extend([n11, n21, n12, n21, n22, n12])
                 v11 = v12
                 v21 = v22
-        n1 = None
-        for i in range(0, len(triangles), 6):
-            v1 = triangles[i]
-            v2 = triangles[i + 1]
-            v3 = triangles[i + 2]
-            cp = np.cross(v2 - v1, v3 - v1)
-            nm = np.linalg.norm(cp)
-            n2 = cp
-            if nm != 0:
-                n2 = cp / nm
-            if n1 is None:
-                n1 = n2
-            normals.append(n1)
-            normals.append(n1)
-            normals.append(n2)
-            normals.append(n1)
-            normals.append(n2)
-            normals.append(n2)
-            n1 = n2
+                n21 = n22
+
         return triangles, normals
 
     def get_sweep_surface_triangles(self):
@@ -370,16 +374,17 @@ class Surface(ObservableObject, IdObject):
         if len(remaining_kps) > 2:
             self.get_triangles_of_convex(remaining_kps, triangles)
 
+        v1 = triangles[0]
+        v2 = triangles[1]
+        v3 = triangles[2]
+        cp = np.cross(v2 - v1, v3 - v1)
+        nm = np.linalg.norm(cp)
+        if nm != 0:
+            n = cp / nm
+        else:
+            n = cp
         for i in range(0, len(triangles), 3):
-            v1 = triangles[i]
-            v2 = triangles[i+1]
-            v3 = triangles[i+2]
-            cp = np.cross(v2 - v1, v3 - v1)
-            nm = np.linalg.norm(cp)
-            if nm != 0:
-                n = cp / nm
-            else:
-                n = cp
+
             normals.append(n)
             normals.append(n)
             normals.append(n)

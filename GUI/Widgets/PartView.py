@@ -53,6 +53,7 @@ class PartViewWidget(QOpenGLWidget):
         self.background_color_upper = QColor(200, 200, 210, 255)
         self._gl = None
         self._show_surfaces = True
+        self._show_lines = True
         self._program = None
         self._vertices = [[0,0,0]]
         self._normals = [[0,0,0]]
@@ -74,6 +75,16 @@ class PartViewWidget(QOpenGLWidget):
     @show_surfaces.setter
     def show_surfaces(self, value):
         self._show_surfaces = value
+        self.redraw_drawables()
+        self.update()
+
+    @property
+    def show_lines(self):
+        return self._show_lines
+
+    @show_lines.setter
+    def show_lines(self, value):
+        self._show_lines = value
         self.redraw_drawables()
         self.update()
 
@@ -329,10 +340,11 @@ class PartViewWidget(QOpenGLWidget):
                 self._gl.glDrawArrays(self._gl.GL_TRIANGLES, self._plane_edges_index+1, count)
                 self._program.setUniformValue('lighting', False)
         if self._part_faces_index+1 < self._part_edges_index:
-            self.set_color(self.part_color_edge)
-            self._gl.glLineWidth(2.0)
-            count = self._part_edges_index - self._part_faces_index
-            self._gl.glDrawArrays(self._gl.GL_LINES, self._part_faces_index+1, count)
+            if self._show_lines:
+                self.set_color(self.part_color_edge)
+                self._gl.glLineWidth(2.0)
+                count = self._part_edges_index - self._part_faces_index
+                self._gl.glDrawArrays(self._gl.GL_LINES, self._part_faces_index+1, count)
 
     def resizeGL(self, width, height):
         side = min(width, height)
