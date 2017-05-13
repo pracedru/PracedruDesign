@@ -347,9 +347,12 @@ class PartView(View):
                     section_datas.append(section_data)
             for section_data in section_datas:
                 coords = section_data['coords']
-                kp1 = self._sketch.create_key_point(coords[0].x, coords[0].y, coords[0].z)
-                kp2 = self._sketch.create_key_point(coords[1].x, coords[1].y, coords[1].z)
-                self._sketch.create_line_edge(kp1, kp2)
+                if len (coords)>2:
+                    kp1 = self._sketch.create_key_point(coords[0][0], coords[0][1], coords[0][2])
+                    for i in range(1, len(coords)):
+                        kp2 = self._sketch.create_key_point(coords[i][0], coords[i][1], coords[i][2])
+                        self._sketch.create_line_edge(kp1, kp2)
+                        kp1 = kp2
             self.changed(ChangeEvent(self, ChangeEvent.ObjectChanged, self))
 
     def delete(self):

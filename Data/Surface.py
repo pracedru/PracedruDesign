@@ -8,12 +8,12 @@ from Data.Objects import *
 
 
 def fsign(value):
-    if value < 0:
+    if isclose(value, 0, abs_tol=1e-10):
+        return 0
+    elif value < 0:
         return -1.0
-    elif value > 0:
-        return 1.0
     else:
-        return 0.0
+        return 1.0
 
 
 class Surface(ObservableObject, IdObject):
@@ -29,34 +29,51 @@ class Surface(ObservableObject, IdObject):
         self._surface_type = surface_type
         self._sweep_axis = None
         self._triangles = None
+        self._normals = None
+
+    def get_projected_point(self, pt1, pt2):
+        delta = pt2 - pt1
+        p = pt1 + delta * (pt1[2] / (pt1[2] - pt2[2]))
+        return p
 
     def get_section_by_plane(self, plane):
         pm = plane.get_local_projection_matrix()
         section_data = {}
-        if self._surface_type == Surface.FlatSurface:
-            kps = []
-            for edge in self._main_edge_loop:
-                kps = edge.get_end_key_points()
-                p1 = pm.dot(kps[0].xyz)
-                p2 = pm.dot(kps[1].xyz)
-                if fsign(p1[2]) != fsign(p2[2]):
-                    kps.append(edge.get_point_on_plane())
-            if len(kps):
-                section_data['type'] = 1
-                section_data['coords'] = [Vertex.from_xyz(p1), Vertex.from_xyz(p2)]
-        elif self._surface_type == Surface.SweepSurface:
-            kps = []
-            for edge in self._main_edge_loop:
-                kps = edge.get_end_key_points()
-                p1 = pm.dot(kps[0].xyz)
-                p2 = pm.dot(kps[1].xyz)
-                if fsign(p1[2]) != fsign(p2[2]):
-                    kps.append(edge.get_point_on_plane())
-            if len(kps):
-                section_data['type'] = 1
-                section_data['coords'] = [Vertex.from_xyz(p1), Vertex.from_xyz(p2)]
-        else:
-            return None
+        loops = []
+        coords = []
+        triangles = self.get_faces_normals()
+
+        for triangle in triangles:
+            v1 = triangle[0]
+            v2 = triangle[1]
+            v3 = triangle[0]
+            cp = np.cross(v2 - v1, v3 - v1)
+            n = cp / np.linalg.norm(cp)
+            p1 = pm.dot(v1)
+            p2 = pm.dot(v2)
+            p3 = pm.dot(v3)
+            counter = 0
+            if isclose(p1[2], 0, abs_tol=1e-8):
+                coords.append(p1)
+                counter += 1
+            if isclose(p2[2], 0, abs_tol=1e-8):
+                coords.append(p2)
+                counter += 1
+            if isclose(p3[2], 0, abs_tol=1e-8):
+                coords.append(p3)
+                counter += 1
+            if counter < 2:
+                s1 = fsign(p1[2])
+                s2 = fsign(p2[2])
+                s3 = fsign(p3[2])
+                if s1 != s2 and s1 != 0 and s2 != 0:
+                    coords.append(self.get_projected_point(p1, p2))
+                if s2 != s3 and s2 != 0 and s3 != 0:
+                    coords.append(self.get_projected_point(p2, p3))
+                if s3 != s1 and s1 != 0 and s3 != 0:
+                    coords.append(self.get_projected_point(p3, p1))
+
+        section_data['coords'] = coords
         return section_data
 
     def set_sweep_axis(self, axis):
@@ -108,24 +125,24 @@ class Surface(ObservableObject, IdObject):
                 en_c -= 1
                 p3 = kps[en_c].xyz
             sw = not sw
-            triangles.append([p1, p2, p3])
+            triangles.extend([p1, p2, p3])
 
-    def get_triangles(self):
+    def get_faces_normals(self):
         if self._triangles is None:
             if self._surface_type == Surface.FlatSurface:
-                self._triangles = self.get_flat_surface_triangles()
+                self._triangles, self._normals = self.get_flat_surface_triangles()
             elif self._surface_type == Surface.SweepSurface:
-                self._triangles = self.get_sweep_surface_triangles()
+                self._triangles, self._normals = self.get_sweep_surface_triangles()
             else:
-                self._triangles = self.get_double_sweep_surface_triangles()
-        return self._triangles
+                self._triangles, self._normals = self.get_double_sweep_surface_triangles()
+        return self._triangles, self._normals
 
     def get_divisions_of_edge(self, edge):
         if edge.type == Edge.ArcEdge:
             sa = edge.get_meta_data('sa')
             ea = edge.get_meta_data('ea')
             span = ea - sa
-            return int(abs(span * 20))
+            return int(abs(span * 10))
         return 1
 
     def get_double_surface_center_and_radius(self, edge2, relative2):
@@ -155,35 +172,6 @@ class Surface(ObservableObject, IdObject):
         cc = c1 + plane1.get_global_xyz(x, y, z)
         return cc
 
-    def get_position_on_double_edge_old(self, edge1, relative1, edge2, relative2):
-        if edge1.type == Edge.LineEdge:
-            kps = edge1.get_end_key_points()
-            diff = kps[1].xyz - kps[0].xyz
-            cc = kps[0].xyz + diff * relative1
-        if edge1.type == Edge.ArcEdge:
-            plane1 = edge1.plane
-            plane2 = edge2.plane
-            c2 = edge2.get_key_points()[0]
-            r2 = edge2.get_meta_data('r')
-            sa2 = edge2.get_meta_data('sa')
-            ea2 = edge2.get_meta_data('ea')
-            span2 = ea2-sa2
-            angle2 = span2*relative2
-            x = cos(sa2 + angle2)*r2
-            y = sin(sa2 + angle2)*r2
-            z = 0
-            p1 = c2.xyz + plane2.get_global_xyz(x, y, z)
-            r1 = self._sweep_axis.distance_xyz(p1)
-            c1 = self._sweep_axis.project_point_xyz(p1)
-            sa1 = edge1.get_meta_data('sa')
-            ea1 = edge1.get_meta_data('ea')
-            span1 = ea1 - sa1
-            x = cos(sa1 + span1 * relative1) * r1
-            y = sin(sa1 + span1 * relative1) * r1
-            z = 0
-            cc = c1 + plane1.get_global_xyz(x, y, z)
-        return cc
-
     def get_position_on_edge(self, edge, relative):
         if edge.type == Edge.LineEdge:
             kps = edge.get_end_key_points()
@@ -204,6 +192,7 @@ class Surface(ObservableObject, IdObject):
 
     def get_double_sweep_surface_triangles(self):
         triangles = []
+        normals = []
         edges = self._main_edge_loop
         divisions = [1, 1]
         divisions[0] = self.get_divisions_of_edge(edges[0])
@@ -222,15 +211,35 @@ class Surface(ObservableObject, IdObject):
                 ri = i / divisions[0]
                 v12 = self.get_position_on_double_edge(edges[0], ri, c11, r11)
                 v22 = self.get_position_on_double_edge(edges[0], ri, c12, r12)
-                triangles.append([v11, v21, v12])
-                triangles.append([v21, v12, v22])
+                triangles.extend([v11, v21, v12])
+                triangles.extend([v21, v22, v12])
                 v11 = v12
                 v21 = v22
-
-        return triangles
+        n1 = None
+        for i in range(0, len(triangles), 6):
+            v1 = triangles[i]
+            v2 = triangles[i + 1]
+            v3 = triangles[i + 2]
+            cp = np.cross(v2 - v1, v3 - v1)
+            nm = np.linalg.norm(cp)
+            n2 = cp
+            if nm != 0:
+                n2 = cp / nm
+            if n1 is None:
+                n1 = n2
+            normals.append(n1)
+            normals.append(n1)
+            normals.append(n2)
+            normals.append(n1)
+            normals.append(n2)
+            normals.append(n2)
+            n1 = n2
+        return triangles, normals
 
     def get_sweep_surface_triangles(self):
+
         triangles = []
+        normals = []
         edges = self._main_edge_loop
         divisions = [1, 1]
         divisions[0] = self.get_divisions_of_edge(edges[0])
@@ -241,15 +250,31 @@ class Surface(ObservableObject, IdObject):
             ri = i / divisions[0]
             v12 = self.get_position_on_edge(edges[0], ri)
             v22 = self.get_position_on_edge(edges[2], ri)
-            triangles.append([v11, v21, v12])
-            triangles.append([v21, v12, v22])
+            triangles.extend([v11, v21, v12])
+            triangles.extend([v21, v22, v12])
             v11 = v12
             v21 = v22
-
-        return triangles
+        n1 = None
+        for i in range(0, len(triangles), 6):
+            v1 = triangles[i]
+            v2 = triangles[i + 1]
+            v3 = triangles[i + 2]
+            cp = np.cross(v2 - v1, v3 - v1)
+            n2 = cp / np.linalg.norm(cp)
+            if n1 is None:
+                n1 = n2
+            normals.append(n1)
+            normals.append(n1)
+            normals.append(n2)
+            normals.append(n1)
+            normals.append(n2)
+            normals.append(n2)
+            n1 = n2
+        return triangles, normals
 
     def get_flat_surface_triangles(self):
         triangles = []
+        normals = []
         kps = []
         if len(self._main_edge_loop) == 0:
             return triangles
@@ -338,14 +363,27 @@ class Surface(ObservableObject, IdObject):
                 n = m + 1
             p3 = remaining_kps[n].xyz
             # if n not in concaves and o not in concaves:
-            triangles.append([p1, p2, p3])
+            triangles.extend([p1, p2, p3])
             remaining_kps.pop(m)
             angles, concaves, total_angle = self.find_angles(remaining_kps, norm)
 
         if len(remaining_kps) > 2:
             self.get_triangles_of_convex(remaining_kps, triangles)
 
-        return triangles
+        for i in range(0, len(triangles), 3):
+            v1 = triangles[i]
+            v2 = triangles[i+1]
+            v3 = triangles[i+2]
+            cp = np.cross(v2 - v1, v3 - v1)
+            nm = np.linalg.norm(cp)
+            if nm != 0:
+                n = cp / nm
+            else:
+                n = cp
+            normals.append(n)
+            normals.append(n)
+            normals.append(n)
+        return triangles, normals
 
     def set_main_edges(self, edges_loop):
         rem_ed = list(edges_loop)

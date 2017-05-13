@@ -1,8 +1,12 @@
 from math import *
 
-from PyQt5.QtCore import QPoint
+import numpy as np
+from PyQt5.QtCore import QPoint, QThread
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QColor
+from PyQt5.QtGui import QColor, QOpenGLShaderProgram, QOpenGLShader, QMatrix4x4, QVector3D, QVector2D
+
+from Data import read_text_from_disk
+
 try:
     from OpenGL import GL
 except:
@@ -22,31 +26,46 @@ from Data.Vertex import Vertex
 from GUI.Widgets.GlDrawable import GlPlaneDrawable, GlPartDrawable
 from GUI.Widgets.SimpleDialogs import SketchDialog, ExtrudeDialog, RevolveDialog
 
-PROGRAM_VERTEX_POS_ATTRIBUTE = 0
-PROGRAM_UV_ATTRIBUTE = 1
-PROGRAM_VERTEX_NORM_ATTRIBUTE = 2
-
 
 class PartViewWidget(QOpenGLWidget):
+    PROGRAM_VERTEX_ATTRIBUTE = 0
+    PROGRAM_NORMALS_ATTRIBUTE = 1
+
     def __init__(self, parent, document):
         super(PartViewWidget, self).__init__(parent)
         self._document = document
         self._part = None
         self._gen_lists_start = 0
         self._drawables = []
-        self.xRot = 135*16
+        self.xRot = 45*16
         self.yRot = 45*16
         self.zRot = 0
         self._scale = 0.5
         self.lastPos = QPoint()
         self._offset = Vertex()
         self._mouse_position = None
-        self.part_color = QColor(180, 180, 180, 255)
+        self.part_color = QColor(200, 200, 200, 255)
+        self.part_color_edge = QColor(150, 150, 150, 255)
         self.plane_color = QColor(0, 150, 200, 25)
         self.plane_color_edge = QColor(0, 150, 200, 180)
         self.background_color = QColor(180, 180, 195, 25)
+        self.background_color_lower = QColor(180, 180, 195, 255)
+        self.background_color_upper = QColor(200, 200, 210, 255)
         self._gl = None
         self._show_surfaces = True
+        self._program = None
+        self._vertices = [[0,0,0]]
+        self._normals = [[0,0,0]]
+        self._plane_faces_index = 0
+        self._plane_edges_index = 0
+        self._part_faces_index = 0
+        self._part_edges_index = 0
+        self._new_verts = False
+
+        format = QSurfaceFormat()
+        format.setSamples(4)
+        self.setFormat(format)
+        print(str(self.format().samples()))
 
     @property
     def show_surfaces(self):
@@ -79,19 +98,50 @@ class PartViewWidget(QOpenGLWidget):
     def redraw_drawables(self, show_messages=True):
         if self._part.update_needed:
             self._part.update_geometry()
-        count = len(self._drawables)
+        count = len(self._drawables)*4
         counter = 1
+        self._vertices.clear()
+        self._normals.clear()
         for drawable in self._drawables:
-            drawable.redraw(self._gl, self.show_surfaces)
+            if type(drawable) == GlPlaneDrawable:
+                drawable.on_plane_changed(None)
+                self._vertices.extend(drawable.vertices)
+                self._normals.extend(drawable.normals)
             if show_messages:
-                self._document.set_status("Drawing surfaces %d" % counter, 100*counter/count)
+                self._document.set_status("Drawing planes faces %d" % counter, 100*counter/count)
             counter += 1
+        self._plane_faces_index = len(self._vertices) - 1
+        for drawable in self._drawables:
+            if type(drawable) == GlPlaneDrawable:
+                self._vertices.extend(drawable.lines)
+                self._normals.extend(drawable.lines)
+            if show_messages:
+                self._document.set_status("Drawing plane edges %d" % counter, 100 * counter / count)
+            counter += 1
+        self._plane_edges_index = len(self._vertices) - 1
+        for drawable in self._drawables:
+            if type(drawable) == GlPartDrawable:
+                self._vertices.extend(drawable.vertices)
+                self._normals.extend(drawable.normals)
+            if show_messages:
+                self._document.set_status("Drawing part faces %d" % counter, 100*counter/count)
+            counter += 1
+        self._part_faces_index = len(self._vertices) - 1
+        for drawable in self._drawables:
+            if type(drawable) == GlPartDrawable:
+                self._vertices.extend(drawable.lines)
+                self._normals.extend(drawable.lines)
+            if show_messages:
+                self._document.set_status("Drawing part edges %d" % counter, 100 * counter / count)
+            counter += 1
+        self._part_edges_index = len(self._vertices) - 1
+        self._new_verts = True
 
     def scale_to_content(self):
         limits = self._part.get_limits()
         size = max(limits[1].x - limits[0].x, limits[1].y - limits[0].y)
         size = max(size, limits[1].z - limits[0].z) * 0.7
-        self._scale = 0.5 / size
+        self._scale = size
 
     def part_changed(self, event):
         if event.type == ChangeEvent.ObjectAdded:
@@ -181,55 +231,108 @@ class PartViewWidget(QOpenGLWidget):
     def initializeGL(self):
         c = self.context()
         f = QSurfaceFormat()             # The default
-        p = QOpenGLVersionProfile(f)
-        self._gl = c.versionFunctions(p)
+        vp = QOpenGLVersionProfile(f)
+        self._gl = c.versionFunctions(vp)
         self._gl.initializeOpenGLFunctions()
-        self.set_clear_color(self.background_color)
-        # self._gl.glShadeModel(self._gl.GL_FLAT)
-        self._gl.glShadeModel(self._gl.GL_SMOOTH)
+        self._gl.glEnable(self._gl.GL_MULTISAMPLE)
         self._gl.glEnable(self._gl.GL_DEPTH_TEST)
-        self._gl.glEnable(self._gl.GL_CULL_FACE)
-        self._gl.glDepthFunc(self._gl.GL_LEQUAL)
+        self._gl.glDisable(self._gl.GL_CULL_FACE)
         self._gl.glBlendFunc(self._gl.GL_SRC_ALPHA, self._gl.GL_ONE_MINUS_SRC_ALPHA)
         self._gl.glEnable(self._gl.GL_BLEND)
-        self._gl.glEnable(self._gl.GL_NORMALIZE)
-        light_diffuse = [0.5, 0.5, 0.5, 1.0]
-        light_ambient = [0.5, 0.5, 0.5, 1.0]
-        self._gl.glLightfv(self._gl.GL_LIGHT0, self._gl.GL_DIFFUSE, light_diffuse)
-        self._gl.glLightfv(self._gl.GL_LIGHT0, self._gl.GL_AMBIENT, light_ambient)
-        self._gen_lists_start = self._gl.glGenLists(100)
 
-        # return
-        # vshader = read_text_from_disk("./GUI/Shaders/vertex_shader.c")
-        # fshader = read_text_from_disk("./GUI/Shaders/fragment_shader.c")
-        # self.program = QOpenGLShaderProgram()
-        # self.program.addShaderFromSourceCode(QOpenGLShader.Vertex, vshader)
-        # self.program.addShaderFromSourceCode(QOpenGLShader.Fragment, fshader)
-        # self.program.link()
-        # self.program.bind()self.gl.glEnable(self.gl.GL_COLOR_MATERIAL)
+        vertex_shader_code = read_text_from_disk("./GUI/Shaders/vertex_shader.c")
+        fragment_shader_code = read_text_from_disk("./GUI/Shaders/fragment_shader.c")
 
-        # self.program.setUniformValue('texture', 0)
-        # self.program.enableAttributeArray(self.PROGRAM_VERTEX_ATTRIBUTE)
-        # self.program.enableAttributeArray(self.PROGRAM_TEXCOORD_ATTRIBUTE)
-        # self.program.setAttributeArray(self.PROGRAM_VERTEX_ATTRIBUTE, self.vertices)
-        # self.program.setAttributeArray(self.PROGRAM_TEXCOORD_ATTRIBUTE, self.texCoords)
+        self._program = QOpenGLShaderProgram()
+        self._program.addShaderFromSourceCode(QOpenGLShader.Vertex, vertex_shader_code)
+        self._program.addShaderFromSourceCode(QOpenGLShader.Fragment, fragment_shader_code)
+        self._program.link()
+        self._program.bind()
+        self._program.enableAttributeArray(self.PROGRAM_VERTEX_ATTRIBUTE)
+        self._program.enableAttributeArray(self.PROGRAM_NORMALS_ATTRIBUTE)
+        self._program.setAttributeArray(self.PROGRAM_VERTEX_ATTRIBUTE, self._vertices)
+        self._program.setAttributeArray(self.PROGRAM_NORMALS_ATTRIBUTE, self._normals)
 
     def paintGL(self):
+        gl = self._gl
         if self._part is not None:
             if self._part.update_needed:
                 self.redraw_drawables(False)
-        light_position = [-0.7, 1.0, -1.0, 0.0]
+        if self._new_verts:
+            if len(self._vertices) > 0:
+                self._program.setAttributeArray(self.PROGRAM_VERTEX_ATTRIBUTE, self._vertices)
+                self._program.setAttributeArray(self.PROGRAM_NORMALS_ATTRIBUTE, self._normals)
+            self._new_verts = False
+        c = self.background_color
+        self._gl.glClearColor(c.redF(), c.greenF(), c.blueF(), c.alphaF())
         self._gl.glClear(self._gl.GL_COLOR_BUFFER_BIT | self._gl.GL_DEPTH_BUFFER_BIT)
-        self._gl.glLoadIdentity()
-        self._gl.glLightfv(self._gl.GL_LIGHT0, self._gl.GL_POSITION, light_position)
-        self._gl.glTranslated(0, 0, -10.0)
-        self._gl.glRotated(self.xRot / 16.0, 1.0, 0.0, 0.0)
-        self._gl.glRotated(self.yRot / 16.0, 0.0, 1.0, 0.0)
-        self._gl.glRotated(self.zRot / 16.0, 0.0, 0.0, 1.0)
-        self._gl.glTranslated(self._offset.x, self._offset.y, self._offset.z)
-        self._gl.glScalef(self._scale, self._scale, self._scale)
-        for drawable in self._drawables:
-            self._gl.glCallList(drawable.get_gen_list)
+        m = QMatrix4x4()
+        v = QMatrix4x4()
+        p = QMatrix4x4()
+
+        #   Gradient
+        v.lookAt(QVector3D(0, 0, -10), QVector3D(0, 0, 0), QVector3D(0, 1, 0))
+        p.ortho(-0.5, 0.5, 0.5, -0.5, 4, 15)
+        mvp = p * v * m
+        self._program.setUniformValue('mvp', mvp)
+        self._program.setUniformValue('view', v)
+        self._program.setUniformValue('model', m)
+
+        self._gl.glDisable(self._gl.GL_DEPTH_TEST)
+        self._program.setUniformValue('resolution', QVector2D(self.width(), self.height()))
+        self._program.setUniformValue('gradient', True)
+        gl.glBegin(gl.GL_QUADS)
+        gl.glVertex2f(-0.5, 0.5)
+        gl.glVertex2f(-0.5, -0.5)
+        gl.glVertex2f(0.5, -0.5)
+        gl.glVertex2f(0.5, 0.5)
+        gl.glEnd()
+        self._program.setUniformValue('gradient', False)
+        #    End Gradient
+
+        v.rotate(self.xRot / 16.0, 1.0, 0.0, 0.0)
+        v.rotate(self.yRot / 16.0, 0.0, 1.0, 0.0)
+        v.rotate(self.zRot / 16.0, 0.0, 0.0, 1.0)
+        v.translate(self._offset.x, self._offset.y, self._offset.z)
+
+        scale = self._scale
+        width = self.width()
+        height = self.height()
+        aspect_ratio = width / height
+        p = QMatrix4x4()
+        if width <= height:
+            p.ortho(-scale, scale, scale/aspect_ratio, -scale/aspect_ratio, min(-10 * scale, -10), max(10 * scale, 15))
+        else:
+            p.ortho(-scale*aspect_ratio, scale*aspect_ratio, scale, -scale, min(-10 * scale, -10), max(10 * scale, 15))
+
+        mvp = p * v * m
+        self._program.setUniformValue('mvp', mvp)
+        self._program.setUniformValue('view', v)
+        self._program.setUniformValue('model', m)
+
+        if self._plane_faces_index > 0:
+            self._gl.glDisable(self._gl.GL_DEPTH_TEST)
+            self.set_color(self.plane_color)
+            self._gl.glDrawArrays(self._gl.GL_TRIANGLES, 0, self._plane_faces_index+1)
+        if self._plane_faces_index+1 < self._plane_edges_index:
+            self.set_color(self.plane_color_edge)
+            self._gl.glEnable(self._gl.GL_DEPTH_TEST)
+            self._gl.glLineWidth(2.0)
+            count = self._plane_edges_index - self._plane_faces_index
+            self._gl.glDrawArrays(self._gl.GL_LINES, self._plane_faces_index+1, count)
+        if self._plane_edges_index+1 < self._part_faces_index:
+            if self._show_surfaces:
+                self._program.setUniformValue('lighting', True)
+                self._gl.glEnable(self._gl.GL_DEPTH_TEST)
+                self.set_color(self.part_color)
+                count = self._part_faces_index - self._plane_edges_index
+                self._gl.glDrawArrays(self._gl.GL_TRIANGLES, self._plane_edges_index+1, count)
+                self._program.setUniformValue('lighting', False)
+        if self._part_faces_index+1 < self._part_edges_index:
+            self.set_color(self.part_color_edge)
+            self._gl.glLineWidth(2.0)
+            count = self._part_edges_index - self._part_faces_index
+            self._gl.glDrawArrays(self._gl.GL_LINES, self._part_faces_index+1, count)
 
     def resizeGL(self, width, height):
         side = min(width, height)
@@ -253,14 +356,16 @@ class PartViewWidget(QOpenGLWidget):
         dy = event.y() - self.lastPos.y()
 
         if event.buttons() & Qt.RightButton:
-            self.setXRotation(self.xRot - 8 * dy)
+            self.setXRotation(self.xRot + 8 * dy)
             self.setYRotation(self.yRot - 8 * dx)
         elif event.buttons() & Qt.MiddleButton:
-            yangle = self.yRot*pi/(180*16)
+            yangle = self.yRot * pi / (180 * 16)
             xangle = self.xRot * pi / (180 * 16)
-            self._offset.x += dx*0.001 * cos(yangle) + dy*0.001 * sin(xangle) * sin(yangle)
-            self._offset.y += dy*0.001 * cos(xangle)
-            self._offset.z += dx*0.001 * sin(yangle) - dy*0.001 * sin(xangle) * cos(yangle)
+            dx *= self._scale * -1
+            dy *= self._scale
+            self._offset.x += dx*0.002 * cos(yangle) + dy*0.002 * sin(xangle) * sin(yangle)
+            self._offset.y += dy*0.002 * cos(xangle)
+            self._offset.z += dx*0.002 * sin(yangle) - dy*0.002 * sin(xangle) * cos(yangle)
             self.update()
 
         self.lastPos = event.pos()
@@ -268,10 +373,7 @@ class PartViewWidget(QOpenGLWidget):
     def wheelEvent(self, event):
         delta = event.angleDelta().y() * 0.01 / 8
         if self._scale + self._scale * (delta * 0.01) > 0:
-            self._scale *= 1 + delta
-            self._offset.x *= 1 + delta
-            self._offset.y *= 1 + delta
-            self._offset.z *= 1 + delta
+            self._scale *= 1 - delta
         self.update()
 
     def normalizeAngle(self, angle):
@@ -281,8 +383,7 @@ class PartViewWidget(QOpenGLWidget):
             angle -= 360 * 16
         return angle
 
-    def set_clear_color(self, c):
-        self._gl.glClearColor(c.redF(), c.greenF(), c.blueF(), c.alphaF())
-
+    def set_color(self, c):
+        self._program.setUniformValue('color', c)
 
 

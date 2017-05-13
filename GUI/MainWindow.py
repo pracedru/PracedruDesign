@@ -492,4 +492,3 @@ class MainWindow(QMainWindow):
         # print(text + " " + str(progress))
         self.statusBar().showMessage(text)
         self.progress_bar.setValue(progress)
-        QApplication.processEvents()

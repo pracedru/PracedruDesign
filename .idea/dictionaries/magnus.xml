@@ -2,6 +2,8 @@
   <dictionary name="magnus">
     <words>
       <w>drawables</w>
+      <w>highp</w>
+      <w>mediump</w>
     </words>
   </dictionary>
 </component>

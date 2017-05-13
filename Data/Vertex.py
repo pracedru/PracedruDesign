@@ -96,9 +96,17 @@ class Vertex(object):
     def angle_between3d_planar(self, kp1, kp2, norm):
         v1 = kp1.xyz - self.xyz
         v2 = kp2.xyz - self.xyz
-        x_axis = v1 / np.linalg.norm(v1)
+        nm = np.linalg.norm(v1)
+        if nm != 0:
+            x_axis = v1 / nm
+        else:
+            x_axis = v1
         cp = np.cross(v1, norm)
-        y_axis = cp / abs(np.linalg.norm(cp))
+        nm = abs(np.linalg.norm(cp))
+        if nm != 0:
+            y_axis = cp / nm
+        else:
+            y_axis = cp
         z_axis = norm
         m = np.array([x_axis, y_axis, z_axis])
         proj = m.dot(v2)

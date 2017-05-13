@@ -29,10 +29,14 @@ def set_color(gl, c):
     gl.glColor4f(c.redF(), c.greenF(), c.blueF(), c.alphaF())
 
 
+def set_glsl_color(program, c):
+    program.setUniformValue('color', c)
+
+
 def draw_surfaces(gl, surfaces):
     gl.glBegin(gl.GL_TRIANGLES)
     for surface in surfaces:
-        for triangle in surface.get_triangles():
+        for triangle in surface.get_faces_normals():
             double_sided_triangle(gl, triangle[0], triangle[1], triangle[2])
     gl.glEnd()
 
@@ -72,6 +76,22 @@ class GlDrawable(object):
     def get_gen_list(self):
         return self._gen_list_index
 
+    @property
+    def vertices(self):
+        return []
+
+    @property
+    def normals(self):
+        return []
+
+    @property
+    def color(self):
+        return QColor(180, 180, 180, 255)
+
+    @property
+    def edge_color(self):
+        return QColor(180, 180, 180, 255)
+
 
 class GlPlaneDrawable(GlDrawable):
     def __init__(self, gen_list_index, plane_feature: Feature):
@@ -79,8 +99,17 @@ class GlPlaneDrawable(GlDrawable):
         self._plane_feature = plane_feature
         self._plane_color = QColor(0, 150, 200, 15)
         self._plane_color_edge = QColor(0, 150, 200, 180)
+        self._vertices = []
+        self._normals = []
+        plane_feature.add_change_handler(self.on_plane_changed)
+
+    def on_plane_changed(self, event):
+        self._vertices = []
+        self._normals = []
 
     def redraw(self, gl, show_surfaces):
+        self._vertices = []
+        self._normals = []
         gl.glNewList(self._gen_list_index, gl.GL_COMPILE)
         gl.glDisable(gl.GL_LIGHT0)
         gl.glDisable(gl.GL_LIGHTING)
@@ -98,6 +127,14 @@ class GlPlaneDrawable(GlDrawable):
         v4 = p.xyz * size + xd.xyz * size - yd.xyz * size
         self.draw_feature_plane(gl, v1, v2, v3, v4)
         gl.glEndList()
+
+    @property
+    def color(self):
+        return self._plane_color
+
+    @property
+    def edge_color(self):
+        return self._plane_color_edge
 
     def draw_feature_plane(self, gl, v1, v2, v3, v4):
         gl.glDisable(gl.GL_DEPTH_TEST)
@@ -132,6 +169,49 @@ class GlPlaneDrawable(GlDrawable):
         gl.glVertex3d(v1[0], v1[1], v1[2])
         gl.glEnd()
 
+    @property
+    def vertices(self):
+        if len(self._vertices) == 0:
+            p = self._plane_feature.get_vertex('p')
+            xd = self._plane_feature.get_vertex('xd')
+            yd = self._plane_feature.get_vertex('yd')
+            parent = self._plane_feature.get_feature_parent()
+            limits = parent.get_limits()
+            size1 = max(np.absolute(limits[0].xyz))
+            size2 = max(np.absolute(limits[1].xyz))
+            size = max(size1, size2) * 1.2
+            v1 = p.xyz * size - xd.xyz * size + yd.xyz * size
+            v2 = p.xyz * size - xd.xyz * size - yd.xyz * size
+            v3 = p.xyz * size + xd.xyz * size + yd.xyz * size
+            v4 = p.xyz * size + xd.xyz * size - yd.xyz * size
+            self._vertices.append(v1)
+            self._vertices.append(v2)
+            self._vertices.append(v3)
+            self._vertices.append(v3)
+            self._vertices.append(v2)
+            self._vertices.append(v4)
+        return self._vertices
+
+    @property
+    def normals(self):
+        if len(self._normals) == 0:
+            for vert in self._vertices:
+                self._normals.append([0, 0, 0])
+        return self._normals
+
+    @property
+    def lines(self):
+        lines = []
+        verts = self.vertices
+        lines.append(verts[0])
+        lines.append(verts[1])
+        lines.append(verts[1])
+        lines.append(verts[5])
+        lines.append(verts[5])
+        lines.append(verts[2])
+        lines.append(verts[2])
+        lines.append(verts[0])
+        return lines
 
 def draw_lines(gl, lines):
     gl.glLineWidth(2.0)
@@ -148,6 +228,9 @@ class GlPartDrawable(GlDrawable):
         self._part_color = QColor(160, 160, 160, 255)
         self._part_color_edge = QColor(140, 140, 140, 255)
         # self._part_color_edge = QColor(10, 10, 10, 255)
+        self._lines = []
+        self._vertices = []
+        self._normals = []
 
     def redraw(self, gl, show_surfaces):
         gl.glNewList(self._gen_list_index, gl.GL_COMPILE)
@@ -161,7 +244,7 @@ class GlPartDrawable(GlDrawable):
             gl.glEnable(gl.GL_LIGHT0)
             gl.glEnable(gl.GL_LIGHTING)
             surfaces = self._part.get_surfaces()
-            draw_surfaces(gl, surfaces)
+            # draw_surfaces(gl, surfaces)
 
         # draw_cube(gl, 1, Vertex(3, 0, 0))
 
@@ -171,3 +254,23 @@ class GlPartDrawable(GlDrawable):
         draw_lines(gl, lines)
 
         gl.glEndList()
+
+    @property
+    def vertices(self):
+        if len(self._vertices) == 0:
+            surfaces = self._part.get_surfaces()
+            for surface in surfaces:
+                faces, norms = surface.get_faces_normals()
+                self._vertices.extend(faces)
+                self._normals.extend(norms)
+        return self._vertices
+
+    @property
+    def normals(self):
+        return self._normals
+
+    @property
+    def lines(self):
+        if len(self._lines) == 0:
+            self._lines = self._part.get_lines()
+        return self._lines
