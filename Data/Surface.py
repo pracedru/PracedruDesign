@@ -142,7 +142,7 @@ class Surface(ObservableObject, IdObject):
             sa = edge.get_meta_data('sa')
             ea = edge.get_meta_data('ea')
             span = ea - sa
-            return int(abs(span * 15))
+            return max(int(abs(span * 15)), 3)
         return 1
 
     def get_double_surface_center_and_radius(self, edge2, relative2):

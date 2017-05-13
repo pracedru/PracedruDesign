@@ -49,8 +49,6 @@ class PartViewWidget(QOpenGLWidget):
         self.plane_color = QColor(0, 150, 200, 25)
         self.plane_color_edge = QColor(0, 150, 200, 180)
         self.background_color = QColor(180, 180, 195, 25)
-        self.background_color_lower = QColor(180, 180, 195, 255)
-        self.background_color_upper = QColor(200, 200, 210, 255)
         self._gl = None
         self._show_surfaces = True
         self._show_lines = True
@@ -285,9 +283,9 @@ class PartViewWidget(QOpenGLWidget):
         v.lookAt(QVector3D(0, 0, -10), QVector3D(0, 0, 0), QVector3D(0, 1, 0))
         p.ortho(-0.5, 0.5, 0.5, -0.5, 4, 15)
         mvp = p * v * m
+        nm = (v*m).normalMatrix()
         self._program.setUniformValue('mvp', mvp)
-        self._program.setUniformValue('view', v)
-        self._program.setUniformValue('model', m)
+        self._program.setUniformValue('normal_matrix', nm)
 
         self._gl.glDisable(self._gl.GL_DEPTH_TEST)
         self._program.setUniformValue('resolution', QVector2D(self.width(), self.height()))
@@ -318,8 +316,8 @@ class PartViewWidget(QOpenGLWidget):
 
         mvp = p * v * m
         self._program.setUniformValue('mvp', mvp)
-        self._program.setUniformValue('view', v)
-        self._program.setUniformValue('model', m)
+        nm = (v * m).normalMatrix()
+        self._program.setUniformValue('normal_matrix', nm)
 
         if self._plane_faces_index > 0:
             self._gl.glDisable(self._gl.GL_DEPTH_TEST)
