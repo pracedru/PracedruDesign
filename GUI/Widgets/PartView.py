@@ -60,11 +60,10 @@ class PartViewWidget(QOpenGLWidget):
         self._part_faces_index = 0
         self._part_edges_index = 0
         self._new_verts = False
-
         format = QSurfaceFormat()
         format.setSamples(4)
         self.setFormat(format)
-        print(str(self.format().samples()))
+
 
     @property
     def show_surfaces(self):
@@ -92,21 +91,25 @@ class PartViewWidget(QOpenGLWidget):
         if self._part is not None:
             part.remove_change_handler(self.part_changed)
         self._part = part
-        self._drawables = []
-
-        for plane_feature in part.get_plane_features():
-            drawable = GlPlaneDrawable(len(self._drawables)+self._gen_lists_start, plane_feature)
-            self._drawables.append(drawable)
-        part_drawable = GlPartDrawable(len(self._drawables)+self._gen_lists_start, part)
-        self._drawables.append(part_drawable)
+        self.update_drawables()
         self.redraw_drawables()
         part.add_change_handler(self.part_changed)
         self.scale_to_content()
         self.update()
 
+    def update_drawables(self):
+        self._drawables = []
+        if self._part is not None:
+            for plane_feature in self._part.get_plane_features():
+                drawable = GlPlaneDrawable(len(self._drawables) + self._gen_lists_start, plane_feature)
+                self._drawables.append(drawable)
+            part_drawable = GlPartDrawable(len(self._drawables) + self._gen_lists_start, self._part)
+            self._drawables.append(part_drawable)
+
     def redraw_drawables(self, show_messages=True):
         if self._part.update_needed:
             self._part.update_geometry()
+            self.update_drawables()
         count = len(self._drawables)*4
         counter = 1
         self._vertices.clear()

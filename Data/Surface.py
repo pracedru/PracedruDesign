@@ -264,7 +264,14 @@ class Surface(ObservableObject, IdObject):
             v2 = triangles[i + 1]
             v3 = triangles[i + 2]
             cp = np.cross(v2 - v1, v3 - v1)
-            n2 = cp / np.linalg.norm(cp)
+            nm = np.linalg.norm(cp)
+            if nm == 0:
+                v1 = triangles[i + 3]
+                v2 = triangles[i + 4]
+                v3 = triangles[i + 5]
+                cp = np.cross(v2 - v1, v3 - v1)
+                nm = np.linalg.norm(cp)
+            n2 = cp / nm
             if n1 is None:
                 n1 = n2
             normals.append(n1)
@@ -382,9 +389,13 @@ class Surface(ObservableObject, IdObject):
         if nm != 0:
             n = cp / nm
         else:
-            n = cp
+            v1 = triangles[3]
+            v2 = triangles[4]
+            v3 = triangles[5]
+            cp = np.cross(v2 - v1, v3 - v1)
+            nm = np.linalg.norm(cp)
+            n = cp / nm
         for i in range(0, len(triangles), 3):
-
             normals.append(n)
             normals.append(n)
             normals.append(n)
