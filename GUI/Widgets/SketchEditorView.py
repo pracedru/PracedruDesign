@@ -450,9 +450,9 @@ class SketchEditorViewWidget(QWidget):
                         radius_param = self._sketch.get_parameter_by_name(value[0])
                         if radius_param is None:
                             radius_param = self._sketch.create_parameter(value[0], 1.0)
-                            for kp in self._selected_key_points:
-                                create_fillet(self._doc, self._sketch, kp, radius_param)
-                            self.on_escape()
+                        for kp in self._selected_key_points:
+                            create_fillet(self._doc, self._sketch, kp, radius_param)
+                        self.on_escape()
                 else:
                     pass
         if self._states.add_text:
