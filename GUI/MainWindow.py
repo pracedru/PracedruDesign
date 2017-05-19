@@ -70,6 +70,7 @@ class MainWindow(QMainWindow):
         self._add_text_action = self.add_action("Insert\ntext", "addtext", "Insert text in sketch", True, self.on_insert_text, checkable=True)
         self._add_attribute_action = self.add_action("Insert\nattribute", "addattribute", "Insert attribute in sketch", True, self.on_insert_attribute, checkable=True)
         self._add_circle_action = self.add_action("Insert\ncircle", "addcircle", "Insert circle in sketch", True, self.on_add_circle, checkable=True)
+        self._add_nurbs_action = self.add_action("Insert\nspline", "addnurbs", "Insert spline in sketch", True, self.on_add_nurbs, checkable=True)
         self._create_sketch_action = self.add_action("Create\nSketch", "addsketch", "Create Sketch", True, self.on_create_sketch)
         self._create_areas_action = self.add_action("Create\nAreas", "createareas", "Create areas from existing edges", True, self.on_create_areas)
         self._create_area_action = self.add_action("Create\nArea", "createarea", "Create area from existing edges", True, self.on_create_area, checkable=True)
@@ -283,6 +284,9 @@ class MainWindow(QMainWindow):
 
     def on_add_circle(self):
         self._viewWidget.on_add_circle()
+
+    def on_add_nurbs(self):
+        self._viewWidget.on_add_nurbs()
 
     def on_create_areas(self):
         self._viewWidget.sketch_view.on_create_areas()

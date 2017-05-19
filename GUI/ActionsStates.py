@@ -21,4 +21,4 @@ class ActionStates(object):
         self.add_arc_edge = False
         self.create_area = False
         self.add_part = False
-
+        self.draw_nurbs_edge = False

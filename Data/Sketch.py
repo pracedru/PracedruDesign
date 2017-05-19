@@ -152,6 +152,11 @@ class Sketch(Geometry):
             self._edges[fillet_edge.uid] = fillet_edge
             self.changed(ChangeEvent(self, ChangeEvent.ObjectAdded, fillet_edge))
             fillet_edge.add_change_handler(self.on_edge_changed)
+            for area_tuple in self._areas.items():
+                area = area_tuple[1]
+                kps = area.get_key_points()
+                if kp in kps:
+                    area.add_edge(fillet_edge)
         return fillet_edge
 
     def create_text(self, key_point, value, height):

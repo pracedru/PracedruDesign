@@ -17,6 +17,7 @@ class Edge(IdObject, NamedObservableObject):
     FilletLineEdge = 5
     CircleEdge = 6
     SplineEdge = 7
+    NurbsEdge = 8
 
     def __init__(self, geometry, type=LineEdge, name="New Edge", plane=Plane()):
         IdObject.__init__(self)

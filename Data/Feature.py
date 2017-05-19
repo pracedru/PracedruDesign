@@ -57,6 +57,8 @@ class Feature(NamedObservableObject, IdObject):
     @distance.setter
     def distance(self, value):
         if self._feature_type == Feature.ExtrudeFeature:
+            if type(value) is str:
+                value = eval(value)
             self._vertexes['ex_ls'].x = value[0]
             self._vertexes['ex_ls'].y = value[1]
         else:

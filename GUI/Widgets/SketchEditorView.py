@@ -124,6 +124,7 @@ class SketchEditorViewWidget(QWidget):
         self._states.add_circle_edge = False
         self._states.add_attribute = False
         self._states.add_arc_edge = False
+        self._states.draw_nurbs_edge = False
         self._selected_key_points.clear()
         self._selected_edges.clear()
         self.setCursor(Qt.ArrowCursor)
@@ -157,6 +158,15 @@ class SketchEditorViewWidget(QWidget):
         self.setCursor(Qt.CrossCursor)
         self._states.select_kp = True
         self._states.add_circle_edge = True
+        self._main_window.update_ribbon_state()
+
+    def on_add_nurbs(self):
+        self.on_escape()
+        if self._sketch is None:
+            return
+        self.setCursor(Qt.CrossCursor)
+        self._states.select_kp = True
+        self._states.draw_nurbs_edge = True
         self._main_window.update_ribbon_state()
 
     def on_add_arc(self):
@@ -381,7 +391,7 @@ class SketchEditorViewWidget(QWidget):
             self._main_window.on_edge_selection_changed_in_view(self._selected_edges)
 
         if self._kp_hover is not None and self._states.select_kp:
-            if self._states.multi_select or self._states.draw_line_edge:
+            if self._states.multi_select or self._states.draw_line_edge or self._states.set_fillet_kp:
                 self._selected_key_points.append(self._kp_hover)
             else:
                 self._selected_key_points = [self._kp_hover]
@@ -406,11 +416,26 @@ class SketchEditorViewWidget(QWidget):
                     self.on_escape()
                 else:
                     self._selected_key_points.remove(self._selected_key_points[0])
+        if self._states.draw_nurbs_edge:
+            doc = self._doc
+            sketch = self._sketch
+            if self._kp_hover is None:
+                coincident_threshold = 5/scale
+                kp = create_key_point(doc, sketch, x, y, 0.0, coincident_threshold)
+                self._selected_key_points.append(kp)
+            if len(self._selected_key_points) == 2:
+                sketch.create_line_edge(self._selected_key_points[0], self._selected_key_points[1])
+                if not self._states.multi_select:
+                    self._selected_key_points.clear()
+                    self.on_escape()
+                else:
+                    self._selected_key_points.remove(self._selected_key_points[0])
         if self._states.set_fillet_kp:
             if self._kp_hover is not None:
-                doc = self._doc
                 edges = self._kp_hover.get_edges()
-                if len(edges) == 2:
+                if len(edges) != 2:
+                    self._selected_key_points.remove(self._kp_hover)
+                if not self._states.multi_select:
                     params = []
                     params.sort()
                     for param_tuple in self._sketch.get_all_parameters():
@@ -420,8 +445,9 @@ class SketchEditorViewWidget(QWidget):
                         radius_param = self._sketch.get_parameter_by_name(value[0])
                         if radius_param is None:
                             radius_param = self._sketch.create_parameter(value[0], 1.0)
-                        create_fillet(self._doc, self._sketch, self._kp_hover, radius_param)
-                        self.on_escape()
+                            for kp in self._selected_key_points:
+                                create_fillet(self._doc, self._sketch, kp, radius_param)
+                            self.on_escape()
                 else:
                     pass
         if self._states.add_text:

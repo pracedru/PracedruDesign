@@ -20,6 +20,7 @@ class Surface(ObservableObject, IdObject):
     FlatSurface = 0
     SweepSurface = 1
     DoubleSweepSurface = 2
+    NurbsSurface = 3
 
     def __init__(self, surface_type):
         IdObject.__init__(self)

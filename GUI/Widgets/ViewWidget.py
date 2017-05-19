@@ -75,6 +75,10 @@ class ViewWidget(QStackedWidget):
         if self.currentIndex() == 0:
             self._sketchView.on_add_circle()
 
+    def on_add_nurbs(self):
+        if self.currentIndex() == 0:
+            self._sketchView.on_add_nurbs()
+
     def on_set_similar_x_coordinates(self):
         if self.currentIndex() == 0:
             self._sketchView.on_set_similar_x_coordinates()
