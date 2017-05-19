@@ -154,6 +154,9 @@ class PartViewWidget(QOpenGLWidget):
         size = max(limits[1].x - limits[0].x, limits[1].y - limits[0].y)
         size = max(size, limits[1].z - limits[0].z) * 0.7
         self._scale = size
+        self._offset.x = 0
+        self._offset.y = 0
+        self._offset.z = 0
 
     def part_changed(self, event):
         if event.type == ChangeEvent.ObjectAdded:
