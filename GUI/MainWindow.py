@@ -47,6 +47,7 @@ class MainWindow(QMainWindow):
         self._document.add_status_handler(self.on_status_changed)
         self.setMinimumHeight(800)
         self.setMinimumWidth(1280)
+        self.setWindowIcon(get_icon("icon"))
         self._Title = "Pracedru Design"
         self._states = ActionStates()
         # Action initialization
