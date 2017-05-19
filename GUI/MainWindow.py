@@ -361,6 +361,7 @@ class MainWindow(QMainWindow):
         sketch_tab = self._ribbon_widget.add_ribbon_tab("Sketch")
         insert_pane = sketch_tab.add_ribbon_pane("Insert")
         insert_pane.add_ribbon_widget(RibbonButton(self, self._add_line_action, True))
+        insert_pane.add_ribbon_widget(RibbonButton(self, self._add_nurbs_action, True))
         insert_pane.add_ribbon_widget(RibbonButton(self, self._add_arc_action, True))
         insert_pane.add_ribbon_widget(RibbonButton(self, self._add_circle_action, True))
         insert_pane.add_ribbon_widget(RibbonButton(self, self._add_fillet_action, True))

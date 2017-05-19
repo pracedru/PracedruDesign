@@ -3,6 +3,7 @@ from math import *
 import numpy as np
 
 from Data.Events import ChangeEvent
+from Data.Nurbs import Nurbs
 from Data.Objects import IdObject
 from Data.Objects import NamedObservableObject
 from Data.Plane import Plane
@@ -94,6 +95,14 @@ class Edge(IdObject, NamedObservableObject):
     def get_end_key_points(self):
         if self._type == Edge.LineEdge:
             return self.get_key_points()
+        if self._type == Edge.NurbsEdge:
+            key_points = self.get_key_points()
+            kps = [key_points[0]]
+            if len(key_points) > 1:
+                kps.append(key_points[len(key_points)-1])
+            else:
+                kps.append(key_points[0])
+            return kps
         elif self._type == Edge.ArcEdge:
             ckp = self._geometry.get_key_point(self._key_points[0])
             if 'start_kp' in self._meta_data:
@@ -190,6 +199,24 @@ class Edge(IdObject, NamedObservableObject):
                 return distance
             else:
                 return min(kp1.distance(point), kp2.distance(point))
+        elif self.type == Edge.NurbsEdge:
+            dist = 1e12
+            for i in range(1, len(kps)):
+                kp1 = kps[i-1]
+                kp2 = kps[i]
+                alpha1 = kp1.angle_between(kp2, point)
+                alpha2 = kp2.angle_between(kp1, point)
+                if alpha1 > pi:
+                    alpha1 = 2 * pi - alpha1
+                if alpha2 > pi:
+                    alpha2 = 2 * pi - alpha2
+                if alpha1 < pi / 2 and alpha2 < pi / 2:
+                    distance = kp1.distance(point) * sin(alpha1)
+                else:
+                    distance = min(kp1.distance(point), kp2.distance(point))
+                if distance < dist:
+                    dist = distance
+            return dist
         elif self.type == Edge.ArcEdge:
             center = kps[0]
             radius = self._meta_data['r']
@@ -360,6 +387,27 @@ class Edge(IdObject, NamedObservableObject):
             edge_data["rect"] = rect
             edge_data["r"] = radius
             edge_data["c"] = Vertex(cx, cy)
+        elif self.type == Edge.NurbsEdge:
+            kps = self.get_key_points()
+            nurbs = Nurbs()
+            controls = []
+            coords = []
+            for i in range(0, len(kps)):
+                controls.append(kps[i].xyz)
+
+            if len(controls) > 2:
+                nurbs.set_controls(controls)
+                divs = len(controls) * 15
+                for i in range(0, divs):
+                    p = nurbs.C(i / divs)
+                    coords.append(Vertex.from_xyz(p))
+                p = controls[len(controls) - 1]
+                coords.append(Vertex.from_xyz(p))
+            else:
+                for kp in kps:
+                    coords.append(kp)
+            edge_data["type"] = 4
+            edge_data["coords"] = coords
         return edge_data
 
     def angle(self, kp=None):

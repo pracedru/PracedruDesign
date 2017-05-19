@@ -159,6 +159,19 @@ class Sketch(Geometry):
                     area.add_edge(fillet_edge)
         return fillet_edge
 
+    def create_nurbs_edge(self, kp):
+        nurbs_edge = None
+        if kp.uid in self._key_points:
+            nurbs_edge = Edge(self, Edge.NurbsEdge)
+            nurbs_edge.name = "Edge" + str(self.edge_naming_index)
+            nurbs_edge.add_key_point(kp)
+            self.edge_naming_index += 1
+            self.changed(ChangeEvent(self, ChangeEvent.BeforeObjectAdded, nurbs_edge))
+            self._edges[nurbs_edge.uid] = nurbs_edge
+            self.changed(ChangeEvent(self, ChangeEvent.ObjectAdded, nurbs_edge))
+            nurbs_edge.add_change_handler(self.on_edge_changed)
+        return nurbs_edge
+
     def create_text(self, key_point, value, height):
         text = Text(self, key_point, value, height)
         self.changed(ChangeEvent(self, ChangeEvent.BeforeObjectAdded, text))

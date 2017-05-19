@@ -450,6 +450,15 @@ class Part(Geometry):
                         cx = c.x + cos(2 * pi * (i + 1) / divisions) * radius
                         cy = c.y + sin(2 * pi * (i + 1) / divisions) * radius
                         lines.append(p.xyz + pm.dot(np.array([cx, cy, 0])))
+                elif draw_data['type'] == 4:
+                    coords = draw_data['coords']
+                    c1 = None
+                    for c in coords:
+                        c2 = p.xyz + pm.dot(c.xyz)
+                        if c1 is not None:
+                            lines.append(c1)
+                            lines.append(c2)
+                        c1 = c2
         for edge_tuple in self._edges.items():
             edge = edge_tuple[1]
             kps = edge.get_end_key_points()

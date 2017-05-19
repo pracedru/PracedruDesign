@@ -125,6 +125,7 @@ class SketchEditorViewWidget(QWidget):
         self._states.add_attribute = False
         self._states.add_arc_edge = False
         self._states.draw_nurbs_edge = False
+        self._states.select_edge = True
         self._selected_key_points.clear()
         self._selected_edges.clear()
         self.setCursor(Qt.ArrowCursor)
@@ -167,6 +168,7 @@ class SketchEditorViewWidget(QWidget):
         self.setCursor(Qt.CrossCursor)
         self._states.select_kp = True
         self._states.draw_nurbs_edge = True
+        self._states.select_edge = False
         self._main_window.update_ribbon_state()
 
     def on_add_arc(self):
@@ -423,13 +425,15 @@ class SketchEditorViewWidget(QWidget):
                 coincident_threshold = 5/scale
                 kp = create_key_point(doc, sketch, x, y, 0.0, coincident_threshold)
                 self._selected_key_points.append(kp)
-            if len(self._selected_key_points) == 2:
-                sketch.create_line_edge(self._selected_key_points[0], self._selected_key_points[1])
-                if not self._states.multi_select:
-                    self._selected_key_points.clear()
-                    self.on_escape()
-                else:
-                    self._selected_key_points.remove(self._selected_key_points[0])
+            else:
+                kp = self._kp_hover
+            if len(self._selected_edges) == 0:
+                nurbs_edge = create_nurbs_edge(doc, sketch, kp)
+                self._selected_edges.append(nurbs_edge)
+            else:
+                nurbs_edge = self._selected_edges[0]
+                nurbs_edge.add_key_point(kp)
+
         if self._states.set_fillet_kp:
             if self._kp_hover is not None:
                 edges = self._kp_hover.get_edges()

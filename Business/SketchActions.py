@@ -23,6 +23,9 @@ def create_circle(doc, sketch, kp, radius_param):
     return circle_edge
 
 
+def create_nurbs_edge(doc, sketch, kp):
+    return sketch.create_nurbs_edge(kp)
+
 def create_fillet(doc, sketch, fillet_kp, radius_param):
     fillet_edge = sketch.create_fillet_edge(fillet_kp, radius_param)
     return fillet_edge
