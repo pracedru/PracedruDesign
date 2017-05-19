@@ -325,10 +325,6 @@ class PartViewWidget(QOpenGLWidget):
         nm = (v * m).normalMatrix()
         self._program.setUniformValue('normal_matrix', nm)
 
-        if self._plane_faces_index > 0:
-            self._gl.glDisable(self._gl.GL_DEPTH_TEST)
-            self.set_color(self.plane_color)
-            self._gl.glDrawArrays(self._gl.GL_TRIANGLES, 0, self._plane_faces_index+1)
         if self._plane_faces_index+1 < self._plane_edges_index:
             self.set_color(self.plane_color_edge)
             self._gl.glEnable(self._gl.GL_DEPTH_TEST)
@@ -349,6 +345,12 @@ class PartViewWidget(QOpenGLWidget):
                 self._gl.glLineWidth(2.0)
                 count = self._part_edges_index - self._part_faces_index
                 self._gl.glDrawArrays(self._gl.GL_LINES, self._part_faces_index+1, count)
+        if self._plane_faces_index > 0:
+            # self._gl.glDisable(self._gl.GL_DEPTH_TEST)
+            self._gl.glDepthMask(self._gl.GL_FALSE)
+            self.set_color(self.plane_color)
+            self._gl.glDrawArrays(self._gl.GL_TRIANGLES, 0, self._plane_faces_index+1)
+            self._gl.glDepthMask(self._gl.GL_TRUE)
 
     def resizeGL(self, width, height):
         side = min(width, height)
