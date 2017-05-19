@@ -31,6 +31,8 @@ class Edge(IdObject, NamedObservableObject):
         self._style = geometry.get_document().get_styles().get_edge_style_by_name('default')
         self._plane = plane
 
+        self._draw_data = None
+
     @property
     def style(self):
         return self._style
@@ -151,6 +153,7 @@ class Edge(IdObject, NamedObservableObject):
         self._key_points.append(key_point.uid)
         key_point.add_change_handler(self.on_key_point_changed)
         key_point.add_edge(self)
+        self._draw_data = None
 
     def on_key_point_changed(self, event):
         if event.type == ChangeEvent.Deleted:
@@ -162,6 +165,8 @@ class Edge(IdObject, NamedObservableObject):
             ckp = self._geometry.get_key_point(self._key_points[0])
             if event.sender == ckp:
                 self.update_linked_kps(ckp)
+        if self._type == Edge.NurbsEdge:
+            self._draw_data = None
 
     def update_linked_kps(self, ckp):
         if self._type == Edge.ArcEdge:
@@ -388,26 +393,30 @@ class Edge(IdObject, NamedObservableObject):
             edge_data["r"] = radius
             edge_data["c"] = Vertex(cx, cy)
         elif self.type == Edge.NurbsEdge:
-            kps = self.get_key_points()
-            nurbs = Nurbs()
-            controls = []
-            coords = []
-            for i in range(0, len(kps)):
-                controls.append(kps[i].xyz)
+            if self._draw_data is None:
+                kps = self.get_key_points()
+                nurbs = Nurbs()
+                controls = []
+                coords = []
+                for i in range(0, len(kps)):
+                    controls.append(kps[i].xyz)
 
-            if len(controls) > 2:
-                nurbs.set_controls(controls)
-                divs = len(controls) * 15
-                for i in range(0, divs):
-                    p = nurbs.C(i / divs)
+                if len(controls) > 2:
+                    nurbs.set_controls(controls)
+                    divs = len(controls) * 15
+                    for i in range(0, divs):
+                        p = nurbs.C(i / divs)
+                        coords.append(Vertex.from_xyz(p))
+                    p = controls[len(controls) - 1]
                     coords.append(Vertex.from_xyz(p))
-                p = controls[len(controls) - 1]
-                coords.append(Vertex.from_xyz(p))
+                else:
+                    for kp in kps:
+                        coords.append(kp)
+                edge_data["type"] = 4
+                edge_data["coords"] = coords
+                self._draw_data = edge_data
             else:
-                for kp in kps:
-                    coords.append(kp)
-            edge_data["type"] = 4
-            edge_data["coords"] = coords
+                edge_data = self._draw_data
         return edge_data
 
     def angle(self, kp=None):

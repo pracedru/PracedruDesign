@@ -312,6 +312,26 @@ class Part(Geometry):
                 surface = Surface(Surface.FlatSurface)
                 surface.set_main_edges([edge1, edge2, edge3, edge4])
                 surfaces.append(surface)
+            elif edge.type == Edge.NurbsEdge:
+                coords = draw_data['coords']
+                coord1 = None
+                for coord2 in coords:
+                    if coord1 is not None:
+                        c1 = p1 + pm.dot(coord1.xyz)
+                        c2 = p1 + pm.dot(coord2.xyz)
+                        kp1 = self.create_key_point(c1[0], c1[1], c1[2])
+                        kp2 = self.create_key_point(c2[0], c2[1], c2[2])
+                        edge1 = self.create_line_edge(kp1, kp2)
+                        front_edges.append(edge1)
+                        c1 = p2 + pm.dot(coord1.xyz)
+                        c2 = p2 + pm.dot(coord2.xyz)
+                        kp1 = self.create_key_point(c1[0], c1[1], c1[2])
+                        kp2 = self.create_key_point(c2[0], c2[1], c2[2])
+                        edge2 = self.create_line_edge(kp1, kp2)
+                        back_edges.append(edge2)
+                    coord1 = coord2
+                    surface = Surface(Surface.NurbsSurface)
+
             elif edge.type == Edge.ArcEdge or edge.type == Edge.FilletLineEdge:
                 plane = Plane(xd, yd)
                 c = draw_data['c']

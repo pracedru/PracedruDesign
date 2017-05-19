@@ -191,6 +191,7 @@ class SketchEditorViewWidget(QWidget):
 
     def set_sketch(self, sketch):
         self._sketch = sketch
+        self.on_escape()
         self.update()
 
     def mouseReleaseEvent(self, q_mouse_event):

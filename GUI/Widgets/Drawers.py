@@ -218,40 +218,16 @@ def draw_edge(edge: Edge, qp: QPainter, scale, offset, center, pens):
                 span = end_angle-start_angle
                 qp.drawArc(rect, start_angle, span)
         elif edge.type == Edge.NurbsEdge:
-            kps = edge.get_key_points()
-            nurbs = Nurbs()
-            controls = []
-
-            for i in range(0, len(kps)):
-                controls.append(kps[i].xyz)
-
-            if len(controls)>2:
-                nurbs.set_controls(controls)
-                p1 = nurbs.C(0)
-                divs = len(controls)*15
-                for i in range(1, divs):
-                    p2 = nurbs.C(i/divs)
-                    x1 = (p1[0] + offset.x) * scale + center.x
-                    y1 = -(p1[1] + offset.y) * scale + center.y
-                    x2 = (p2[0] + offset.x) * scale + center.x
-                    y2 = -(p2[1] + offset.y) * scale + center.y
+            draw_data = edge.get_draw_data()
+            coords = draw_data['coords']
+            x1 = None
+            for coord in coords:
+                x2 = (coord.x + offset.x) * scale + center.x
+                y2 = -(coord.y + offset.y) * scale + center.y
+                if x1 is not None:
                     qp.drawLine(QPointF(x1, y1), QPointF(x2, y2))
-                    p1 = p2
-                p2 = controls[len(controls)-1]
-                x1 = (p1[0] + offset.x) * scale + center.x
-                y1 = -(p1[1] + offset.y) * scale + center.y
-                x2 = (p2[0] + offset.x) * scale + center.x
-                y2 = -(p2[1] + offset.y) * scale + center.y
-                qp.drawLine(QPointF(x1, y1), QPointF(x2, y2))
-            else:
-                for i in range(1, len(kps)):
-                    kp1 = kps[i - 1]
-                    kp2 = kps[i]
-                    x1 = (kp1.x + offset.x) * scale + center.x
-                    y1 = -(kp1.y + offset.y) * scale + center.y
-                    x2 = (kp2.x + offset.x) * scale + center.x
-                    y2 = -(kp2.y + offset.y) * scale + center.y
-                    qp.drawLine(QPointF(x1, y1), QPointF(x2, y2))
+                x1 = x2
+                y1 = y2
 
 
 def draw_kp(qp, key_point, scale, offset, center):
