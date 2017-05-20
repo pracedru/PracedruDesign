@@ -335,6 +335,7 @@ class MainWindow(QMainWindow):
         self._create_area_action.setChecked(self._states.create_area)
         self._show_surfs_action.setChecked(self._viewWidget.part_view.show_surfaces)
         self._show_lines_action.setChecked(self._viewWidget.part_view.show_lines)
+        self._add_nurbs_action.setChecked(self._states.draw_nurbs_edge)
 
     def init_ribbon(self):
         self.init_home_tab()
