@@ -1,5 +1,6 @@
 from PyQt5.QtCore import *
 from Business import *
+from Business.SketchActions import remove_key_points
 from Data.Parameters import *
 from Data.Point3d import KeyPoint
 
@@ -99,13 +100,13 @@ class KeyPointsModel(QAbstractTableModel):
 
     def removeRow(self, row, QModelIndex_parent=None, *args, **kwargs):
         kp = self._sketch.get_key_point(self._rows[row])
-        remove_key_point(self._doc, kp)
+        remove_key_points(self._doc, self._sketch, [kp])
 
     def remove_rows(self, rows):
         kps = []
         for row in rows:
             kps.append(self._sketch.get_key_point(self._rows[row]))
-        remove_key_points(self._doc, kps)
+        remove_key_points(self._doc, self._sketch, kps)
 
     def on_sketch_changed(self, event: ChangeEvent):
         if type(event.object) is KeyPoint:

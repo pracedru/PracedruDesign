@@ -52,6 +52,7 @@ class PartViewWidget(QOpenGLWidget):
         self._gl = None
         self._show_surfaces = True
         self._show_lines = True
+        self._show_planes = True
         self._program = None
         self._vertices = [[0,0,0]]
         self._normals = [[0,0,0]]
@@ -83,6 +84,15 @@ class PartViewWidget(QOpenGLWidget):
     def show_lines(self, value):
         self._show_lines = value
         self.redraw_drawables()
+        self.update()
+
+    @property
+    def show_planes(self):
+        return self._show_planes
+
+    @show_planes.setter
+    def show_planes(self, value):
+        self._show_planes = value
         self.update()
 
     def set_part(self, part: Part):
@@ -221,6 +231,9 @@ class PartViewWidget(QOpenGLWidget):
             if area is not None and revolve_axis is not None:
                 add_revolve_in_part(self._document, self._part, sketch_feature, area, length, revolve_axis)
 
+    def on_create_nurbs_surface(self):
+        add_nurbs_surface_in_part(self._document, self._part, sketch_feature, nurbs_edges)
+
     def setXRotation(self, angle):
         angle = max(90 * 16, angle)
         angle = min(270 * 16, angle)
@@ -325,7 +338,7 @@ class PartViewWidget(QOpenGLWidget):
         nm = (v * m).normalMatrix()
         self._program.setUniformValue('normal_matrix', nm)
 
-        if self._plane_faces_index+1 < self._plane_edges_index:
+        if self._plane_faces_index+1 < self._plane_edges_index  and self._show_planes:
             self.set_color(self.plane_color_edge)
             self._gl.glEnable(self._gl.GL_DEPTH_TEST)
             self._gl.glLineWidth(2.0)
@@ -345,7 +358,7 @@ class PartViewWidget(QOpenGLWidget):
                 self._gl.glLineWidth(2.0)
                 count = self._part_edges_index - self._part_faces_index
                 self._gl.glDrawArrays(self._gl.GL_LINES, self._part_faces_index+1, count)
-        if self._plane_faces_index > 0:
+        if self._plane_faces_index > 0 and self._show_planes:
             # self._gl.glDisable(self._gl.GL_DEPTH_TEST)
             self._gl.glDepthMask(self._gl.GL_FALSE)
             self.set_color(self.plane_color)

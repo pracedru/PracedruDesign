@@ -84,8 +84,10 @@ class MainWindow(QMainWindow):
         self._insert_part_action = self.add_action("Insert\npart", "addpartview", "Insert part in drawing", True, self.on_insert_part_in_drawing)
         self._add_revolve_action = self.add_action("Revolve\nArea", "revolve", "Revolve an area on this part", True, self.on_revolve_area)
         self._add_extrude_action = self.add_action("Extrude\nArea", "extrude", "Extrude an area on this part", True, self.on_extrude_area)
+        self._add_nurbs_surface_action = self.add_action("Create\nNurbs Srf.", "nurbssurf", "Create nurbs surface", True, self.on_create_nurbs_surface)
         self._show_surfs_action = self.add_action("Show\nSurfs", "showsurfs", "Show surfaces", True, self.on_show_surfs, checkable=True)
         self._show_lines_action = self.add_action("Show\nLines", "showlines", "Show Lines", True, self.on_show_lines, checkable=True)
+        self._show_planes_action = self.add_action("Show\nPlanes", "showplanes", "Show Planes", True, self.on_show_planes, checkable=True)
         self._add_field_action = self.add_action("Insert\nfield", "addfield", "Insert field on drawing", True, self.on_add_field)
         self._about_action = self.add_action("About", "about", "About this programme", True, self.on_about)
 
@@ -172,11 +174,17 @@ class MainWindow(QMainWindow):
     def on_extrude_area(self):
         self._viewWidget.part_view.on_insert_extrude()
 
+    def on_create_nurbs_surface(self):
+        self._viewWidget.part_view.on_create_nurbs_surface()
+
     def on_show_surfs(self):
         self._viewWidget.part_view.show_surfaces = self._show_surfs_action.isChecked()
 
     def on_show_lines(self):
         self._viewWidget.part_view.show_lines = self._show_lines_action.isChecked()
+
+    def on_show_planes(self):
+        self._viewWidget.part_view.show_planes = self._show_planes_action.isChecked()
 
     def on_add_field(self):
         self._viewWidget.drawing_view.on_add_field()
@@ -336,6 +344,7 @@ class MainWindow(QMainWindow):
         self._create_area_action.setChecked(self._states.create_area)
         self._show_surfs_action.setChecked(self._viewWidget.part_view.show_surfaces)
         self._show_lines_action.setChecked(self._viewWidget.part_view.show_lines)
+        self._show_planes_action.setChecked(self._viewWidget.part_view.show_planes)
         self._add_nurbs_action.setChecked(self._states.draw_nurbs_edge)
 
     def init_ribbon(self):
@@ -402,9 +411,11 @@ class MainWindow(QMainWindow):
         insert_pane.add_ribbon_widget(RibbonButton(self, self._create_sketch_action, True))
         insert_pane.add_ribbon_widget(RibbonButton(self, self._add_extrude_action, True))
         insert_pane.add_ribbon_widget(RibbonButton(self, self._add_revolve_action, True))
+        insert_pane.add_ribbon_widget(RibbonButton(self, self._add_nurbs_surface_action, True))
         view_pane = part_tab.add_ribbon_pane("View")
         view_pane.add_ribbon_widget(RibbonButton(self, self._show_surfs_action, True))
         view_pane.add_ribbon_widget(RibbonButton(self, self._show_lines_action, True))
+        view_pane.add_ribbon_widget(RibbonButton(self, self._show_planes_action, True))
 
     def init_assembly_tab(self):
         pass

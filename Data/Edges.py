@@ -403,7 +403,7 @@ class Edge(IdObject, NamedObservableObject):
 
                 if len(controls) > 2:
                     nurbs.set_controls(controls)
-                    divs = len(controls) * 15
+                    divs = len(controls) * 20
                     for i in range(0, divs):
                         p = nurbs.C(i / divs)
                         coords.append(Vertex.from_xyz(p))

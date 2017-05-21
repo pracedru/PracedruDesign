@@ -134,8 +134,11 @@ class Surface(ObservableObject, IdObject):
                 self._triangles, self._normals = self.get_flat_surface_triangles()
             elif self._surface_type == Surface.SweepSurface:
                 self._triangles, self._normals = self.get_sweep_surface_triangles()
+            elif self._surface_type == Surface.NurbsSurface:
+                self._triangles, self._normals = self.get_nurbs_surface_triangles()
             else:
                 self._triangles, self._normals = self.get_double_sweep_surface_triangles()
+
         return self._triangles, self._normals
 
     def get_divisions_of_edge(self, edge):
@@ -199,6 +202,11 @@ class Surface(ObservableObject, IdObject):
         else:
             n = cp
         return n
+
+    def get_nurbs_surface_triangles(self):
+        triangles = []
+        normals = []
+        return triangles, normals
 
     def get_double_sweep_surface_triangles(self):
         triangles = []

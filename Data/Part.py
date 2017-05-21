@@ -451,7 +451,7 @@ class Part(Geometry):
                     span = draw_data["span"] * pi / (180 * 16)
                     radius = draw_data["r"]
                     c = draw_data["c"]
-                    divisions = abs(int(span * 20))
+                    divisions = abs(int(span * 15))
                     for i in range(divisions):
                         cx = c.x + cos(start_angle + span * i / divisions) * radius
                         cy = c.y + sin(start_angle + span * i / divisions) * radius
@@ -462,7 +462,7 @@ class Part(Geometry):
                 elif draw_data['type'] == 3:
                     radius = draw_data["r"]
                     c = draw_data["c"]
-                    divisions = int(2 * pi * 20)
+                    divisions = int(2 * pi * 15)
                     for i in range(divisions):
                         cx = c.x + cos(2 * pi * i / divisions) * radius
                         cy = c.y + sin(2 * pi * i / divisions) * radius
@@ -493,7 +493,7 @@ class Part(Geometry):
                 end_angle = edge.get_meta_data("ea")
                 span = end_angle - start_angle
                 pm = edge.plane.get_global_projection_matrix()
-                divisions = abs(int(span * 20))
+                divisions = abs(int(span * 15))
                 for i in range(divisions):
                     cx = cos(start_angle + span * i / divisions) * radius
                     cy = sin(start_angle + span * i / divisions) * radius

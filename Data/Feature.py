@@ -11,6 +11,7 @@ class Feature(NamedObservableObject, IdObject):
     FilletFeature = 2
     PlaneFeature = 3
     SketchFeature = 4
+    NurbsSurfaceFeature = 5
 
     AddOperation = 0
     SubtractOperation = 1
