@@ -31,6 +31,7 @@ class Feature(NamedObservableObject, IdObject):
         self._feature_type = feature_type
         self._vertexes = {}
         self._edges = []
+        self._order_items = []
         self._features = []
         self._features_late_bind = []
         self._feature_objects = []
@@ -66,6 +67,9 @@ class Feature(NamedObservableObject, IdObject):
             self._vertexes['ex_ls'].x = value[0]*pi/180
             self._vertexes['ex_ls'].y = value[1]*pi/180
         self.changed(ValueChangeEvent(self, 'distance', None, value))
+
+    def get_order_items(self):
+        return self._order_items
 
     @property
     def plane(self):
@@ -137,6 +141,9 @@ class Feature(NamedObservableObject, IdObject):
             self._features_late_bind.clear()
         return list(self._features)
 
+    def add_order_item(self, item):
+        self._order_items.append(item)
+
     @property
     def feature_type(self):
         return self._feature_type
@@ -179,8 +186,8 @@ class Feature(NamedObservableObject, IdObject):
             'vertexes': self._vertexes,
             'type': self._feature_type,
             'features': self._get_feature_uids(),
-            'objects': self._get_object_uids()
-
+            'objects': self._get_object_uids(),
+            'order_items': self._order_items
         }
 
     @staticmethod
@@ -193,6 +200,7 @@ class Feature(NamedObservableObject, IdObject):
     def deserialize_data(self, data, feature_parent):
         IdObject.deserialize_data(self, data['uid'])
         NamedObservableObject.deserialize_data(self, data['name'])
+        self._order_items = data.get('order_items', [])
         self._feature_type = data['type']
         for vertex_data_tuple in data.get('vertexes', {}).items():
             vertex_data = vertex_data_tuple[1]

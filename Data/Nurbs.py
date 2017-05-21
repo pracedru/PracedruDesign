@@ -99,6 +99,10 @@ class NurbsSurface(object):
     def S(self, u, v):
         s = None
         n = self._degree
+        if u == 1:
+            u = 0.999999999
+        if v == 1:
+            v = 0.999999999
         for i in range(len(self._controls)):
             for j in range(len(self._controls[0])):
                 P = self._controls[i][j]

@@ -3,6 +3,7 @@ from math import *
 
 from Data.Edges import Edge
 from Data.Events import *
+from Data.Nurbs import NurbsSurface
 from Data.Vertex import Vertex
 from Data.Objects import *
 
@@ -206,6 +207,49 @@ class Surface(ObservableObject, IdObject):
     def get_nurbs_surface_triangles(self):
         triangles = []
         normals = []
+        ns = NurbsSurface()
+        edges = self._main_edge_loop
+        controls = []
+        for edge in edges:
+            kps = edge.get_key_points()
+            cps = []
+            for kp in kps:
+                cps.append(kp.xyz)
+            controls.append(cps)
+        ns.set_controls(controls)
+        verts_matrix = []
+        i_count = len(controls)*10
+        j_count = len(controls[0])*10
+        for i in range(i_count):
+            verts_array = []
+            for j in range(j_count):
+                verts_array.append(ns.S(i/(i_count-1), j/(j_count-1)))
+            verts_matrix.append(verts_array)
+        for i in range(1, i_count):
+            for j in range(1, j_count):
+                v1 = verts_matrix[i - 1][j - 1]
+                v2 = verts_matrix[i - 1][j]
+                v3 = verts_matrix[i][j - 1]
+                v4 = verts_matrix[i][j]
+                triangles.append(v1)
+                triangles.append(v2)
+                triangles.append(v3)
+                triangles.append(v3)
+                triangles.append(v2)
+                triangles.append(v4)
+                n4 = self.calc_norm(v1, v2, v3)
+                if j == 1:
+                    n3 = n4
+                if i == 1:
+                    n1 = n3
+                    n2 = n4
+                else:
+                    n1 = normals[(j_count-1) * (i - 2) * 6 + (j-0) * 6-3]
+                    n2 = normals[(j_count-1) * (i - 2) * 6 + (j-0) * 6-1]
+                normals.extend([n1, n2, n3, n3, n2, n4])
+                # normals.extend([n4, n4, n4, n4, n4, n4])
+                n3 = n4
+
         return triangles, normals
 
     def get_double_sweep_surface_triangles(self):
@@ -414,38 +458,42 @@ class Surface(ObservableObject, IdObject):
         rem_ed = list(edges_loop)
         first_edge = rem_ed[0]
         rem_ed.remove(first_edge)
-        self._main_edge_loop.append(first_edge)
-        las_kp = first_edge.get_end_key_points()[0]
-        while len(rem_ed) > 0:
-            found = False
-            for edge in rem_ed:
-                kps = edge.get_end_key_points()
-                if kps[0].distance(las_kp) < 0.000001:
-                    self._main_edge_loop.append(edge)
-                    found = True
-                    las_kp = kps[1]
-                    break
-                elif kps[1].distance(las_kp) < 0.000001:
-                    self._main_edge_loop.append(edge)
-                    found = True
-                    las_kp = kps[0]
-                    break
-            if not found:
-                print("not found")
-                if True: # if len(rem_ed) == 1:
-                    self._main_edge_loop.append(edge)
-                    rem_ed.remove(edge)
-                    # rem_ed.clear()
-                else:
-                    pass # raise Exception("Unrecoverable error")
-                for edge in self._main_edge_loop:
+
+        if self._surface_type == Surface.NurbsSurface:
+            self._main_edge_loop = edges_loop
+        else:
+            self._main_edge_loop.append(first_edge)
+            las_kp = first_edge.get_end_key_points()[0]
+            while len(rem_ed) > 0:
+                found = False
+                for edge in rem_ed:
                     kps = edge.get_end_key_points()
-                    print(str(kps[0].xyz))
-                    print(str(kps[1].xyz))
-            else:
-                rem_ed.remove(edge)
-            for edge in self._main_edge_loop:
-                edge.add_change_handler(self.on_edge_changed)
+                    if kps[0].distance(las_kp) < 0.000001:
+                        self._main_edge_loop.append(edge)
+                        found = True
+                        las_kp = kps[1]
+                        break
+                    elif kps[1].distance(las_kp) < 0.000001:
+                        self._main_edge_loop.append(edge)
+                        found = True
+                        las_kp = kps[0]
+                        break
+                if not found:
+                    print("not found")
+                    if True: # if len(rem_ed) == 1:
+                        self._main_edge_loop.append(edge)
+                        rem_ed.remove(edge)
+                        # rem_ed.clear()
+                    else:
+                        pass # raise Exception("Unrecoverable error")
+                    for edge in self._main_edge_loop:
+                        kps = edge.get_end_key_points()
+                        print(str(kps[0].xyz))
+                        print(str(kps[1].xyz))
+                else:
+                    rem_ed.remove(edge)
+        for edge in self._main_edge_loop:
+            edge.add_change_handler(self.on_edge_changed)
 
         self.changed(ChangeEvent(self, ChangeEvent.ObjectChanged, self))
 

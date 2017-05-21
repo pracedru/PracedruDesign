@@ -75,6 +75,18 @@ class Part(Geometry):
         self._feature_progression.append(feature.uid)
         self.changed(ChangeEvent(self, ChangeEvent.ObjectAdded, feature))
 
+    def create_nurbs_surface(self, sketch_feature, nurbs_edges):
+        name = self.get_new_unique_feature_name("New Surface")
+        nurbs_surface_feature = Feature(self._doc, self, Feature.NurbsSurfaceFeature, name)
+        nurbs_surface_feature.add_feature(sketch_feature)
+        for edge in nurbs_edges:
+            nurbs_surface_feature.add_order_item(edge.uid)
+        self._features[nurbs_surface_feature.uid] = nurbs_surface_feature
+        self._add_feature(nurbs_surface_feature)
+        nurbs_surface_feature.add_change_handler(self.on_nurbs_surface_feature_changed)
+        self._update_needed = True
+        return nurbs_surface_feature
+
     def create_plane_feature(self, name, position, x_direction, y_direction):
         name = self.get_new_unique_feature_name(name)
         plane_feature = Feature(self._doc, self, Feature.PlaneFeature, name)
@@ -152,6 +164,13 @@ class Part(Geometry):
         line_edge.add_key_point(key_point2)
         self._edges[line_edge.uid] = line_edge
         return line_edge
+
+    def create_nurbs_edge(self, kp):
+        nurbs_edge = Edge(self, Edge.NurbsEdge)
+        nurbs_edge.name = "Edge"
+        nurbs_edge.add_key_point(kp)
+        self._edges[nurbs_edge.uid] = nurbs_edge
+        return nurbs_edge
 
     def create_surfaces_from_revolve(self, feature):
         surfaces = []
@@ -362,6 +381,27 @@ class Part(Geometry):
         surfaces.append(surface)
         return surfaces
 
+    def create_suface_from_nurbs_feature(self, nurbs_surface_feature):
+        surface = Surface(Surface.NurbsSurface)
+        sketch_feature = nurbs_surface_feature.get_features()[0]
+        plane_feature = sketch_feature.get_features()[0]
+        p = plane_feature.get_vertex('p')
+        xd = plane_feature.get_vertex('xd')
+        yd = plane_feature.get_vertex('yd')
+
+        cp = np.cross(xd.xyz, yd.xyz)
+        n = cp / np.linalg.norm(cp)
+        pm = np.array([xd.xyz, yd.xyz, n]).transpose()
+        sketch = sketch_feature.get_objects()[0]
+        order_items = nurbs_surface_feature.get_order_items()
+        edges = []
+        for order_item in order_items:
+            edge = sketch.get_edge(order_item)
+            edges.append(edge)
+
+        surface.set_main_edges(edges)
+        return surface
+
     def update_geometry(self):
         self._surfaces.clear()
         self._edges.clear()
@@ -377,6 +417,9 @@ class Part(Geometry):
                 surfaces = self.create_surfaces_from_revolve(feature)
                 for surface in surfaces:
                     self._surfaces[surface.uid] = surface
+            elif feature.feature_type == Feature.NurbsSurfaceFeature:
+                surface = self.create_suface_from_nurbs_feature(feature)
+                self._surfaces[surface.uid] = surface
         self._cal_limits()
         self._update_needed = False
 
@@ -512,6 +555,16 @@ class Part(Geometry):
             self._feature_progression.remove(event.sender.uid)
             self.changed(ChangeEvent(self, ChangeEvent.ObjectRemoved, event.sender))
             event.sender.remove_change_handler(self.on_plane_feature_changed)
+
+    def on_nurbs_surface_feature_changed(self, event):
+        self.changed(ChangeEvent(self, ChangeEvent.ObjectChanged, event.sender))
+        if event.type == ChangeEvent.Deleted:
+            self.changed(ChangeEvent(self, ChangeEvent.BeforeObjectRemoved, event.sender))
+            self._features.pop(event.sender.uid)
+            self._feature_progression.remove(event.sender.uid)
+            self.changed(ChangeEvent(self, ChangeEvent.ObjectRemoved, event.sender))
+            event.sender.remove_change_handler(self.on_plane_feature_changed)
+        self._update_needed = True
 
     def on_sketch_feature_changed(self, event):
         self.changed(ChangeEvent(self, ChangeEvent.ObjectChanged, event.sender))

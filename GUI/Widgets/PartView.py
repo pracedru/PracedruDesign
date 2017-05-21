@@ -6,6 +6,7 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QColor, QOpenGLShaderProgram, QOpenGLShader, QMatrix4x4, QVector3D, QVector2D
 
 from Data import read_text_from_disk
+from Data.Edges import Edge
 
 try:
     from OpenGL import GL
@@ -232,7 +233,18 @@ class PartViewWidget(QOpenGLWidget):
                 add_revolve_in_part(self._document, self._part, sketch_feature, area, length, revolve_axis)
 
     def on_create_nurbs_surface(self):
-        add_nurbs_surface_in_part(self._document, self._part, sketch_feature, nurbs_edges)
+        sketch_feature = None
+        nurbs_edges = []
+        feats = self._part.get_features_list()
+        for feat in feats:
+            if feat.feature_type == Feature.SketchFeature:
+                sketch_feature = feat
+                sketch = sketch_feature.get_objects()[0]
+                for edge in sketch.get_edges():
+                    if edge[1].type == Edge.NurbsEdge:
+                        nurbs_edges.append(edge[1])
+        if sketch_feature is not None and len(nurbs_edges) > 2:
+            add_nurbs_surface_in_part(self._document, self._part, sketch_feature, nurbs_edges)
 
     def setXRotation(self, angle):
         angle = max(90 * 16, angle)

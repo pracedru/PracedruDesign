@@ -20,3 +20,7 @@ def create_add_sketch_to_part(document, part, plane):
     document.get_geometries().add_geometry(sketch)
     insert_sketch_in_part(document, part, sketch, plane)
     return sketch
+
+
+def add_nurbs_surface_in_part(document, part, sketch_feature, nurbs_edges):
+    return part.create_nurbs_surface(sketch_feature, nurbs_edges)

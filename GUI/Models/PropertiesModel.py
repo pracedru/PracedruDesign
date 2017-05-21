@@ -55,7 +55,7 @@ rows_by_type = {
         ['Line type', 'line_type']],
     "Feature": [
         ['Name', 'name'],
-        ['Type', 'feature_type', {'choices': ['Extrude', 'Revolve', 'Fillet', 'Plane', 'Sketch']}],
+        ['Type', 'feature_type', {'choices': ['Extrude', 'Revolve', 'Fillet', 'Plane', 'Sketch', 'Nurbs Surface']}],
         ['Length', 'distance', {'condition': ['feature_type', 0]}],
         ['Angles', 'distance', {'condition': ['feature_type', 1]}],
         ['Plane', 'plane', {'condition': ['feature_type', 4]}]],
