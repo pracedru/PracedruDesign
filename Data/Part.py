@@ -134,11 +134,10 @@ class Part(Geometry):
         self._update_needed = True
         self._cal_limits()
 
-    def create_key_point(self, x, y, z):
+    def create_key_point(self, x, y, z, ts=0.000001):
         key_point = None
         for p_tuple in self._key_points.items():
             p = p_tuple[1]
-            ts = 0.000001
             if abs(p.x - x) <= ts and abs(p.y - y) <= ts and abs(p.z - z) <= ts:
                 key_point = p
                 break
@@ -397,7 +396,15 @@ class Part(Geometry):
         edges = []
         for order_item in order_items:
             edge = sketch.get_edge(order_item)
-            edges.append(edge)
+            kps = edge.get_key_points()
+            c = p.xyz + pm.dot(kps[0].xyz)
+            kp = self.create_key_point(c[0], c[1], c[2])
+            surf_edge = self.create_nurbs_edge(kp)
+            for i in range(1, len(kps)):
+                c = p.xyz + pm.dot(kps[i].xyz)
+                kp = self.create_key_point(c[0], c[1], c[2])
+                surf_edge.add_key_point(kp)
+            edges.append(surf_edge)
 
         surface.set_main_edges(edges)
         return surface

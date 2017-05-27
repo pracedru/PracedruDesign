@@ -195,13 +195,15 @@ class Surface(ObservableObject, IdObject):
             cc = c.xyz + plane.get_global_xyz(x, y, z)
         return cc
 
-    def calc_norm(self, v1, v2, v3):
+    def calc_norm(self, v1, v2, v3, v4):
         cp = np.cross(v2 - v1, v3 - v1)
         nm = np.linalg.norm(cp)
         if nm != 0:
             n = cp / nm
         else:
-            n = cp
+            cp = np.cross(v4 - v2, v3 - v2)
+            nm = np.linalg.norm(cp)
+            n = cp / nm
         return n
 
     def get_nurbs_surface_triangles(self):
@@ -237,7 +239,7 @@ class Surface(ObservableObject, IdObject):
                 triangles.append(v3)
                 triangles.append(v2)
                 triangles.append(v4)
-                n4 = self.calc_norm(v1, v2, v3)
+                n4 = self.calc_norm(v1, v2, v3, v4)
                 if j == 1:
                     n3 = n4
                 if i == 1:
@@ -277,7 +279,7 @@ class Surface(ObservableObject, IdObject):
                 v22 = self.get_position_on_double_edge(edges[0], ri, c12, r12)
                 triangles.extend([v11, v21, v12])
                 triangles.extend([v21, v22, v12])
-                n22 = self.calc_norm(v11, v21, v12)
+                n22 = self.calc_norm(v11, v21, v12, v22)
                 if i == 1:
                     n21 = n22
                 if j == 0:
@@ -294,7 +296,6 @@ class Surface(ObservableObject, IdObject):
         return triangles, normals
 
     def get_sweep_surface_triangles(self):
-
         triangles = []
         normals = []
         edges = self._main_edge_loop

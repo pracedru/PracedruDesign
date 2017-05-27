@@ -82,8 +82,8 @@ class MainWindow(QMainWindow):
         self._insert_sketch_in_action = self.add_action("Insert\nsketch", "addsketch", "Insert sketch ", True, self.on_insert_sketch)
         self._insert_sketch_in_drawing_action = self.add_action("Insert\nsketch", "addsketchview", "Insert sketch in drawing", True, self.on_insert_sketch)
         self._insert_part_action = self.add_action("Insert\npart", "addpartview", "Insert part in drawing", True, self.on_insert_part_in_drawing)
-        self._add_revolve_action = self.add_action("Revolve\nArea", "revolve", "Revolve an area on this part", True, self.on_revolve_area)
-        self._add_extrude_action = self.add_action("Extrude\nArea", "extrude", "Extrude an area on this part", True, self.on_extrude_area)
+        self._add_revolve_action = self.add_action("Revolve\nArea", "addrevolve", "Revolve an area on this part", True, self.on_revolve_area)
+        self._add_extrude_action = self.add_action("Extrude\nArea", "addextrude", "Extrude an area on this part", True, self.on_extrude_area)
         self._add_nurbs_surface_action = self.add_action("Create\nNurbs Srf.", "nurbssurf", "Create nurbs surface", True, self.on_create_nurbs_surface)
         self._show_surfs_action = self.add_action("Show\nSurfs", "showsurfs", "Show surfaces", True, self.on_show_surfs, checkable=True)
         self._show_lines_action = self.add_action("Show\nLines", "showlines", "Show Lines", True, self.on_show_lines, checkable=True)
@@ -366,7 +366,7 @@ class MainWindow(QMainWindow):
         insert_pane = home_tab.add_ribbon_pane("Insert")
         insert_pane.add_ribbon_widget(RibbonButton(self, self.add_sketch_to_document_action, True))
         insert_pane.add_ribbon_widget(RibbonButton(self, self.add_part_action, True))
-        insert_pane.add_ribbon_widget(RibbonButton(self, self.add_drawing_action, True))
+        insert_pane.add_ribbon_widget(RibbonButton(self, self.add_drawing_action, True))        
 
     def init_sketch_tab(self):
         sketch_tab = self._ribbon_widget.add_ribbon_tab("Sketch")

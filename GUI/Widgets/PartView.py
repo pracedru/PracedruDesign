@@ -38,7 +38,7 @@ class PartViewWidget(QOpenGLWidget):
         self._part = None
         self._gen_lists_start = 0
         self._drawables = []
-        self.xRot = 45*16
+        self.xRot = 225*16
         self.yRot = 45*16
         self.zRot = 0
         self._scale = 0.5

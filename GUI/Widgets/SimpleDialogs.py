@@ -108,6 +108,9 @@ class ExtrudeDialog(QDialog):
         dialog_buttons.accepted.connect(self.accept)
         dialog_buttons.rejected.connect(self.reject)
         self._sketch_view = SketchViewWidget(self, None, document)
+        self._sketch_view.show_areas = True
+        self._sketch_view.areas_selectable = True
+        self._sketch_view.set_change_listener(self)
         self.layout().addWidget(self._sketch_view)
         self.layout().addWidget(dialog_buttons)
 
@@ -115,6 +118,9 @@ class ExtrudeDialog(QDialog):
         self.on_sketch_selection_changed()
         sketch = self.sketch_feature.get_objects()[0]
         self._sketch_view.set_sketch(sketch)
+
+    def on_area_selected(self, area):
+        self._area_combo_box.setCurrentText(area.name)
 
     def on_sketch_selection_changed(self):
         self._area_combo_box.clear()
@@ -199,7 +205,17 @@ class RevolveDialog(QDialog):
         self._sketch_combo_box.currentIndexChanged.connect(self.on_sketch_selection_changed)
         self.on_sketch_selection_changed()
         sketch = self.sketch_feature.get_objects()[0]
+        self._sketch_view.show_areas = True
+        self._sketch_view.areas_selectable = True
+        self._sketch_view.edges_selectable = True
+        self._sketch_view.set_change_listener(self)
         self._sketch_view.set_sketch(sketch)
+
+    def on_area_selected(self, area):
+        self._area_combo_box.setCurrentText(area.name)
+
+    def on_edge_selected(self, edge):
+        self._axis_combo_box.setCurrentText(edge.name)
 
     def on_sketch_selection_changed(self):
         self._area_combo_box.clear()

@@ -115,6 +115,10 @@ class Area(IdObject, ObservableObject):
                 self.changed(ChangeEvent(self, ChangeEvent.Deleted, self))
 
     def get_key_points(self):
+        """
+        This function returns the key points that control the edges of this area.
+        :return: 
+        """
         if self._key_points is None:
             self._key_points = []
             this_kp = self._edges[0].get_end_key_points()[0]
@@ -135,6 +139,10 @@ class Area(IdObject, ObservableObject):
         return self._key_points
 
     def get_inside_key_points(self):
+        """
+        This functions finds the key points used to determine if another point is inside this area
+        :return: list of points describing the outside limits
+        """
         key_points = []
         this_kp = self._edges[0].get_end_key_points()[0]
         next_kp = self._edges[0].get_end_key_points()[1]

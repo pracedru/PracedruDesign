@@ -236,7 +236,7 @@ def draw_kp(qp, key_point, scale, offset, center):
     qp.drawEllipse(QPointF(x1, y1), 4, 4)
 
 
-def draw_area(area, qp, scale, offset, height, width, show_names, brush):
+def draw_area(area, qp, scale, offset, half_height, half_width, show_names, brush):
     path = QPainterPath()
     first_kp = True
     x_max = 0
@@ -245,8 +245,8 @@ def draw_area(area, qp, scale, offset, height, width, show_names, brush):
     y_min = 0
     counter = 0
     for kp in area.get_key_points():
-        x = (kp.x + offset.x) * scale + width
-        y = -(kp.y + offset.y) * scale + height
+        x = (kp.x + offset.x) * scale + half_width
+        y = -(kp.y + offset.y) * scale + half_height
         if first_kp:
             path.moveTo(QPointF(x, y))
             first_kp = False
@@ -258,8 +258,8 @@ def draw_area(area, qp, scale, offset, height, width, show_names, brush):
             edge = area.get_edges()[counter - 1]
             if edge.type == Edge.ArcEdge:
                 center_kp = edge.get_key_points()[0]
-                cx = (center_kp.x + offset.x) * scale + width
-                cy = -(center_kp.y + offset.y) * scale + height
+                cx = (center_kp.x + offset.x) * scale + half_width
+                cy = -(center_kp.y + offset.y) * scale + half_height
                 radius = edge.get_meta_data('r')
                 start_angle = edge.get_meta_data('sa')
                 end_angle = edge.get_meta_data('ea')

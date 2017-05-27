@@ -168,6 +168,10 @@ class DocumentItemModel(QAbstractItemModel):
             elif type(model_item.data) is Feature:
                 if model_item.data.feature_type == Feature.SketchFeature:
                     return get_icon("sketch")
+                if model_item.data.feature_type == Feature.RevolveFeature:
+                    return get_icon("revolve")
+                if model_item.data.feature_type == Feature.ExtrudeFeature:
+                    return get_icon("extrude")
             return get_icon("default")
         return None
 

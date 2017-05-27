@@ -115,7 +115,7 @@ class Edge(IdObject, NamedObservableObject):
                 y = sin(self._meta_data['sa'])*self._meta_data['r']
                 z = 0
                 pc1 = ckp.xyz + pm.dot(np.array([x, y, z]))
-                start_kp = self._geometry.create_key_point(pc1[0], pc1[1], pc1[2])
+                start_kp = self._geometry.create_key_point(pc1[0], pc1[1], pc1[2], 0)
                 start_kp.add_edge(self)
                 start_kp.add_change_handler(self.on_key_point_changed)
                 self._meta_data['start_kp'] = start_kp.uid
@@ -127,7 +127,7 @@ class Edge(IdObject, NamedObservableObject):
                 y = sin(self._meta_data['ea'])*self._meta_data['r']
                 z = 0
                 pc1 = ckp.xyz + pm.dot(np.array([x, y, z]))
-                end_kp = self._geometry.create_key_point(pc1[0], pc1[1], pc1[2])
+                end_kp = self._geometry.create_key_point(pc1[0], pc1[1], pc1[2], 0)
                 end_kp.add_edge(self)
                 end_kp.add_change_handler(self.on_key_point_changed)
                 self._meta_data['end_kp'] = end_kp.uid
