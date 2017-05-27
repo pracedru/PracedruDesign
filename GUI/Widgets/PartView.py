@@ -45,8 +45,8 @@ class PartViewWidget(QOpenGLWidget):
         self.lastPos = QPoint()
         self._offset = Vertex()
         self._mouse_position = None
-        self.part_color = QColor(200, 200, 200, 255)
-        self.part_color_edge = QColor(150, 150, 150, 255)
+        self.part_color = QColor(200, 203, 210, 255)
+        self.part_color_edge = QColor(50, 50, 50, 255)
         self.plane_color = QColor(0, 150, 200, 25)
         self.plane_color_edge = QColor(0, 150, 200, 180)
         self.background_color = QColor(180, 180, 195, 25)
@@ -349,29 +349,29 @@ class PartViewWidget(QOpenGLWidget):
         self._program.setUniformValue('mvp', mvp)
         nm = (v * m).normalMatrix()
         self._program.setUniformValue('normal_matrix', nm)
-
-        if self._plane_faces_index+1 < self._plane_edges_index  and self._show_planes:
+        self._gl.glEnable(self._gl.GL_DEPTH_TEST)
+        if self._plane_faces_index+1 < self._plane_edges_index and self._show_planes:
             self.set_color(self.plane_color_edge)
-            self._gl.glEnable(self._gl.GL_DEPTH_TEST)
             self._gl.glLineWidth(2.0)
             count = self._plane_edges_index - self._plane_faces_index
             self._gl.glDrawArrays(self._gl.GL_LINES, self._plane_faces_index+1, count)
+        if self._part_faces_index+1 < self._part_edges_index:
+            if self._show_lines:
+                self.set_color(self.part_color_edge)
+                self._gl.glLineWidth(1.5)
+                count = self._part_edges_index - self._part_faces_index
+                self._gl.glDrawArrays(self._gl.GL_LINES, self._part_faces_index+1, count)
         if self._plane_edges_index+1 < self._part_faces_index:
             if self._show_surfaces:
+                self._gl.glEnable(self._gl.GL_POLYGON_OFFSET_FILL)
+                self._gl.glPolygonOffset(1.0, 1.0)
                 self._program.setUniformValue('lighting', True)
-                self._gl.glEnable(self._gl.GL_DEPTH_TEST)
                 self.set_color(self.part_color)
                 count = self._part_faces_index - self._plane_edges_index
                 self._gl.glDrawArrays(self._gl.GL_TRIANGLES, self._plane_edges_index+1, count)
                 self._program.setUniformValue('lighting', False)
-        if self._part_faces_index+1 < self._part_edges_index:
-            if self._show_lines:
-                self.set_color(self.part_color_edge)
-                self._gl.glLineWidth(2.0)
-                count = self._part_edges_index - self._part_faces_index
-                self._gl.glDrawArrays(self._gl.GL_LINES, self._part_faces_index+1, count)
+                self._gl.glDisable(self._gl.GL_POLYGON_OFFSET_FILL)
         if self._plane_faces_index > 0 and self._show_planes:
-            # self._gl.glDisable(self._gl.GL_DEPTH_TEST)
             self._gl.glDepthMask(self._gl.GL_FALSE)
             self.set_color(self.plane_color)
             self._gl.glDrawArrays(self._gl.GL_TRIANGLES, 0, self._plane_faces_index+1)

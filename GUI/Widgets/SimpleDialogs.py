@@ -84,12 +84,14 @@ class ExtrudeDialog(QDialog):
         contents_layout.addWidget(QLabel("Area"), 1, 0)
         contents_layout.addWidget(QLabel("Extrude direction"), 2, 0)
         contents_layout.addWidget(QLabel("Extrude length"), 3, 0)
+        contents_layout.addWidget(QLabel("Type"), 4, 0)
 
         self._sketch_combo_box = QComboBox()
         self._area_combo_box = QComboBox()
         self._direction = QComboBox()
-
         self._direction.addItems(['Forward', 'Backward', 'Both'])
+        self._type_combo_box = QComboBox()
+        self._type_combo_box.addItems(['Add', 'Cut'])
 
         self._sketch_combo_box.addItems(self._sketches)
         self._sketch_combo_box.setEditable(False)
@@ -102,6 +104,7 @@ class ExtrudeDialog(QDialog):
         contents_layout.addWidget(self._area_combo_box, 1, 1)
         contents_layout.addWidget(self._direction, 2, 1)
         contents_layout.addWidget(self._length_edit, 3, 1)
+        contents_layout.addWidget(self._type_combo_box, 4, 1)
 
         self.layout().addWidget(contents_widget)
         dialog_buttons = QDialogButtonBox(QDialogButtonBox.Cancel | QDialogButtonBox.Ok)
@@ -116,8 +119,9 @@ class ExtrudeDialog(QDialog):
 
         self._sketch_combo_box.currentIndexChanged.connect(self.on_sketch_selection_changed)
         self.on_sketch_selection_changed()
-        sketch = self.sketch_feature.get_objects()[0]
-        self._sketch_view.set_sketch(sketch)
+        if self.sketch_feature is not None:
+            sketch = self.sketch_feature.get_objects()[0]
+            self._sketch_view.set_sketch(sketch)
 
     def on_area_selected(self, area):
         self._area_combo_box.setCurrentText(area.name)
@@ -158,6 +162,10 @@ class ExtrudeDialog(QDialog):
                         return area_tuple[1]
         return None
 
+    @property
+    def type(self):
+        return self._type_combo_box.currentIndex()
+
 
 class RevolveDialog(QDialog):
     def __init__(self, parent, document, part):
@@ -178,13 +186,15 @@ class RevolveDialog(QDialog):
         contents_layout.addWidget(QLabel("Axis"), 2, 0)
         contents_layout.addWidget(QLabel("Revolve direction"), 3, 0)
         contents_layout.addWidget(QLabel("Revolve angle"), 4, 0)
+        contents_layout.addWidget(QLabel("Type"), 5, 0)
 
         self._sketch_combo_box = QComboBox()
         self._area_combo_box = QComboBox()
         self._axis_combo_box = QComboBox()
         self._direction = QComboBox()
-
         self._direction.addItems(['Forward', 'Backward', 'Both'])
+        self._type_combo_box = QComboBox()
+        self._type_combo_box.addItems(['Add', 'Cut'])
         self._sketch_combo_box.addItems(self._sketches)
         self._length_edit = QLineEdit(QLocale().toString(360))
 
@@ -193,6 +203,7 @@ class RevolveDialog(QDialog):
         contents_layout.addWidget(self._axis_combo_box, 2, 1)
         contents_layout.addWidget(self._direction, 3, 1)
         contents_layout.addWidget(self._length_edit, 4, 1)
+        contents_layout.addWidget(self._type_combo_box, 5, 1)
 
         self.layout().addWidget(contents_widget)
         dialog_buttons = QDialogButtonBox(QDialogButtonBox.Cancel | QDialogButtonBox.Ok)
@@ -279,6 +290,10 @@ class RevolveDialog(QDialog):
             edge = sketch.get_edge_by_name(name)
             axis.set_edge_governor(edge, sketch)
         return axis
+
+    @property
+    def type(self):
+        return self._type_combo_box.currentIndex()
 
 
 class AddArcDialog(QDialog):

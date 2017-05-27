@@ -203,7 +203,10 @@ class Surface(ObservableObject, IdObject):
         else:
             cp = np.cross(v4 - v2, v3 - v2)
             nm = np.linalg.norm(cp)
-            n = cp / nm
+            if nm != 0:
+                n = cp / nm
+            else:
+                n = cp
         return n
 
     def get_nurbs_surface_triangles(self):
@@ -220,8 +223,8 @@ class Surface(ObservableObject, IdObject):
             controls.append(cps)
         ns.set_controls(controls)
         verts_matrix = []
-        i_count = len(controls)*10
-        j_count = len(controls[0])*10
+        i_count = len(controls)*15
+        j_count = len(controls[0])*15
         for i in range(i_count):
             verts_array = []
             for j in range(j_count):
@@ -246,8 +249,8 @@ class Surface(ObservableObject, IdObject):
                     n1 = n3
                     n2 = n4
                 else:
-                    n1 = normals[(j_count-1) * (i - 2) * 6 + (j-0) * 6-3]
-                    n2 = normals[(j_count-1) * (i - 2) * 6 + (j-0) * 6-1]
+                    n1 = normals[(j_count-1) * (i - 2) * 6 + j * 6-4]
+                    n2 = normals[(j_count-1) * (i - 2) * 6 + j * 6-1]
                 normals.extend([n1, n2, n3, n3, n2, n4])
                 # normals.extend([n4, n4, n4, n4, n4, n4])
                 n3 = n4
@@ -317,15 +320,8 @@ class Surface(ObservableObject, IdObject):
             v1 = triangles[i]
             v2 = triangles[i + 1]
             v3 = triangles[i + 2]
-            cp = np.cross(v2 - v1, v3 - v1)
-            nm = np.linalg.norm(cp)
-            if nm == 0:
-                v1 = triangles[i + 3]
-                v2 = triangles[i + 4]
-                v3 = triangles[i + 5]
-                cp = np.cross(v2 - v1, v3 - v1)
-                nm = np.linalg.norm(cp)
-            n2 = cp / nm
+            v4 = triangles[i + 4]
+            n2 = self.calc_norm(v1, v2, v3, v4)
             if n1 is None:
                 n1 = n2
             normals.append(n1)

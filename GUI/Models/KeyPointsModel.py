@@ -140,7 +140,11 @@ class KeyPointsModel(QAbstractTableModel):
             self.endRemoveRows()
 
     def flags(self, model_index: QModelIndex):
-        default_flags = Qt.ItemIsSelectable | Qt.ItemIsEnabled | Qt.ItemIsEditable
+        default_flags = Qt.ItemIsSelectable
+        row = model_index.row()
+        kp_item = self._sketch.get_key_point(self._rows[row])
+        if kp_item.editable:
+            default_flags |= Qt.ItemIsEditable | Qt.ItemIsEnabled
         return default_flags
 
     def headerData(self, p_int, orientation, int_role=None):

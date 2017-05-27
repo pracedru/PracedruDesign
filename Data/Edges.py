@@ -118,6 +118,7 @@ class Edge(IdObject, NamedObservableObject):
                 start_kp = self._geometry.create_key_point(pc1[0], pc1[1], pc1[2], 0)
                 start_kp.add_edge(self)
                 start_kp.add_change_handler(self.on_key_point_changed)
+                start_kp.editable = False
                 self._meta_data['start_kp'] = start_kp.uid
             if 'end_kp' in self._meta_data:
                 end_kp = self._geometry.get_key_point(self._meta_data['end_kp'])
@@ -130,6 +131,7 @@ class Edge(IdObject, NamedObservableObject):
                 end_kp = self._geometry.create_key_point(pc1[0], pc1[1], pc1[2], 0)
                 end_kp.add_edge(self)
                 end_kp.add_change_handler(self.on_key_point_changed)
+                end_kp.editable = False
                 self._meta_data['end_kp'] = end_kp.uid
             return [start_kp, end_kp]
         elif self.type == Edge.CircleEdge:

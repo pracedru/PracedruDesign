@@ -44,6 +44,7 @@ class KeyPoint(Point3d, ObservableObject):
         self._z_param = None
         self._parameters = parameters
         self._edges = []
+        self.editable = True
 
     def delete(self):
         self.changed(ChangeEvent(self, ChangeEvent.Deleted, self))
