@@ -10,6 +10,7 @@ from Data.Document import Document
 from Data.Drawings import Drawing
 from Data.Part import Part
 from Data.Sketch import Sketch
+from GUI import tr
 from GUI.Models.DocumentModel import DocumentItemModel
 
 
@@ -17,7 +18,7 @@ class TreeViewDock(QDockWidget):
     def __init__(self, main_window, document: Document):
         QDockWidget.__init__(self, main_window)
         self._main_window = main_window
-        self.setWindowTitle("Project view")
+        self.setWindowTitle(tr("Project view"))
         self.setObjectName("TreeViewDock")
         self._doc = document
         self._treeView = QTreeView(self)
@@ -30,8 +31,8 @@ class TreeViewDock(QDockWidget):
         self.installEventFilter(self)
 
     def on_delete(self):
-        txt = "Are you sure you want to delete this item?"
-        ret = QMessageBox.warning(self, "Delete item?", txt, QMessageBox.Yes | QMessageBox.Cancel)
+        txt = tr("Are you sure you want to delete this item?", "messages")
+        ret = QMessageBox.warning(self, tr("Delete item?"), txt, QMessageBox.Yes | QMessageBox.Cancel)
         if ret == QMessageBox.Yes:
             selection_model = self._treeView.selectionModel()
             indexes = selection_model.selectedIndexes()

@@ -1,5 +1,8 @@
+from PyQt5.QtCore import QCoreApplication, QLocale
 from PyQt5.QtWidgets import QApplication
 from PyQt5.QtWidgets import QWidget
+
+from Data import write_data_to_disk
 
 
 def gui_scale():
@@ -54,3 +57,40 @@ class Stylesheets(object):
         except KeyError:
             print("stylesheet " + name + " not found")
         return stylesheet
+
+
+contexts = {}
+
+
+def tr(string, context_name='app'):
+    value = QCoreApplication.translate(context_name, string)
+    try:
+        context = contexts[context_name]
+    except KeyError:
+        contexts[context_name] = {}
+        context = contexts[context_name]
+    context[string] = value
+    return value
+
+
+def write_language_file():
+    from lxml import etree
+    import goslate
+    gs = goslate.Goslate()
+    ts_elem = etree.Element("TS", version="2.0", language=QLocale().name(), sourcelanguage="en")
+    doc = etree.ElementTree(ts_elem)
+    for context_tuple in contexts.items():
+        context_elem = etree.SubElement(ts_elem, "context")
+        name_elem = etree.SubElement(context_elem, "name")
+        name_elem.text = context_tuple[0]
+        for message_tuple in context_tuple[1].items():
+            message_elem = etree.SubElement(context_elem, "message")
+            source_elem = etree.SubElement(message_elem, "source")
+            translation_elem = etree.SubElement(message_elem, "translation")
+            source_elem.text = message_tuple[0]
+            translation_elem.text = message_tuple[1]
+
+    text = etree.tostring(ts_elem, pretty_print=False, xml_declaration=True, encoding="UTF-8", doctype="<!DOCTYPE TS>")
+    text = str(text, 'utf-8')
+    text = text.replace("\n", "&#xA;")
+    write_data_to_disk("%s.ts" % QLocale().name(), text)

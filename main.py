@@ -1,4 +1,6 @@
 import sys
+
+from PyQt5.QtCore import QTranslator, QLocale
 from PyQt5.QtWidgets import *
 
 import Business
@@ -16,10 +18,23 @@ def except_hook(cls, exception, traceback):
     sys.__excepthook__(cls, exception, traceback)
 
 
+def load_language(a):
+    locale = QLocale()
+    translator = QTranslator()
+    fname = "translate/%s.qm" % locale.name()
+    if not os.path.isfile(fname):
+        if "_" in locale.name():
+            index = locale.name().index('_')
+            fname = "translate/%s.qm" % locale.name()[:index]
+    if os.path.isfile(fname):
+        translator.load(fname)
+        a.installTranslator(translator)
+
+
 def main():
     a = QApplication(sys.argv)
     a.setQuitOnLastWindowClosed(True)
-
+    load_language(a)
     if len(sys.argv) > 1:
         my_file = Path(sys.argv[1])
         if my_file.is_file():

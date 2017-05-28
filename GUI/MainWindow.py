@@ -90,6 +90,7 @@ class MainWindow(QMainWindow):
         self._show_planes_action = self.add_action("Show\nPlanes", "showplanes", "Show Planes", True, self.on_show_planes, checkable=True)
         self._add_field_action = self.add_action("Insert\nfield", "addfield", "Insert field on drawing", True, self.on_add_field)
         self._about_action = self.add_action("About", "about", "About this programme", True, self.on_about)
+        self._write_language_action = self.add_action("Write\nlang", "writelang", "Write language translation file", True, self.on_write_lang)
 
         # Ribbon initialization
         self._ribbon = QToolBar(self)
@@ -116,7 +117,7 @@ class MainWindow(QMainWindow):
         self._parameters_dock_widget.setObjectName("paramsDock")
         self.parameters_widget = ParametersWidget(self, self._document)
         self._parameters_dock_widget.setWidget(self.parameters_widget)
-        self._parameters_dock_widget.setWindowTitle("Parameters")
+        self._parameters_dock_widget.setWindowTitle(tr("Parameters"))
         self.addDockWidget(Qt.LeftDockWidgetArea, self._parameters_dock_widget)
         self._geometry_dock = GeometryDock(self, self._document)
         self.addDockWidget(Qt.LeftDockWidgetArea, self._geometry_dock)
@@ -191,6 +192,9 @@ class MainWindow(QMainWindow):
 
     def on_about(self):
         pass
+
+    def on_write_lang(self):
+        write_language_file()
 
     def on_save(self):
         if self._document.path == "" or self._document.name == "":
@@ -405,8 +409,8 @@ class MainWindow(QMainWindow):
         sketch_tab.add_spacer()
 
     def init_part_tab(self):
-        part_tab = self._ribbon_widget.add_ribbon_tab("Part")
-        insert_pane = part_tab.add_ribbon_pane("Insert")
+        part_tab = self._ribbon_widget.add_ribbon_tab(tr("Part"))
+        insert_pane = part_tab.add_ribbon_pane(tr("Insert"))
         insert_pane.add_ribbon_widget(RibbonButton(self, self._insert_sketch_in_action, True))
         insert_pane.add_ribbon_widget(RibbonButton(self, self._create_sketch_action, True))
         insert_pane.add_ribbon_widget(RibbonButton(self, self._add_extrude_action, True))
@@ -438,6 +442,7 @@ class MainWindow(QMainWindow):
         drawing_tab = self._ribbon_widget.add_ribbon_tab("Info")
         information_pane = drawing_tab.add_ribbon_pane("Information")
         information_pane.add_ribbon_widget(RibbonButton(self, self._about_action, True))
+        information_pane.add_ribbon_widget(RibbonButton(self, self._write_language_action, True))
 
     def on_show_hidden_parameters(self):
         pass
@@ -461,8 +466,8 @@ class MainWindow(QMainWindow):
         Business.add_part(self._document)
 
     def add_action(self, caption, icon_name, status_tip, icon_visible, connection, shortcut=None, checkable=False):
-        action = QAction(get_icon(icon_name), caption, self)
-        action.setStatusTip(status_tip)
+        action = QAction(get_icon(icon_name), tr(caption, "ribbon"), self)
+        action.setStatusTip(tr(status_tip, "ribbon"))
         action.triggered.connect(connection)
         action.setIconVisibleInMenu(icon_visible)
         if shortcut is not None:
@@ -480,7 +485,8 @@ class MainWindow(QMainWindow):
 
     def maybe_save(self):
         if self._document.is_modified():
-            ret = QMessageBox.warning(self, "Application", "The document has been modified.\nDo you want to save your changes?", QMessageBox.Save | QMessageBox.Discard | QMessageBox.Cancel)
+            msg = tr("The document has been modified.\nDo you want to save your changes?")
+            ret = QMessageBox.warning(self, tr("Application"), msg, QMessageBox.Save | QMessageBox.Discard | QMessageBox.Cancel)
             if ret == QMessageBox.Save:
                 return self.on_save()
             if ret == QMessageBox.Cancel:

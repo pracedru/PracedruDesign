@@ -1,5 +1,7 @@
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import Qt
+
+from GUI import tr
 from GUI.Ribbon.RibbonButton import RibbonButton
 from GUI.Ribbon.RibbonPane import RibbonPane
 
@@ -14,7 +16,7 @@ class RibbonTab(QWidget):
         layout.setAlignment(Qt.AlignLeft)
 
     def add_ribbon_pane(self, name):
-        ribbon_pane = RibbonPane(self,name)
+        ribbon_pane = RibbonPane(self, tr(name, "ribbon"))
         self.layout().addWidget(ribbon_pane)
         return ribbon_pane
 

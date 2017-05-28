@@ -13,6 +13,7 @@ from Data.Part import Part, Feature
 from Data.Point3d import KeyPoint
 from Data.Sketch import Sketch, Edge, Text, Attribute
 from Data.Style import EdgeStyle
+from GUI import tr
 from GUI.Icons import get_icon
 
 
@@ -288,7 +289,7 @@ class DocumentModelItem(QObject):
     def __init__(self, data, model, parent=None, name="No name"):
         QObject.__init__(self, parent)
         self._data = data
-        self._name = name
+        self._name = tr(name, 'model')
         self._model = model
         if data is not None:
             data.add_change_handler(self.data_changed)

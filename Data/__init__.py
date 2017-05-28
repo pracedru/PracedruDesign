@@ -5,7 +5,7 @@ import Data.Document
 
 __author__ = 'mamj'
 
-text_formats_endings = ['.json', '.jadoc', '.jobj', '.jgeom', '.inp', '.si_mpl']
+text_formats_endings = ['.json', '.jadoc', '.jobj', '.jgeom', '.inp', '.si_mpl', '.ts']
 
 
 def complex_handler(Obj):
