@@ -363,14 +363,16 @@ class PartViewWidget(QOpenGLWidget):
                 self._gl.glDrawArrays(self._gl.GL_LINES, self._part_faces_index+1, count)
         if self._plane_edges_index+1 < self._part_faces_index:
             if self._show_surfaces:
-                self._gl.glEnable(self._gl.GL_POLYGON_OFFSET_FILL)
-                self._gl.glPolygonOffset(1.0, 1.0)
+                if self._show_lines:
+                    self._gl.glEnable(self._gl.GL_POLYGON_OFFSET_FILL)
+                    self._gl.glPolygonOffset(1.0, 1.0)
                 self._program.setUniformValue('lighting', True)
                 self.set_color(self.part_color)
                 count = self._part_faces_index - self._plane_edges_index
                 self._gl.glDrawArrays(self._gl.GL_TRIANGLES, self._plane_edges_index+1, count)
                 self._program.setUniformValue('lighting', False)
-                self._gl.glDisable(self._gl.GL_POLYGON_OFFSET_FILL)
+                if self._show_lines:
+                    self._gl.glDisable(self._gl.GL_POLYGON_OFFSET_FILL)
         if self._plane_faces_index > 0 and self._show_planes:
             self._gl.glDepthMask(self._gl.GL_FALSE)
             self.set_color(self.plane_color)

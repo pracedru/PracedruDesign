@@ -75,8 +75,6 @@ def tr(string, context_name='app'):
 
 def write_language_file():
     from lxml import etree
-    import goslate
-    gs = goslate.Goslate()
     ts_elem = etree.Element("TS", version="2.0", language=QLocale().name(), sourcelanguage="en")
     doc = etree.ElementTree(ts_elem)
     for context_tuple in contexts.items():
@@ -93,4 +91,5 @@ def write_language_file():
     text = etree.tostring(ts_elem, pretty_print=False, xml_declaration=True, encoding="UTF-8", doctype="<!DOCTYPE TS>")
     text = str(text, 'utf-8')
     text = text.replace("\n", "&#xA;")
+    text = text.replace(">&#xA;<", "><")
     write_data_to_disk("%s.ts" % QLocale().name(), text)

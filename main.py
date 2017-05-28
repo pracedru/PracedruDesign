@@ -6,12 +6,10 @@ from PyQt5.QtWidgets import *
 import Business
 from Data.Document import Document
 from GUI.MainWindow import MainWindow
-# import Business.ActionHandler
 import os
 from pathlib import Path
 
 __author__ = 'mamj'
-
 
 
 def except_hook(cls, exception, traceback):
@@ -20,15 +18,15 @@ def except_hook(cls, exception, traceback):
 
 def load_language(a):
     locale = QLocale()
-    translator = QTranslator()
+    translator = QTranslator(a)
     fname = "translate/%s.qm" % locale.name()
     if not os.path.isfile(fname):
         if "_" in locale.name():
             index = locale.name().index('_')
             fname = "translate/%s.qm" % locale.name()[:index]
     if os.path.isfile(fname):
-        translator.load(fname)
-        a.installTranslator(translator)
+        if translator.load(fname):
+            a.installTranslator(translator)
 
 
 def main():
