@@ -26,9 +26,31 @@ class Part(Geometry):
         self._key_points = {}
         self._edges = {}
         self._surfaces = {}
+        self._color = [180, 180, 180, 255]
+        self._specular = 0.5
 
     def get_document(self):
         return self._doc
+
+    @property
+    def specular(self):
+        return self._specular
+
+    @specular.setter
+    def specular(self, value):
+        old_value = self._specular
+        self._specular = value
+        self.changed(ValueChangeEvent(self, "specular", old_value, value))
+
+    @property
+    def color(self):
+        return self._color
+
+    @color.setter
+    def color(self, value):
+        old_value = self._color
+        self._color = value
+        self.changed(ValueChangeEvent(self, "color", old_value, value))
 
     @property
     def update_needed(self):

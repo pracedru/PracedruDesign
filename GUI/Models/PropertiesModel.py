@@ -60,7 +60,9 @@ rows_by_type = {
         ['Angles', 'distance', {'condition': ['feature_type', 1]}],
         ['Plane', 'plane', {'condition': ['feature_type', 4]}]],
     "Part": [
-        ['Name', 'name']],
+        ['Name', 'name'],
+        ['Color', 'color'],
+        ['Hardness', 'specular']],
     "Field": [
         ['Name', 'name'],
         ['Value', 'value']],

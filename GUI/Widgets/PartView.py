@@ -45,7 +45,8 @@ class PartViewWidget(QOpenGLWidget):
         self.lastPos = QPoint()
         self._offset = Vertex()
         self._mouse_position = None
-        self.part_color = QColor(200, 203, 210, 255)
+        self.part_color = QColor(100, 100, 190, 255)
+        self.part_specular = 0.5
         self.part_color_edge = QColor(50, 50, 50, 255)
         self.plane_color = QColor(0, 150, 200, 25)
         self.plane_color_edge = QColor(0, 150, 200, 180)
@@ -104,6 +105,8 @@ class PartViewWidget(QOpenGLWidget):
         self._part = part
         self.update_drawables()
         self.redraw_drawables()
+        self.part_color = QColor(part.color[0], part.color[1], part.color[2], part.color[3])
+        self.part_specular = part.specular
         part.add_change_handler(self.part_changed)
         self.scale_to_content()
         self.update()
@@ -174,6 +177,9 @@ class PartViewWidget(QOpenGLWidget):
             self.redraw_drawables()
             self.update()
             self.scale_to_content()
+        if event.type == ChangeEvent.ValueChanged:
+            self.part_color = QColor(self._part.color[0], self._part.color[1], self._part.color[2], self._part.color[3])
+            self.part_specular = self._part.specular
 
     def on_create_add_sketch_to_part(self):
         planes = []
@@ -311,16 +317,18 @@ class PartViewWidget(QOpenGLWidget):
         p = QMatrix4x4()
 
         #   Gradient
-        v.lookAt(QVector3D(0, 0, -10), QVector3D(0, 0, 0), QVector3D(0, 1, 0))
-        p.ortho(-0.5, 0.5, 0.5, -0.5, 4, 15)
+        v.lookAt(QVector3D(0, 0, -10*self._scale), QVector3D(0, 0, 0), QVector3D(0, 1, 0))
+        p.ortho(-0.5, 0.5, 0.5, -0.5, 0, 15*self._scale)
         mvp = p * v * m
-        nm = (v*m).normalMatrix()
         self._program.setUniformValue('mvp', mvp)
-        self._program.setUniformValue('normal_matrix', nm)
+        mv = v * m
+        self._program.setUniformValue('model_view_matrix', mv)
+        self._program.setUniformValue('normal_matrix', mv.normalMatrix())
 
         self._gl.glDisable(self._gl.GL_DEPTH_TEST)
         self._program.setUniformValue('resolution', QVector2D(self.width(), self.height()))
         self._program.setUniformValue('gradient', True)
+        self._program.setUniformValue('lighting', False)
         gl.glBegin(gl.GL_QUADS)
         gl.glVertex2f(-0.5, 0.5)
         gl.glVertex2f(-0.5, -0.5)
@@ -341,14 +349,15 @@ class PartViewWidget(QOpenGLWidget):
         aspect_ratio = width / height
         p = QMatrix4x4()
         if width <= height:
-            p.ortho(-scale, scale, scale/aspect_ratio, -scale/aspect_ratio, min(-10 * scale, -10), max(10 * scale, 15))
+            p.ortho(-scale, scale, scale/aspect_ratio, -scale/aspect_ratio, min(-10 * scale, -10), max(20 * scale, 15))
         else:
-            p.ortho(-scale*aspect_ratio, scale*aspect_ratio, scale, -scale, min(-10 * scale, -10), max(10 * scale, 15))
+            p.ortho(-scale*aspect_ratio, scale*aspect_ratio, scale, -scale, min(-10 * scale, -10), max(20 * scale, 15))
 
         mvp = p * v * m
         self._program.setUniformValue('mvp', mvp)
-        nm = (v * m).normalMatrix()
-        self._program.setUniformValue('normal_matrix', nm)
+        mv = v * m
+        self._program.setUniformValue('model_view_matrix', mv)
+        self._program.setUniformValue('normal_matrix', mv.normalMatrix())
         self._gl.glEnable(self._gl.GL_DEPTH_TEST)
         if self._plane_faces_index+1 < self._plane_edges_index and self._show_planes:
             self.set_color(self.plane_color_edge)
@@ -368,6 +377,7 @@ class PartViewWidget(QOpenGLWidget):
                     self._gl.glPolygonOffset(1.0, 1.0)
                 self._program.setUniformValue('lighting', True)
                 self.set_color(self.part_color)
+                self.set_specular(self.part_specular)
                 count = self._part_faces_index - self._plane_edges_index
                 self._gl.glDrawArrays(self._gl.GL_TRIANGLES, self._plane_edges_index+1, count)
                 self._program.setUniformValue('lighting', False)
@@ -431,4 +441,6 @@ class PartViewWidget(QOpenGLWidget):
     def set_color(self, c):
         self._program.setUniformValue('color', c)
 
+    def set_specular(self, spec):
+        self._program.setUniformValue('specular', spec)
 
