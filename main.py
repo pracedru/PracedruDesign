@@ -17,7 +17,7 @@ def except_hook(cls, exception, traceback):
 
 
 def load_language(a):
-    locale = QLocale()
+    locale = QLocale()    
     translator = QTranslator(a)
     fname = "translate/%s.qm" % locale.name()
     if not os.path.isfile(fname):

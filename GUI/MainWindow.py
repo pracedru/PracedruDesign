@@ -51,7 +51,7 @@ class MainWindow(QMainWindow):
         self._Title = "Pracedru Design"
         self._states = ActionStates()
         # Action initialization
-
+        
         self.new_action = self.add_action("New\nFile", "newicon", "New Document", True, self.on_new_document, QKeySequence.New)
         self.open_action = self.add_action("Open\nFile", "open", "Open file", True, self.on_open_file, QKeySequence.Open)
         self.save_action = self.add_action("Save", "save", "Save these data", True, self.on_save, QKeySequence.Save)
@@ -370,7 +370,7 @@ class MainWindow(QMainWindow):
         insert_pane = home_tab.add_ribbon_pane("Insert")
         insert_pane.add_ribbon_widget(RibbonButton(self, self.add_sketch_to_document_action, True))
         insert_pane.add_ribbon_widget(RibbonButton(self, self.add_part_action, True))
-        insert_pane.add_ribbon_widget(RibbonButton(self, self.add_drawing_action, True))        
+        insert_pane.add_ribbon_widget(RibbonButton(self, self.add_drawing_action, True))
 
     def init_sketch_tab(self):
         sketch_tab = self._ribbon_widget.add_ribbon_tab("Sketch")

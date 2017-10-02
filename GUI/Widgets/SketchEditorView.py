@@ -61,7 +61,7 @@ class SketchEditorViewWidget(QWidget):
     def on_insert_text(self):
         self.on_escape()
         self._states.select_kp = True
-        self._states.insert_text = True
+        self._states.add_text = True
 
     def on_zoom_fit(self):
         if self._sketch is None:
@@ -120,7 +120,7 @@ class SketchEditorViewWidget(QWidget):
         self._states.draw_line_edge = False
         self._states.create_area = False
         self._states.set_fillet_kp = False
-        self._states.insert_text = False
+        self._states.add_text = False
         self._states.add_circle_edge = False
         self._states.add_attribute = False
         self._states.add_arc_edge = False
