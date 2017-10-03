@@ -44,8 +44,9 @@ def create_default_header(document):
     titleHeight = 0.02
     ts = 0.001
     widthRevision = 0.012
-    textDist = 0.003
     valueTextHeight = 0.003
+    textDist = valueTextHeight*2
+
     captionTextHeight = 0.002
     pnt1 = header.create_key_point(0, 0, 0, ts)
     pnt2 = header.create_key_point(width, 0, 0, ts)
@@ -86,8 +87,10 @@ def create_default_header(document):
         pnta = header.create_key_point(width, height / 2 + i * 0.01, 0, ts)
         pntb = header.create_key_point(0, height / 2 + i * 0.01, 0, ts)
         header.create_line_edge(pnta, pntb)
-    apnt1 = header.create_key_point(0.002, 0.002, 0, ts)
-    header.create_attribute(apnt1, "DocTitle3", "Document Title 3", 0.003).horizontal_alignment = Text.Right
+
+    header.create_attribute(header.create_key_point(textDist, textDist, 0, ts), "DocTitle3", "Document Title 3", valueTextHeight).horizontal_alignment = Text.Right
+    header.create_attribute(header.create_key_point(textDist, textDist * 2, 0, ts), "DocTitle2", "Document Title 2", valueTextHeight).horizontal_alignment = Text.Right
+    header.create_attribute(header.create_key_point(textDist, textDist * 3, 0, ts), "DocTitle1", "Document Title 1", valueTextHeight).horizontal_alignment = Text.Right
 
 
     return header

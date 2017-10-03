@@ -299,14 +299,14 @@ class SketchEditorViewWidget(QWidget):
                 x1 = key_point.x
                 y1 = key_point.y
                 if text.horizontal_alignment == Text.Left:
-                    x1 -= text.height * 2.5
+                    x1 -= text.height * len(text.value) / 2
                 elif text.horizontal_alignment == Text.Right:
-                    x1 += text.height * 2.5
+                    x1 += text.height * len(text.value) / 2
                 if text.vertical_alignment == Text.Top:
-                    y1 -= text.height / 2
-                elif text.vertical_alignment == Text.Bottom:
                     y1 += text.height / 2
-                if abs(y1 - y) < text.height/2 and abs(x1 - x) < text.height*2.5:
+                elif text.vertical_alignment == Text.Bottom:
+                    y1 -= text.height / 2
+                if abs(y1 - y) < text.height and abs(x1 - x) < text.height * len(text.value) / 2:
                     self._text_hover = text
                     update_view = True
                     break

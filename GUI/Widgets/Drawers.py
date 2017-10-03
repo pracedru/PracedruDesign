@@ -57,13 +57,13 @@ def draw_attribute(text, qp: QPainter, scale, offset, center, show_value=False, 
     x1 = (key_point.x + offset.x)*scale + center.x
     y1 = -(key_point.y + offset.y)*scale + center.y
     if text.horizontal_alignment == Text.Left:
-        x1 -= width*scale
+        x1 -= width * scale
     elif text.horizontal_alignment == Text.Center:
-        x1 -= width*scale/2
+        x1 -= width * scale / 2
     if text.vertical_alignment == Text.Top:
-        y1 -= text.height*scale
+        y1 -= text.height * 2 * scale
     elif text.vertical_alignment == Text.Center:
-        y1 -= text.height * 2.3 * scale/2
+        y1 -= text.height * 2 * scale / 2
     qp.translate(x1, y1)
     qp.scale(scale/factor, scale/factor)
     qp.rotate(text.angle*180/pi)
@@ -73,7 +73,7 @@ def draw_attribute(text, qp: QPainter, scale, offset, center, show_value=False, 
 
 def draw_text(text, qp: QPainter, scale, offset, center):
     key_point = text.key_point
-    factor = 10 / text.height
+    factor = 10 / text.height       # Factor takes care of wierd bug in Qt with fonts that are smaller than 1 in height
     font = QFont("Helvetica", text.height*factor)
     fm = QFontMetrics(font)
     qp.setFont(font)
@@ -82,13 +82,13 @@ def draw_text(text, qp: QPainter, scale, offset, center):
     x1 = (key_point.x + offset.x)*scale + center.x
     y1 = -(key_point.y + offset.y)*scale + center.y
     if text.horizontal_alignment == Text.Left:
-        x1 -= width*scale
+        x1 -= width * scale
     elif text.horizontal_alignment == Text.Center:
-        x1 -= width*scale/2
+        x1 -= width * scale / 2
     if text.vertical_alignment == Text.Top:
-        y1 -= text.height*scale
+        y1 -= text.height * 2 * scale
     elif text.vertical_alignment == Text.Center:
-        y1 -= text.height * 2.3 * scale/2
+        y1 -= text.height * 2 * scale / 2
     qp.translate(x1, y1)
     qp.scale(scale/factor, scale/factor)
     qp.rotate(text.angle*180/pi)
