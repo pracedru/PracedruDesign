@@ -82,6 +82,7 @@ class MainWindow(QMainWindow):
         self._insert_sketch_in_action = self.add_action("Insert\nsketch", "addsketch", "Insert sketch ", True, self.on_insert_sketch)
         self._insert_sketch_in_drawing_action = self.add_action("Insert\nsketch", "addsketchview", "Insert sketch in drawing", True, self.on_insert_sketch)
         self._insert_part_action = self.add_action("Insert\npart", "addpartview", "Insert part in drawing", True, self.on_insert_part_in_drawing)
+        self._insert_dim_annotation = self.add_action("Dim", "insertdimannotation", "Insert dimension annotation in drawing", True, self.on_insert_dim_ann_in_drawing)
         self._add_revolve_action = self.add_action("Revolve\nArea", "addrevolve", "Revolve an area on this part", True, self.on_revolve_area)
         self._add_extrude_action = self.add_action("Extrude\nArea", "addextrude", "Extrude an area on this part", True, self.on_extrude_area)
         self._add_nurbs_surface_action = self.add_action("Create\nNurbs Srf.", "nurbssurf", "Create nurbs surface", True, self.on_create_nurbs_surface)
@@ -168,6 +169,9 @@ class MainWindow(QMainWindow):
 
     def on_insert_part_in_drawing(self):
         self._viewWidget.drawing_view.on_insert_part()
+
+    def on_insert_dim_ann_in_drawing(self):
+        pass
 
     def on_revolve_area(self):
         self._viewWidget.part_view.on_revolve_area()
@@ -430,6 +434,7 @@ class MainWindow(QMainWindow):
         insert_pane.add_ribbon_widget(RibbonButton(self, self._insert_sketch_in_drawing_action, True))
         insert_pane.add_ribbon_widget(RibbonButton(self, self._insert_part_action, True))
         annotation_pane = drawing_tab.add_ribbon_pane("Annotation")
+        annotation_pane.add_ribbon_widget(RibbonButton(self, self._insert_dim_annotation, True))
         edit_pane = drawing_tab.add_ribbon_pane("Edit")
         edit_pane.add_ribbon_widget(RibbonButton(self, self._add_field_action, True))
         view_pane = drawing_tab.add_ribbon_pane("View")

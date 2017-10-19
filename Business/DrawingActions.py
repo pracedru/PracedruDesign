@@ -39,6 +39,7 @@ def create_empty_header(document):
 
 def create_default_header(document):
     header = document.get_drawings().create_header()
+    header.name = "Default header"
     width = 0.18
     height = 0.12
     titleHeight = 0.02
