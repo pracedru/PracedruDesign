@@ -293,7 +293,7 @@ class SketchView(View):
         self.changed(ChangeEvent(self, ChangeEvent.Deleted, self))
 
     def on_sketch_changed(self, event):
-        self.changed(ChangeEvent(self, ChangeEvent.ObjectChanged, self._part))
+        self.changed(ChangeEvent(self, ChangeEvent.ObjectChanged, self._sketch))
 
     def serialize_json(self):
         return {

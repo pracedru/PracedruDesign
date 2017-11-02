@@ -93,6 +93,7 @@ def draw_text(text, qp: QPainter, scale, offset, center):
     qp.scale(scale/factor, scale/factor)
     qp.rotate(text.angle*180/pi)
     qp.drawText(QRectF(0, 0, width*factor, text.height*2*factor), Qt.AlignHCenter | Qt.AlignVCenter, text.value)
+    qp.drawRect(QRectF(0, 0, width*factor, text.height*2*factor))
     qp.restore()
 
 
