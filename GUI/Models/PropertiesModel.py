@@ -53,6 +53,8 @@ rows_by_type = {
         ['Thickness', 'thickness'],
         ['Color', 'color'],
         ['Line type', 'line_type']],
+    "HatchStyle":[
+        ['Name', 'name']],
     "Feature": [
         ['Name', 'name'],
         ['Type', 'feature_type', {'choices': ['Extrude', 'Revolve', 'Fillet', 'Plane', 'Sketch', 'Nurbs Surface']}],

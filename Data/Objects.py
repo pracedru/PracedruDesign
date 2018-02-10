@@ -29,6 +29,7 @@ class ObservableObject(object):
     def changed(self, event):
         self._is_modified = True
         for handler in list(self._change_handlers):
+            #print(str(handler))
             handler(event)
 
     def is_modified(self):

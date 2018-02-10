@@ -13,46 +13,48 @@ __author__ = 'mamj'
 
 
 class GeometryDock(QDockWidget):
-    def __init__(self, main_window, doc: Document):
-        QDockWidget.__init__(self, main_window)
-        self._main_window = main_window
-        self._doc = doc
-        self._widget = QWidget(self)
-        self.setWidget(self._widget)
-        guiscale = gui_scale()
-        self.setWindowTitle("Geometry")
-        self.setObjectName("geometryDock")
-        self.setMinimumWidth(200*guiscale)
-        layout = QVBoxLayout()
-        self._widget.setLayout(layout)
-        # self.areas_table_widget = AreaTableView(self, doc, main_window)
-        # layout.addWidget(self.areas_table_widget)
-        layout.setContentsMargins(QMargins(0, 0, 0, 0))
+  def __init__(self, main_window, doc: Document):
+    QDockWidget.__init__(self, main_window)
+    self._main_window = main_window
+    self._doc = doc
+    self._widget = QWidget(self)
+    self.setWidget(self._widget)
+    guiscale = gui_scale()
+    self.setWindowTitle("Geometry")
+    self.setObjectName("geometryDock")
+    self.setMinimumWidth(200 * guiscale)
+    layout = QVBoxLayout()
+    self._widget.setLayout(layout)
+    layout.setContentsMargins(QMargins(0, 0, 0, 0))
 
-        self.edges_table_widget = EdgesTableView(self, doc, main_window)
-        layout.addWidget(self.edges_table_widget)
+    self.areas_table_widget = AreaTableView(self, doc, main_window)
+    layout.addWidget(self.areas_table_widget)
 
-        self.kps_table_widget = KeyPointsTableView(self, doc, main_window)
-        layout.addWidget(self.kps_table_widget)
+    self.edges_table_widget = EdgesTableView(self, doc, main_window)
+    layout.addWidget(self.edges_table_widget)
 
-    def set_sketch(self, sketch):
-        self.edges_table_widget.set_sketch(sketch)
-        self.kps_table_widget.set_sketch(sketch)
+    self.kps_table_widget = KeyPointsTableView(self, doc, main_window)
+    layout.addWidget(self.kps_table_widget)
 
-    def set_list(self, list):
-        pass
+  def set_sketch(self, sketch):
+    self.areas_table_widget.set_sketch(sketch)
+    self.edges_table_widget.set_sketch(sketch)
+    self.kps_table_widget.set_sketch(sketch)
 
-    def on_edge_selection_changed(self, selected_edges):
-        self.edges_table_widget.set_selected_edges(selected_edges)
-        kps = []
-        for edge in selected_edges:
-            for kp in edge.get_end_key_points():
-                kps.append(kp)
-        if len(kps) > 0:
-            self.kps_table_widget.set_selected_kps(kps)
+  def set_list(self, list):
+    pass
 
-    def on_kp_selection_changed(self, selected_key_points):
-        self.kps_table_widget.set_selected_kps(selected_key_points)
+  def on_edge_selection_changed(self, selected_edges):
+    self.edges_table_widget.set_selected_edges(selected_edges)
+    kps = []
+    for edge in selected_edges:
+      for kp in edge.get_end_key_points():
+        kps.append(kp)
+    if len(kps) > 0:
+      self.kps_table_widget.set_selected_kps(kps)
 
-    def on_area_selection_changed(self, selected_areas):
-        self.areas_table_widget.set_selected_areas(selected_areas)
+  def on_kp_selection_changed(self, selected_key_points):
+    self.kps_table_widget.set_selected_kps(selected_key_points)
+
+  def on_area_selection_changed(self, selected_areas):
+    self.areas_table_widget.set_selected_areas(selected_areas)

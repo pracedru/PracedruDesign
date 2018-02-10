@@ -24,6 +24,9 @@ class AreaTableView(QTableView):
         self.installEventFilter(self)
         self._throw_selection_changed_event = True
 
+    def set_sketch(self, sketch):
+        self._areas_model.set_sketch(sketch)
+
     def on_area_selection_changed(self, selection):
         if self._throw_selection_changed_event:
             selection_model = self.selectionModel()
