@@ -263,6 +263,9 @@ class MainWindow(QMainWindow):
                     self.parameters_widget.set_parameters(sketch)
             self._properties_dock.set_item(selection[0])
 
+    def on_area_selection_changed_in_table(self, selected_areas):
+        self._viewWidget.on_area_selection_changed_in_table(selected_areas)
+
     def on_kp_selection_changed_in_table(self, selected_key_points):
         self._viewWidget.on_kp_selection_changed_in_table(selected_key_points)
 
