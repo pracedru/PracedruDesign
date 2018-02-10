@@ -1,3 +1,4 @@
+from Data.Analyses import Analyses
 from Data.Axis import Axis
 from Data.Components import Components
 from Data.Drawings import Drawings
@@ -29,6 +30,7 @@ class Document(IdObject, ObservableObject):
         self._mesh = Mesh(self)
         self._sweeps = Sweeps(self)
         self._drawings = Drawings(self)
+        self._analyses = Analyses(self)
         self.path = ""
         self.name = "New document.jadoc"
         self.do_update = True
@@ -57,6 +59,9 @@ class Document(IdObject, ObservableObject):
 
     def get_geometries(self):
         return self._geometries
+
+    def get_analyses(self):
+        return self._analyses
 
     def get_materials(self):
         return self._materials

@@ -50,8 +50,9 @@ class DocumentItemModel(QAbstractItemModel):
             if type(geom) is Part:
                 self.populate_part(geom, geoms_item)
                 # DocumentModelItem(geom, self, geoms_item)
-
-        DocumentModelItem(None, self, self._root_item, "Analyses")
+        analyses_item = DocumentModelItem(self._doc.get_analyses(), self, self._root_item)
+        for analysis in self._doc.get_analyses().items():
+            self.populate_analysis(analysis, analyses_item)
         self.populate_drawings()
         DocumentModelItem(None, self, self._root_item, "Reports")
 

@@ -63,6 +63,9 @@ def add_drawing(document, size, name, header, orientation):
             drawing.add_field(text.name, text.value)
     return drawing
 
+def add_calc_table_analysis(document, name):
+    analysis = document.get_analyses().create_calc_table_analysis(name)
+    return analysis
 
 def delete_items(doc, items):
     for item in items:
