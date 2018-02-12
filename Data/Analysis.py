@@ -1,13 +1,14 @@
-from Data.Objects import IdObject, NamedObservableObject
+from Data.Objects import IdObject
+from Data.Parameters import Parameters
 
 
-class Analysis(IdObject, NamedObservableObject):
-    CalcSheetAnalysis = 0
-    CalcTableAnalysis = 1
-    SpatialNumericalAnalysis = 2
+class Analysis(IdObject, Parameters):
+  CalcSheetAnalysisType = 0
+  CalcTableAnalysisType = 1
+  SpatialNumericalAnalysisType = 2
 
-    def __init__(self, name, analysisType, document):
-        IdObject.__init__(self)
-        NamedObservableObject.__init__(self, name)
-        self._analysisType = analysisType
-        self._doc = document
+  def __init__(self, name, analysisType, document):
+    IdObject.__init__(self)
+    Parameters.__init__(self, name, document.get_parameters())
+    self._analysisType = analysisType
+    self._doc = document

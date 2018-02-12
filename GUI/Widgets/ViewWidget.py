@@ -1,6 +1,7 @@
 from PyQt5.QtWidgets import QStackedWidget
 
 from Business import create_add_sketch_to_document
+from GUI.Widgets.CalcTableView import CalcTableView
 from GUI.Widgets.DrawingEditorView import DrawingEditorViewWidget
 from GUI.Widgets.PartView import PartViewWidget
 from GUI.Widgets.SketchEditorView import SketchEditorViewWidget
@@ -15,9 +16,11 @@ class ViewWidget(QStackedWidget):
         self._sketchView = SketchEditorViewWidget(self, document, main_window)
         self._partView = PartViewWidget(self, document)
         self._drawingView = DrawingEditorViewWidget(self, document, main_window)
+        self._calcTableView = CalcTableView(self, document, main_window)
         self.addWidget(self._sketchView)
         self.addWidget(self._partView)
         self.addWidget(self._drawingView)
+        self.addWidget(self._calcTableView)
 
     @property
     def sketch_view(self):
@@ -42,6 +45,10 @@ class ViewWidget(QStackedWidget):
     def set_part_view(self, part):
         self.setCurrentIndex(1)
         self._partView.set_part(part)
+
+    def set_calc_table_view(self, calc_table):
+        self.setCurrentIndex(3)
+        self._calcTableView.set_calc_table(calc_table)
 
     def on_add_line(self):
         if self.currentIndex() == 0:
