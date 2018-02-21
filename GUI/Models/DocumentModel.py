@@ -4,6 +4,7 @@ from PyQt5.QtCore import QObject
 from PyQt5.QtCore import Qt
 
 from Data.Areas import Area
+from Data.CalcSheetAnalysis import CalcSheetAnalysis
 from Data.CalcTableAnalysis import CalcTableAnalysis
 from Data.Document import Document
 from Data.Drawings import Drawing, Drawings, Field, SketchView, PartView
@@ -170,6 +171,8 @@ class DocumentItemModel(QAbstractItemModel):
         return get_icon("part")
       elif type(model_item.data) is CalcTableAnalysis:
         return get_icon("calctable")
+      elif type(model_item.data) is CalcSheetAnalysis:
+        return get_icon("calcsheet")
       elif type(model_item.data) is Feature:
         if model_item.data.feature_type == Feature.SketchFeature:
           return get_icon("sketch")

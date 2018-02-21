@@ -73,6 +73,7 @@ class Parameter(IdObject, ObservableObject):
     self._formula = str(value)
     self._change_senders = []
     self._hidden = False
+    self._arguments = []
 
   @property
   def name(self):
@@ -80,8 +81,28 @@ class Parameter(IdObject, ObservableObject):
 
   @name.setter
   def name(self, value):
-    self._name = value
+    if '(' in value:
+      args = re.findall("\((.*?)\)", value)
+      self._arguments = str.split(args[0], ',')
+      self._name = value.replace("(" + args[0] + ")", "")
+    else:
+      self._name = value
     self.changed(ChangeEvent(self, ChangeEvent.ValueChanged, self))
+
+  @property
+  def full_name(self):
+    args = ""
+    if len(self._arguments) > 0:
+      args = "("
+      first = True
+      for arg in self._arguments:
+        if first:
+          first = False
+        else:
+          args += ","
+        args += arg
+      args += ")"
+    return self._name + args
 
   def serialize_json(self):
     return {
@@ -178,6 +199,8 @@ class Parameter(IdObject, ObservableObject):
     self._change_senders = []
 
   def on_parameter_changed(self, event):
+    if event.type == ChangeEvent.Deleted:
+      self._formula = self._formula.replace('{' + event.object.uid + '}', event.object.name)
     old_value = self._value
     self._value = self.evaluate()
     new_value = self._value
@@ -212,6 +235,7 @@ class Parameters(NamedObservableObject):
     self._parameter_list = []
     self._params = {}
     self._parent = parent
+    self._custom_name_getter = None
 
   def _add_parameter_object(self, param):
     self._params[param.uid] = param
@@ -233,6 +257,8 @@ class Parameters(NamedObservableObject):
     for prm in self._params.values():
       if prm.name == name:
         param = prm
+    if param is None and self._custom_name_getter is not None:
+      param = self._custom_name_getter(name)
     if param is None and self._parent is not None:
       param = self._parent.get_parameter_by_name(name)
 
@@ -260,13 +286,14 @@ class Parameters(NamedObservableObject):
     return param
 
   def delete_parameter(self, uid):
-
     param = self.get_parameter_by_uid(uid)
-    param.remove_change_handler(self.on_parameter_changed)
-    self.changed(ChangeEvent(self, ChangeEvent.BeforeObjectRemoved, param))
-    self._parameter_list.remove(uid)
-    self.changed(ChangeEvent(self, ChangeEvent.ObjectRemoved, param))
-    self._remove_parameter_object(uid)
+    if param is not None:
+      param.remove_change_handler(self.on_parameter_changed)
+      self.changed(ChangeEvent(self, ChangeEvent.BeforeObjectRemoved, param))
+      self._parameter_list.remove(uid)
+      self.changed(ChangeEvent(self, ChangeEvent.ObjectRemoved, param))
+      self._remove_parameter_object(uid)
+      param.changed(ChangeEvent(param, ChangeEvent.Deleted, param))
 
   def delete_parameters(self, params):
     for param in params:

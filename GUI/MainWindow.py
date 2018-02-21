@@ -17,6 +17,7 @@ from PyQt5.QtWidgets import QToolBar
 
 import Business
 from Business.DrawingActions import create_default_header
+from Data.CalcSheetAnalysis import CalcSheetAnalysis
 from Data.CalcTableAnalysis import CalcTableAnalysis
 from Data.Document import Document
 from Data.Drawings import Drawing
@@ -62,6 +63,7 @@ class MainWindow(QMainWindow):
     self.add_drawing_action = self.add_action("Add\nDrawing", "adddrawing", "Add drawing to the document", True, self.on_add_drawing)
     self.add_part_action = self.add_action("Add\nPart", "addpart", "Add part to the document", True, self.on_add_part)
     self._add_calc_table_analysis = self.add_action("Add Calc\nTable", "addcalctable", "Add calculation table analysis to document", True, self.on_add_calc_table_analysis)
+    self._add_calc_sheet_analysis = self.add_action("Add Calc\nSheet", "addcalcsheet", "Add calculation sheet analysis to document", True, self.on_add_calc_sheet_analysis)
     self._show_hidden_params_action = self.add_action("Show hidden\nparameters", "hideparams", "Show hidden parameters", True, self.on_show_hidden_parameters, checkable=True)
     self._set_sim_x_action = self.add_action("Set simil.\nx coords", "setsimx", "Set similar x coordinate values", True, self.on_set_sim_x, checkable=True)
     self._set_sim_y_action = self.add_action("Set simil.\ny coords", "setsimy", "Set similar y coordinate values", True, self.on_set_sim_y, checkable=True)
@@ -266,6 +268,9 @@ class MainWindow(QMainWindow):
       if type(selection[0]) is CalcTableAnalysis:
         self._viewWidget.set_calc_table_view(selection[0])
         self._ribbon_widget.setCurrentIndex(4)
+      if type(selection[0]) is CalcSheetAnalysis:
+        self._viewWidget.set_calc_sheet_view(selection[0])
+        self._ribbon_widget.setCurrentIndex(4)
 
   def on_area_selection_changed_in_table(self, selected_areas):
     self._viewWidget.on_area_selection_changed_in_table(selected_areas)
@@ -391,6 +396,7 @@ class MainWindow(QMainWindow):
     insert_pane.add_ribbon_widget(RibbonButton(self, self.add_part_action, True))
     insert_pane.add_ribbon_widget(RibbonButton(self, self.add_drawing_action, True))
     insert_pane.add_ribbon_widget(RibbonButton(self, self._add_calc_table_analysis, True))
+    insert_pane.add_ribbon_widget(RibbonButton(self, self._add_calc_sheet_analysis, True))
 
   def init_sketch_tab(self):
     sketch_tab = self._ribbon_widget.add_ribbon_tab("Sketch")
@@ -488,6 +494,9 @@ class MainWindow(QMainWindow):
 
   def on_add_calc_table_analysis(self):
     Business.add_calc_table_analysis(self._document, "New Table")
+
+  def on_add_calc_sheet_analysis(self):
+    Business.add_calc_sheet_analysis(self._document, "New Sheet")
 
   def add_action(self, caption, icon_name, status_tip, icon_visible, connection, shortcut=None, checkable=False):
     action = QAction(get_icon(icon_name), tr(caption, "ribbon"), self)

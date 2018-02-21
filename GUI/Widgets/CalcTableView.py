@@ -1,5 +1,4 @@
 from PyQt5.QtWidgets import QTableView
-
 from GUI import gui_scale
 from GUI.Models.CalcTableModel import CalcTableModel
 
@@ -18,4 +17,5 @@ class CalcTableView(QTableView):
     pass
 
   def set_calc_table(self, calc_table):
+
     self._calc_table_model.set_table(calc_table)

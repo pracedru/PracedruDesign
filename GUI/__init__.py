@@ -93,3 +93,17 @@ def write_language_file():
     text = text.replace("\n", "&#xA;")
     text = text.replace(">&#xA;<", "><")
     write_data_to_disk("%s.ts" % QLocale().name(), text)
+
+def formula_from_locale(formula):
+  locale = QLocale()
+  if locale.decimalPoint() == ",":
+    return formula.replace(",", ".").replace(";", ",")
+  return formula
+
+
+def formula_to_locale(formula):
+    locale = QLocale()
+    if locale.decimalPoint() == ",":
+        return formula.replace(",", ";").replace(".", ",")
+    return formula
+

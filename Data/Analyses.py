@@ -1,4 +1,5 @@
 from Data.Analysis import Analysis
+from Data.CalcSheetAnalysis import CalcSheetAnalysis
 from Data.CalcTableAnalysis import CalcTableAnalysis
 from Data.Events import ChangeEvent
 from Data.Objects import ObservableObject
@@ -18,7 +19,15 @@ class Analyses(ObservableObject):
         return "Analyses"
 
     def create_calc_table_analysis(self, name):
-        analysis = CalcTableAnalysis(name, Analysis.CalcTableAnalysisType, self._doc)
+        analysis = CalcTableAnalysis(name, self._doc)
+        self.changed(ChangeEvent(self, ChangeEvent.BeforeObjectAdded, analysis))
+        self._analyses[analysis.uid] = analysis
+        self.changed(ChangeEvent(self, ChangeEvent.ObjectAdded, analysis))
+        analysis.add_change_handler(self.analysis_changed)
+        return analysis
+
+    def create_calc_sheet_analysis(self, name):
+        analysis = CalcSheetAnalysis(name, self._doc)
         self.changed(ChangeEvent(self, ChangeEvent.BeforeObjectAdded, analysis))
         self._analyses[analysis.uid] = analysis
         self.changed(ChangeEvent(self, ChangeEvent.ObjectAdded, analysis))

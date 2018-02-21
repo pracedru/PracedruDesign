@@ -6,8 +6,10 @@ from PyQt5.QtWidgets import QMessageBox
 from PyQt5.QtWidgets import QTreeView
 
 from Business import delete_items
+from Data.CalcTableAnalysis import CalcTableAnalysis
 from Data.Document import Document
 from Data.Drawings import Drawing
+from Data.Geometry import Geometry
 from Data.Part import Part
 from Data.Sketch import Sketch
 from GUI import tr
@@ -63,6 +65,10 @@ class TreeViewDock(QDockWidget):
         if type(index.internalPointer().data) is Drawing:
             select = True
         if type(index.internalPointer().data) is Part:
+            select = True
+        if type(index.internalPointer().data) is CalcTableAnalysis:
+            select = True
+        if type(index.internalPointer().data) is Geometry:
             select = True
         if select:
             sel_type = QItemSelectionModel.ClearAndSelect

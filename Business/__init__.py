@@ -67,6 +67,10 @@ def add_calc_table_analysis(document, name):
     analysis = document.get_analyses().create_calc_table_analysis(name)
     return analysis
 
+def add_calc_sheet_analysis(document, name):
+    analysis = document.get_analyses().create_calc_sheet_analysis(name)
+    return analysis
+
 def delete_items(doc, items):
     for item in items:
         object = item.data

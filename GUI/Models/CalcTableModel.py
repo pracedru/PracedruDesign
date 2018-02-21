@@ -1,4 +1,7 @@
-from PyQt5.QtCore import QAbstractTableModel, QModelIndex, Qt
+from PyQt5.QtCore import QAbstractTableModel, QModelIndex, Qt, QLocale
+from PyQt5.QtWidgets import QMessageBox
+
+from GUI import formula_from_locale, formula_to_locale
 
 col_header_letters  = "ABCDEFGHIJKLMNOPQRSTUVXYZ"
 
@@ -24,7 +27,7 @@ class CalcTableModel(QAbstractTableModel):
     if role == Qt.EditRole:
       cell = self._calc_table.get_cell(index.row(), index.column())
       if cell is not None:
-        return cell.formula
+        return formula_to_locale(cell.formula)
     return None
 
   def headerData(self, p_int, orientation, role):
@@ -42,7 +45,17 @@ class CalcTableModel(QAbstractTableModel):
 
   def setData(self, index: QModelIndex, value, role):
     if role == Qt.EditRole:
-      self._calc_table.set_cell_value(index.row(), index.column(), value)
+      if isinstance(value, float):
+        self._calc_table.set_cell_value(index.row(), index.column(), value)
+        return True
+      parsed = QLocale().toDouble(value)
+      if parsed[1]:
+        self._calc_table.set_cell_value(index.row(), index.column(), parsed[0])
+      else:
+        try:
+          self._calc_table.set_cell_value(index.row(), index.column(), formula_from_locale(value))
+        except Exception as ex:
+          QMessageBox.information(None, "Error", str(ex))
       return True
     return False
 

@@ -3,8 +3,8 @@ from Data.Events import ChangeEvent
 
 
 class CalcTableAnalysis(Analysis):
-  def __init__(self, name, analysisType, document):
-    Analysis.__init__(self, name, analysisType, document)
+  def __init__(self, name, document):
+    Analysis.__init__(self, name, Analysis.CalcTableAnalysisType, document)
     self._row_count = 0
     self._col_count = 0
     self._rows = {}
@@ -18,13 +18,14 @@ class CalcTableAnalysis(Analysis):
   def set_cell_value(self, row, col, value):
     cell = self.get_cell(row, col)
     if cell == None:
-      cell = self.create_parameter()
-      if row not in self._rows.keys():
-        self._rows[row] = {}
-      self._rows[row][col] = cell
-    if value == "":
-      cell.changed(ChangeEvent(self, ChangeEvent.Deleted, cell))
+      if value != "":
+        cell = self.create_parameter("Cell")
+        if row not in self._rows.keys():
+          self._rows[row] = {}
+        self._rows[row][col] = cell
+    if value == "" and cell is not None:
+      self.delete_parameter(cell.uid)
       self._rows[row].pop(col)
-    else:
+    elif cell is not None:
       cell.value = value
 
