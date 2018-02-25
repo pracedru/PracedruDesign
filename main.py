@@ -12,6 +12,7 @@ from pathlib import Path
 
 __author__ = 'mamj'
 
+# This is a test
 
 def except_hook(cls, exception, traceback):
     sys.__excepthook__(cls, exception, traceback)
