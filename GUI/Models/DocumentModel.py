@@ -68,6 +68,8 @@ class DocumentItemModel(QAbstractItemModel):
       param_item = DocumentModelItem(edge_tuple[1], self, geom_item.children()[2])
     for text_tuple in sketch.get_texts():
       param_item = DocumentModelItem(text_tuple[1], self, geom_item.children()[3])
+    for area_tuple in sketch.get_areas():
+      param_item = DocumentModelItem(area_tuple[1], self, geom_item.children()[4])
     return geom_item
 
   def populate_drawing(self, drawing, parent_item):

@@ -6,6 +6,7 @@ from PyQt5.QtGui import QBrush, QFont, QPen, QPainter, QFontMetrics, QColor, QPa
 
 from Data.Nurbs import Nurbs
 from Data.Sketch import Edge, Text, Attribute
+from Data.Vertex import Vertex
 
 
 def create_pens(document, scale, color_override=None):
@@ -97,6 +98,14 @@ def draw_text(text, qp: QPainter, scale, offset, center):
     qp.restore()
 
 
+def get_fillet_offset_distance(fillet_kp, r, edge1, edge2):
+    kp1 = edge1.get_other_kp(fillet_kp)
+    kp2 = edge2.get_other_kp(fillet_kp)
+    abtw = fillet_kp.angle_between_positive_minimized(kp1, kp2)
+    dist = -tan(abtw / 2 + pi / 2) * r
+    return dist
+
+
 def draw_edge(edge: Edge, qp: QPainter, scale, offset, center, pens):
     if edge.style is None:
         qp.setPen(pens['default'])
@@ -127,10 +136,7 @@ def draw_edge(edge: Edge, qp: QPainter, scale, offset, center, pens):
             if fillet1 is not None and other_edge1 is not None:
                 r = fillet1.get_meta_data("r")
                 a1 = edge.angle(key_points[0])
-                kp1 = edge.get_other_kp(key_points[0])
-                kp2 = other_edge1.get_other_kp(key_points[0])
-                abtw = key_points[0].angle_between_positive_minimized(kp1, kp2)
-                dist = -tan(abtw/2+pi/2)*r
+                dist = get_fillet_offset_distance(key_points[0], r, edge, other_edge1)
                 fillet_offset_x = dist * cos(a1)
                 fillet_offset_y = dist * sin(a1)
 
@@ -143,10 +149,7 @@ def draw_edge(edge: Edge, qp: QPainter, scale, offset, center, pens):
             if fillet2 is not None and other_edge2 is not None:
                 r = fillet2.get_meta_data("r")
                 a1 = edge.angle(key_points[1])
-                kp1 = edge.get_other_kp(key_points[1])
-                kp2 = other_edge2.get_other_kp(key_points[1])
-                abtw = key_points[1].angle_between_positive_minimized(kp2, kp1)
-                dist = -tan(abtw / 2+pi/2) * r
+                dist = get_fillet_offset_distance(key_points[1], r, edge, other_edge2)
                 fillet_offset_x = dist * cos(a1)
                 fillet_offset_y = dist * sin(a1)
 
@@ -174,7 +177,8 @@ def draw_edge(edge: Edge, qp: QPainter, scale, offset, center, pens):
         elif edge.type == Edge.FilletLineEdge:
             kp = key_points[0]
             edges_list = kp.get_edges()
-            edges_list.remove(edge)
+            if edge in edges_list:
+                edges_list.remove(edge)
             if len(edges_list) > 1:
                 edge1 = edges_list[0]
                 edge2 = edges_list[1]
@@ -246,8 +250,40 @@ def draw_area(area, qp, scale, offset, half_height, half_width, show_names, brus
     y_min = 0
     counter = 0
     for kp in area.get_key_points():
-        x = (kp.x + offset.x) * scale + half_width
-        y = -(kp.y + offset.y) * scale + half_height
+        edges = kp.get_edges()
+        is_fillet_kp = False
+        fillet_dist = 0
+        for edge in edges:
+            if edge.type == Edge.FilletLineEdge:
+                r = edge.get_meta_data("r")
+                is_fillet_kp = True
+                edge1 = None
+                edge2 = None
+                for e in edges:
+                    if e is not edge:
+                        edge1 = e
+                for e in edges:
+                    if e is not edge and e is not edge1:
+                        edge2 = e
+                fillet_dist = get_fillet_offset_distance(kp, r, edge1, edge2)
+        if is_fillet_kp:
+            if first_kp:
+                kp_prev = area.get_key_points()[len(area.get_key_points())-2]
+            else:
+                kp_prev = area.get_key_points()[counter-1]
+            if counter + 1 == len(area.get_key_points()):
+                kp_next = area.get_key_points()[1]
+            else:
+                kp_next = area.get_key_points()[counter + 1]
+            angle = kp.angle2d(kp_prev)
+            angle_next = kp.angle2d(kp_next)
+            fillet_offset_x = fillet_dist * cos(angle_next)
+            fillet_offset_y = fillet_dist * sin(angle_next)
+            x = (kp.x + fillet_offset_x + offset.x) * scale + half_width
+            y = -(kp.y + fillet_offset_y + offset.y) * scale + half_height
+        else:
+            x = (kp.x + offset.x) * scale + half_width
+            y = -(kp.y + offset.y) * scale + half_height
         if first_kp:
             path.moveTo(QPointF(x, y))
             first_kp = False
@@ -273,6 +309,33 @@ def draw_area(area, qp, scale, offset, half_height, half_width, show_names, brus
                     sweep_length = -sweep_length
 
                 path.arcTo(cx - radius * scale, cy - radius * scale, scale * radius * 2, scale * radius * 2, start_angle, sweep_length)
+            elif is_fillet_kp:
+                center_kp = Vertex(kp.x, kp.y, kp.z)
+                fillet_offset_x = fillet_dist * cos(angle)
+                fillet_offset_y = fillet_dist * sin(angle)
+                center_kp.x += fillet_offset_x
+                center_kp.y += fillet_offset_y
+
+                angle1 = kp_next.angle2d(kp)
+
+                angle_between = kp.angle_between(kp_prev, kp_next)
+                if angle_between < 0 or angle_between < pi:
+                    angle_perp = angle + pi/2
+                else:
+                    angle_perp = angle - pi/2
+                center_kp.x += r * cos(angle_perp)
+                center_kp.y += r * sin(angle_perp)
+
+                cx = (center_kp.x + offset.x) * scale + half_width
+                cy = -(center_kp.y + offset.y) * scale + half_height
+
+                if angle_between < 0 or angle_between < pi:
+                    start_angle = (angle * 180 / pi) + 270
+                else:
+                    start_angle = angle * 180 / pi + 90
+                sweep_length = -(180-angle_between * 180 / pi)
+                path.arcTo(cx - r * scale, cy - r * scale, scale * r * 2, scale * r * 2, start_angle, sweep_length)
+
             else:
                 path.lineTo(QPointF(x, y))
             if x > x_max:
