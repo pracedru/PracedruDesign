@@ -101,6 +101,7 @@ class Geometries(ObservableObject):
             geometry = None
             if geometry_data['type'] == Geometry.Sketch:
                 geometry = Sketch.deserialize(geometry_data, document.get_parameters(), document)
+                geometry.add_change_handler(self.geometry_changed)
             if geometry_data['type'] == Geometry.Part:
                 geometry = Part.deserialize(geometry_data, document.get_parameters(), document)
             if geometry is not None:
@@ -109,3 +110,4 @@ class Geometries(ObservableObject):
             if child_id in self._geometries:
                 child = self._geometries[child_id]
                 self.add_child(child)
+                geometry.add_change_handler(self.child_geometry_changed)

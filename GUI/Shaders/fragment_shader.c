@@ -43,7 +43,7 @@ void main(void)
         lcol.x = color.x * (ambient + p);
         lcol.y = color.y * (ambient + p);
         lcol.z = color.z * (ambient + p);
-        lcol += scol * spec * specular;
+        lcol += scol * spec * specular * 2;
     }
     if (gradient){
         float grad = 0.18 * gl_FragCoord.y / resolution.y;

@@ -404,7 +404,7 @@ class Part(Geometry):
     surfaces.append(surface)
     return surfaces
 
-  def create_suface_from_nurbs_feature(self, nurbs_surface_feature):
+  def create_surface_from_nurbs_feature(self, nurbs_surface_feature):
     surface = Surface(Surface.NurbsSurface)
     sketch_feature = nurbs_surface_feature.get_features()[0]
     plane_feature = sketch_feature.get_features()[0]
@@ -657,7 +657,7 @@ class Part(Geometry):
       self._features[feature.uid] = feature
       if feature.feature_type == Feature.PlaneFeature:
         feature.add_change_handler(self.on_plane_feature_changed)
-      elif feature.feature_type == Feature.PlaneFeature:
+      elif feature.feature_type == Feature.SketchFeature:
         feature.add_change_handler(self.on_sketch_feature_changed)
       elif feature.feature_type == Feature.ExtrudeFeature:
         feature.add_change_handler(self.on_extrude_feature_changed)

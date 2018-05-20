@@ -63,13 +63,13 @@ class DocumentItemModel(QAbstractItemModel):
     for param_tuple in sketch.get_all_local_parameters():
       param_item = DocumentModelItem(param_tuple[1], self, geom_item.children()[0])
     for kp_tuple in sketch.get_key_points():
-      param_item = DocumentModelItem(kp_tuple[1], self, geom_item.children()[1], "Key point")
+      kp_item = DocumentModelItem(kp_tuple[1], self, geom_item.children()[1], "Key point")
     for edge_tuple in sketch.get_edges():
-      param_item = DocumentModelItem(edge_tuple[1], self, geom_item.children()[2])
+      edge_item = DocumentModelItem(edge_tuple[1], self, geom_item.children()[2])
     for text_tuple in sketch.get_texts():
-      param_item = DocumentModelItem(text_tuple[1], self, geom_item.children()[3])
+      text_item = DocumentModelItem(text_tuple[1], self, geom_item.children()[3])
     for area_tuple in sketch.get_areas():
-      param_item = DocumentModelItem(area_tuple[1], self, geom_item.children()[4])
+      area_item = DocumentModelItem(area_tuple[1], self, geom_item.children()[4])
     return geom_item
 
   def populate_drawing(self, drawing, parent_item):
@@ -268,11 +268,14 @@ class DocumentItemModel(QAbstractItemModel):
     elif type(parent_item.data) is Drawing and type(object) is Field:
       fields_item = parent_item.children()[0]
       new_item = DocumentModelItem(object, self, fields_item)
-    elif type(parent_item.data) is Part:
+    elif type(parent_item.data) is Part and type(object) is Feature:
       if type(object) is Feature:
         if object.feature_type == Feature.PlaneFeature:
           planes_item = parent_item.children()[0]
           new_item = DocumentModelItem(object, self, planes_item)
+        elif object.feature_type == Feature.SketchFeature:
+          sketch = object.get_objects()[0]
+          new_item = self.populate_sketch(sketch, parent_item)
         else:
           new_item = DocumentModelItem(object, self, parent_item)
     else:

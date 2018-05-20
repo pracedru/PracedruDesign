@@ -116,6 +116,7 @@ class Feature(NamedObservableObject, IdObject):
                             break
                 if feature_object is not None:
                     self.add_object(feature_object)
+                    feature_object.add_change_handler(self.on_object_changed)
             self._feature_objects_late_bind.clear()
         feats = list(self._feature_objects)
         return feats
@@ -217,4 +218,5 @@ class Feature(NamedObservableObject, IdObject):
 
         for feature_object_uid in data.get('objects', []):
             self._feature_objects_late_bind.append(feature_object_uid)
+
 

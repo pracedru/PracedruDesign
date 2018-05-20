@@ -280,6 +280,9 @@ class Sketch(Geometry):
       event.object.remove_change_handler(self.on_area_changed)
       self.changed(ChangeEvent(self, ChangeEvent.ObjectRemoved, event.sender))
 
+  def delete(self):
+    self.changed(ChangeEvent(self, ChangeEvent.Deleted, self))
+
   def serialize_json(self):
     return {
       'uid': IdObject.serialize_json(self),
