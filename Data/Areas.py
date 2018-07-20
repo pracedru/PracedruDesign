@@ -23,16 +23,23 @@ class Area(IdObject, NamedObservableObject):
   def inside(self, point):
     anglesum = 0.0
     last_point = None
-    for pnt in self.get_inside_key_points():
-      if last_point is not None:
-        angle = point.angle_between(last_point, pnt)
-        if angle > pi:
-          angle = -(2 * pi - angle)
-        anglesum += angle
-      last_point = pnt
-    if abs(anglesum) > pi:
-      return True
-    return False
+    if self._edges[0].type == Edge.CircleEdge:
+      kp = self._edges[0].get_key_points()[0]
+      r = self._edges[0].get_meta_data('r')
+      if r > kp.distance(point):
+        return True
+      return False
+    else:
+      for pnt in self.get_inside_key_points():
+        if last_point is not None:
+          angle = point.angle_between(last_point, pnt)
+          if angle > pi:
+            angle = -(2 * pi - angle)
+          anglesum += angle
+        last_point = pnt
+      if abs(anglesum) > pi:
+        return True
+      return False
 
   def get_intersecting_edges(self, kp, gamma):
     intersecting_edges = []
@@ -134,41 +141,44 @@ class Area(IdObject, NamedObservableObject):
     :return: list of points describing the outside limits
     """
     key_points = []
-    this_kp = self._edges[0].get_end_key_points()[0]
-    next_kp = self._edges[0].get_end_key_points()[1]
-    if this_kp == self._edges[1].get_end_key_points()[0] or this_kp == self._edges[1].get_end_key_points()[1]:
-      this_kp = self._edges[0].get_end_key_points()[1]
-      next_kp = self._edges[0].get_end_key_points()[0]
-    key_points.append(this_kp)
-    if self._edges[0].type == Edge.ArcEdge:
-      ckp = self._edges[0].get_key_points()[0]
-      sa = self._edges[0].get_meta_data('sa')
-      ea = self._edges[0].get_meta_data('ea')
-      r = self._edges[0].get_meta_data('r')
-      diff = ea - sa
-      if diff < 0:
-        diff += 2 * pi
-      ma = sa + diff / 2
-      key_points.append(Vertex(ckp.x + cos(ma) * r, ckp.y + sin(ma) * r))
-    key_points.append(next_kp)
-    for i in range(1, len(self._edges)):
-      edge = self._edges[i]
-      if edge.type != Edge.FilletLineEdge:
-        if edge.type == Edge.ArcEdge:
-          ckp = edge.get_key_points()[0]
-          sa = edge.get_meta_data('sa')
-          ea = edge.get_meta_data('ea')
-          r = edge.get_meta_data('r')
-          diff = ea - sa
-          if diff < 0:
-            diff += 2 * pi
-          ma = sa + diff / 2
-          key_points.append(Vertex(ckp.x + cos(ma) * r, ckp.y + sin(ma) * r))
-        if next_kp == edge.get_end_key_points()[0]:
-          next_kp = edge.get_end_key_points()[1]
-        else:
-          next_kp = edge.get_end_key_points()[0]
-        key_points.append(next_kp)
+    if self._edges[0].type == Edge.CircleEdge:
+      key_points.append(self._edges[0].get_end_key_points()[0])
+    else:
+      this_kp = self._edges[0].get_end_key_points()[0]
+      next_kp = self._edges[0].get_end_key_points()[1]
+      if this_kp == self._edges[1].get_end_key_points()[0] or this_kp == self._edges[1].get_end_key_points()[1]:
+        this_kp = self._edges[0].get_end_key_points()[1]
+        next_kp = self._edges[0].get_end_key_points()[0]
+      key_points.append(this_kp)
+      if self._edges[0].type == Edge.ArcEdge:
+        ckp = self._edges[0].get_key_points()[0]
+        sa = self._edges[0].get_meta_data('sa')
+        ea = self._edges[0].get_meta_data('ea')
+        r = self._edges[0].get_meta_data('r')
+        diff = ea - sa
+        if diff < 0:
+          diff += 2 * pi
+        ma = sa + diff / 2
+        key_points.append(Vertex(ckp.x + cos(ma) * r, ckp.y + sin(ma) * r))
+      key_points.append(next_kp)
+      for i in range(1, len(self._edges)):
+        edge = self._edges[i]
+        if edge.type != Edge.FilletLineEdge:
+          if edge.type == Edge.ArcEdge:
+            ckp = edge.get_key_points()[0]
+            sa = edge.get_meta_data('sa')
+            ea = edge.get_meta_data('ea')
+            r = edge.get_meta_data('r')
+            diff = ea - sa
+            if diff < 0:
+              diff += 2 * pi
+            ma = sa + diff / 2
+            key_points.append(Vertex(ckp.x + cos(ma) * r, ckp.y + sin(ma) * r))
+          if next_kp == edge.get_end_key_points()[0]:
+            next_kp = edge.get_end_key_points()[1]
+          else:
+            next_kp = edge.get_end_key_points()[0]
+          key_points.append(next_kp)
     return key_points
 
   def get_edges(self):

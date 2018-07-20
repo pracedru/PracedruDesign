@@ -2,6 +2,7 @@ from PyQt5.QtCore import *
 from PyQt5.QtWidgets import QMessageBox
 
 from Business import *
+from Business.SketchActions import *
 from Data import Areas
 from Data.Areas import Area
 from Data.Parameters import *
@@ -71,7 +72,7 @@ class AreasModel(QAbstractTableModel):
     areas = []
     for row in rows:
       areas.append(self._sketch.get_area(self._rows[row]))
-    remove_areas(self._doc, areas)
+    remove_areas(self._doc, self._sketch, areas)
 
   def on_areas_changed(self, event: ChangeEvent):
     if event.type == event.BeforeObjectAdded:

@@ -14,6 +14,7 @@ class ActionStates(object):
         self.select_kp = True
         self.select_edge = True
         self.select_text = True
+        self.select_area = True
         self.add_text = False
         self.add_circle_edge = False
         self.add_attribute = False

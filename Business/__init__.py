@@ -77,3 +77,4 @@ def delete_items(doc, items):
         if object is not None:
             if "delete" in dir(object):
                 object.delete()
+

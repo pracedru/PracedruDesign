@@ -89,6 +89,14 @@ class Sketch(Geometry):
     self.edge_naming_index += 1
     return self.edge_naming_index - 1
 
+  def remove_areas(self, areas):
+    for area in areas:
+      if area.uid in self._areas:
+        self.changed(ChangeEvent(self, ChangeEvent.BeforeObjectRemoved, area))
+        self._areas.pop(area.uid)
+        area.changed(ChangeEvent(self, ChangeEvent.Deleted, area))
+        self.changed(ChangeEvent(self, ChangeEvent.ObjectRemoved, area))
+
   def remove_edge(self, edge):
     if edge.uid in self._edges:
       self.changed(ChangeEvent(self, ChangeEvent.BeforeObjectRemoved, edge))
@@ -275,7 +283,8 @@ class Sketch(Geometry):
   def on_area_changed(self, event: ChangeEvent):
     if event.type == ChangeEvent.Deleted:
       self.changed(ChangeEvent(self, ChangeEvent.BeforeObjectRemoved, event.sender))
-      self._areas.pop(event.object.uid)
+      if event.object.uid in self._areas:
+        self._areas.pop(event.object.uid)
       self.changed(ChangeEvent(self, ChangeEvent.ObjectRemoved, event.sender))
       event.object.remove_change_handler(self.on_area_changed)
       self.changed(ChangeEvent(self, ChangeEvent.ObjectRemoved, event.sender))

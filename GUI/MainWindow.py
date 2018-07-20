@@ -17,10 +17,12 @@ from PyQt5.QtWidgets import QToolBar
 
 import Business
 from Business.DrawingActions import create_default_header
+from Data.Areas import Area
 from Data.CalcSheetAnalysis import CalcSheetAnalysis
 from Data.CalcTableAnalysis import CalcTableAnalysis
 from Data.Document import Document
 from Data.Drawings import Drawing
+from Data.Edges import Edge
 from Data.Parameters import Parameters
 from Data.Part import Part, Feature
 from Data.Point3d import KeyPoint
@@ -247,6 +249,12 @@ class MainWindow(QMainWindow):
         self._viewWidget.set_sketch_view(selection[0])
         self._geometry_dock.set_sketch(selection[0])
         self._ribbon_widget.setCurrentIndex(1)
+      if type(selection[0]) is KeyPoint:
+        self._viewWidget.sketch_view.set_selected_key_points([selection[0]])
+      if type(selection[0]) is Edge:
+        self._viewWidget.sketch_view.set_selected_edges([selection[0]])
+      if type(selection[0]) is Area:
+        self._viewWidget.sketch_view.set_selected_areas([selection[0]])
       if type(selection[0]) is Drawing:
         self._viewWidget.set_drawing_view(selection[0])
         self._ribbon_widget.setCurrentIndex(3)

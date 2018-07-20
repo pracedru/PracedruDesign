@@ -449,7 +449,7 @@ class Part(Geometry):
         for surface in surfaces:
           self._surfaces[surface.uid] = surface
       elif feature.feature_type == Feature.NurbsSurfaceFeature:
-        surface = self.create_suface_from_nurbs_feature(feature)
+        surface = self.create_surface_from_nurbs_feature(feature)
         self._surfaces[surface.uid] = surface
     self._cal_limits()
     self._update_needed = False

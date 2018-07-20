@@ -223,8 +223,8 @@ class Surface(ObservableObject, IdObject):
             controls.append(cps)
         ns.set_controls(controls)
         verts_matrix = []
-        i_count = len(controls)*15
-        j_count = len(controls[0])*15
+        i_count = len(controls)*10
+        j_count = len(controls[0])*10
         for i in range(i_count):
             verts_array = []
             for j in range(j_count):
@@ -252,7 +252,6 @@ class Surface(ObservableObject, IdObject):
                     n1 = normals[(j_count-1) * (i - 2) * 6 + j * 6-4]
                     n2 = normals[(j_count-1) * (i - 2) * 6 + j * 6-1]
                 normals.extend([n1, n2, n3, n3, n2, n4])
-                # normals.extend([n4, n4, n4, n4, n4, n4])
                 n3 = n4
 
         return triangles, normals

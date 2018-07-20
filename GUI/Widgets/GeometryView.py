@@ -51,9 +51,11 @@ class GeometryDock(QDockWidget):
       for kp in edge.get_end_key_points():
         kps.append(kp)
     if len(kps) > 0:
+      self.kps_table_widget.hide_unselected_key_points = True
       self.kps_table_widget.set_selected_kps(kps)
 
   def on_kp_selection_changed(self, selected_key_points):
+    self.kps_table_widget.hide_unselected_key_points = False
     self.kps_table_widget.set_selected_kps(selected_key_points)
 
   def on_area_selection_changed(self, selected_areas):

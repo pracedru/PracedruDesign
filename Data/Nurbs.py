@@ -3,10 +3,11 @@ import numpy as np
 
 class Nurbs(object):
   def __init__(self):
-    self._knots = [0, 0, 0, 1, 1, 1]
+    self._knots = [0.0, 0.0, 0.0, 1.0, 1.0, 1.0]
     self._weights = None
     self._controls = []
     self._degree = 2
+    self._ntable = []
 
   @property
   def controls(self):
@@ -15,6 +16,7 @@ class Nurbs(object):
   def set_controls(self, controls):
     self._controls = controls
     self.create_knots(len(controls))
+    self._ntable = []
 
   def create_knots(self, control_count):
     self._knots.clear()
@@ -41,14 +43,31 @@ class Nurbs(object):
       denom = 1.0e-30
     return num / denom
 
+  def lookup(self, i, u):
+    if len(self._ntable) < i+1:
+      self._ntable.append({})
+      return None
+    else:
+      if u in self._ntable[i]:
+        return self._ntable[i][u]
+      else:
+        return None
+
   def N(self, i, n, u):
+    if n == self._degree:
+      lu = self.lookup(i, u)
+      if lu is not None:
+        return lu
     if n == 0:
       if self._knots[i] <= u < self._knots[i + 1]:
         return 1.0
       elif u == self._knots[i + 1] and i + 2 == len(self._knots):
         return 1.0
       return 0.0
-    return self.f(i, n, u) * self.N(i, n - 1, u) + self.g(i + 1, n, u) * self.N(i + 1, n - 1, u)
+    retval = self.f(i, n, u) * self.N(i, n - 1, u) + self.g(i + 1, n, u) * self.N(i + 1, n - 1, u)
+    if n == self._degree:
+      self._ntable[i][u] = retval
+    return retval
 
   def R(self, i, n, u):
     if self._weights is None:

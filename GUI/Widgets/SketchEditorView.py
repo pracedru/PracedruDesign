@@ -35,6 +35,7 @@ class SketchEditorViewWidget(QWidget):
     self._kp_move = None
     self._edge_hover = None
     self._text_hover = None
+    self._area_hover = None
     self.similar_threshold = 1
     self.installEventFilter(self)
 
@@ -270,9 +271,12 @@ class SketchEditorViewWidget(QWidget):
         if self._kp_move.get_y_parameter() is None:
           self._kp_move.y = y
           update_view = True
+
     self._kp_hover = None
     self._edge_hover = None
     self._text_hover = None
+    self._area_hover = None
+
     if self._states.select_kp:
       for kp_tuple in key_points:
         key_point = kp_tuple[1]
@@ -331,6 +335,14 @@ class SketchEditorViewWidget(QWidget):
         y1 = key_point.y
         if abs(y1 - self._kp_hover.y) < self.similar_threshold:
           self._similar_coords.add(key_point)
+          update_view = True
+
+
+    if self._states.select_area and self._kp_hover is None and self._edge_hover is None:
+      for area_tuple in sketch.get_areas():
+        area = area_tuple[1]
+        if area.inside(Vertex(x, y, 0)):
+          self._area_hover = area
           update_view = True
 
     if update_view:
@@ -409,6 +421,18 @@ class SketchEditorViewWidget(QWidget):
       self._selected_key_points = []
       self.update()
       self._main_window.on_kp_selection_changed_in_view(self._selected_key_points)
+
+    if self._states.select_area:
+      if self._area_hover is not None:
+        if self._states.multi_select:
+          self._selected_areas.append(self._area_hover)
+        else:
+          self._selected_areas = [self._area_hover]
+        self.update()
+      else:
+        if not self._states.multi_select:
+          self._selected_areas = []
+          self.update()
 
     if self._states.draw_line_edge:
       doc = self._doc
@@ -642,7 +666,9 @@ class SketchEditorViewWidget(QWidget):
     if self._sketch is None:
       return
     normal_pen = QPen(QColor(0, 0, 0), 2)
-
+    area_brush = QBrush(QColor(150, 150, 150, 80))
+    area_hover_brush = QBrush(QColor(150, 150, 200, 80))
+    area_selected_brush = QBrush(QColor(150, 150, 200, 120))
     areas = self._sketch.get_areas()
     qp.setPen(normal_pen)
     width = self.width() / 2
@@ -651,7 +677,12 @@ class SketchEditorViewWidget(QWidget):
 
     for area_tuple in areas:
       area = area_tuple[1]
-      draw_area(area, qp, scale, self._offset, height, width, True, QBrush(QColor(150, 150, 150, 80)))
+      brush = area_brush
+      if area in self._selected_areas:
+        brush = area_selected_brush
+      if area == self._area_hover:
+        brush = area_hover_brush
+      draw_area(area, qp, scale, self._offset, height, width, True, brush)
 
       # for area_tuple in areas:
       #     area = area_tuple[1]
