@@ -1,7 +1,7 @@
 import numpy as np
 from math import *
 
-from Data.Edges import Edge
+from Data.Edges import *
 from Data.Events import *
 from Data.Nurbs import NurbsSurface
 from Data.Vertex import Vertex
@@ -143,7 +143,7 @@ class Surface(ObservableObject, IdObject):
         return self._triangles, self._normals
 
     def get_divisions_of_edge(self, edge):
-        if edge.type == Edge.ArcEdge:
+        if edge.type == EdgeType.ArcEdge:
             sa = edge.get_meta_data('sa')
             ea = edge.get_meta_data('ea')
             span = ea - sa
@@ -178,11 +178,11 @@ class Surface(ObservableObject, IdObject):
         return cc
 
     def get_position_on_edge(self, edge, relative):
-        if edge.type == Edge.LineEdge:
+        if edge.type == EdgeType.LineEdge:
             kps = edge.get_end_key_points()
             diff = kps[1].xyz - kps[0].xyz
             cc = kps[0].xyz + diff * relative
-        if edge.type == Edge.ArcEdge:
+        if edge.type == EdgeType.ArcEdge:
             plane = edge.plane
             r = edge.get_meta_data('r')
             sa = edge.get_meta_data('sa')
@@ -360,7 +360,7 @@ class Surface(ObservableObject, IdObject):
             if edge_found is None:
                 next_kp = ekps[1]
             remaining_edges.remove(edge)
-            if edge.type is Edge.ArcEdge:
+            if edge.type is EdgeType.ArcEdge:
                 plane = edge.plane
                 r = edge.get_meta_data('r')
                 sa = edge.get_meta_data('sa')

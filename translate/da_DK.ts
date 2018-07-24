@@ -153,7 +153,7 @@
         </message>
         <message>
             <source>Scale</source>
-            <translation>Skala</translation>
+            <translation>Skaler</translation>
         </message>
         <message>
             <source>Parametry</source>

@@ -2,7 +2,7 @@ import collections
 from math import pi
 
 from Data.Document import Document
-from Data.Sketch import Edge, Sketch
+from Data.Sketch import *
 
 
 def create_key_point(doc, sketch, x, y, param, coincident_threshold):
@@ -198,7 +198,7 @@ def find_fillets(sketch, area):
   fillet_edges = []
   for edge_tuple in sketch.get_edges():
     edge = edge_tuple[1]
-    if edge.type == Edge.FilletLineEdge:
+    if edge.type == EdgeType.FilletLineEdge:
       fillet_edges.append(edge)
   kps = area.get_inside_key_points()
   for kp in kps:
@@ -213,7 +213,7 @@ def find_all_areas(edges):
   connections = {}
   for edge in edges:
     # edge = edge_tuple[1]
-    if edge.type != Edge.FilletLineEdge:
+    if edge.type != EdgeType.FilletLineEdge:
       kps = edge.get_end_key_points()
       for kp in kps:
         if kp.uid not in connections:
@@ -229,7 +229,7 @@ def find_all_areas(edges):
     conn1 = None
     if len(connection_tuple[1]['edges']) > 1:
       conn1 = connection_tuple[1]
-    elif connection_tuple[1]['edges'][0].type == Edge.CircleEdge:
+    elif connection_tuple[1]['edges'][0].type == EdgeType.CircleEdge:
       conn1 = connection_tuple[1]
 
     if conn1 is not None:
@@ -246,7 +246,7 @@ def follow_branch(branch, branches, connections):
   branch_ended = False
   next_connection = None
   previous_edge = branch['edges'][0]
-  if previous_edge.type == Edge.CircleEdge:
+  if previous_edge.type == EdgeType.CircleEdge:
     branch_ended = True
     branch['enclosed'] = True
   for kp in previous_edge.get_end_key_points():
@@ -261,7 +261,7 @@ def follow_branch(branch, branches, connections):
       prev_kp = last_connection['kp']
       smallest_angle = None
       for edge in this_connection['edges']:
-        if edge is not previous_edge and edge.type != Edge.FilletLineEdge and edge.type != Edge.CircleEdge:
+        if edge is not previous_edge and edge.type != EdgeType.FilletLineEdge and edge.type != EdgeType.CircleEdge:
           kps = edge.get_key_points()
           if kps[0] == this_kp:
             next_kp = kps[1]
@@ -276,7 +276,7 @@ def follow_branch(branch, branches, connections):
               smallest_angle = angle
               next_edge = edge
       for edge in this_connection['edges']:
-        if edge is not next_edge and edge is not previous_edge and edge.type != Edge.FilletLineEdge and edge.type != Edge.CircleEdge:
+        if edge is not next_edge and edge is not previous_edge and edge.type != EdgeType.FilletLineEdge and edge.type != EdgeType.CircleEdge:
           exists = False
           for existing_branch in branches:
             if existing_branch['edges'][0] == edge and this_connection == existing_branch['start_conn']:

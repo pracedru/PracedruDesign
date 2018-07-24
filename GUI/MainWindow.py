@@ -23,6 +23,7 @@ from Data.CalcTableAnalysis import CalcTableAnalysis
 from Data.Document import Document
 from Data.Drawings import Drawing
 from Data.Edges import Edge
+from Data.Feature import FeatureType
 from Data.Parameters import Parameters
 from Data.Part import Part, Feature
 from Data.Point3d import KeyPoint
@@ -81,6 +82,7 @@ class MainWindow(QMainWindow):
     self._create_sketch_action = self.add_action("Create\nSketch", "addsketch", "Create Sketch", True, self.on_create_sketch)
     self._create_areas_action = self.add_action("Create\nAreas", "createareas", "Create areas from existing edges", True, self.on_create_areas)
     self._create_area_action = self.add_action("Create\nArea", "createarea", "Create area from existing edges", True, self.on_create_area, checkable=True)
+    self._create_composite_area_action = self.add_action("Create\nComp. Area", "createcomparea", "Create composite area from existing areas", True,self.on_create_composite_area, checkable=True)
     self._show_area_names_action = self.add_action("Show area\nNames", "showareanames", "Show area names", True, self.on_show_area_names, checkable=True)
     self._scale_selected_action = self.add_action("Scale", "scale", "Scale selected items", True, self.on_scale_selected)
     self._pattern_selected_action = self.add_action("Pattern", "pattern", "Pattern selected items", True, self.on_pattern_selected)
@@ -266,7 +268,7 @@ class MainWindow(QMainWindow):
         self._viewWidget.set_part_view(selection[0])
         self._ribbon_widget.setCurrentIndex(2)
       if type(selection[0]) is Feature:
-        if selection[0].feature_type == Feature.SketchFeature:
+        if selection[0].feature_type == FeatureType.SketchFeature:
           sketch = selection[0].get_objects()[0]
           self._viewWidget.set_sketch_view(sketch)
           self._geometry_dock.set_sketch(sketch)
@@ -339,6 +341,9 @@ class MainWindow(QMainWindow):
   def on_create_area(self):
     self._viewWidget.sketch_view.on_create_area()
 
+  def on_create_composite_area(self):
+    self._viewWidget.sketch_view.on_create_composite_area()
+
   def on_show_area_names(self, event):
     self._states.show_area_names = self._show_area_names_action.isChecked()
 
@@ -382,6 +387,7 @@ class MainWindow(QMainWindow):
     self._show_lines_action.setChecked(self._viewWidget.part_view.show_lines)
     self._show_planes_action.setChecked(self._viewWidget.part_view.show_planes)
     self._add_nurbs_action.setChecked(self._states.draw_nurbs_edge)
+    self._create_composite_area_action.setChecked(self._states.create_composite_area)
 
   def init_ribbon(self):
     self.init_home_tab()
@@ -419,6 +425,7 @@ class MainWindow(QMainWindow):
     insert_pane.add_ribbon_widget(RibbonButton(self, self._add_attribute_action, True))
     insert_pane.add_ribbon_widget(RibbonButton(self, self._create_areas_action, True))
     insert_pane.add_ribbon_widget(RibbonButton(self, self._create_area_action, True))
+    insert_pane.add_ribbon_widget(RibbonButton(self, self._create_composite_area_action, True))
 
     operate_pane = sketch_tab.add_ribbon_pane("Operate")
     operate_pane.add_ribbon_widget(RibbonButton(self, self._scale_selected_action, True))
@@ -560,6 +567,6 @@ class MainWindow(QMainWindow):
     settings.setValue("docks", self.saveState(1))
 
   def on_status_changed(self, text, progress):
-    # print(text + " " + str(progress))
-    self.statusBar().showMessage(text)
-    self.progress_bar.setValue(progress)
+    if self.statusBar().currentMessage() != text:
+      self.statusBar().showMessage(text)
+      self.progress_bar.setValue(progress)

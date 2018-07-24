@@ -17,5 +17,4 @@ class CalcTableView(QTableView):
     pass
 
   def set_calc_table(self, calc_table):
-
     self._calc_table_model.set_table(calc_table)

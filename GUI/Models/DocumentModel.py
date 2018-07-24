@@ -3,12 +3,14 @@ from PyQt5.QtCore import QModelIndex
 from PyQt5.QtCore import QObject
 from PyQt5.QtCore import Qt
 
+from Data.Analysis import Analysis
 from Data.Areas import Area
 from Data.CalcSheetAnalysis import CalcSheetAnalysis
 from Data.CalcTableAnalysis import CalcTableAnalysis
 from Data.Document import Document
 from Data.Drawings import Drawing, Drawings, Field, SketchView, PartView
 from Data.Events import ChangeEvent
+from Data.Feature import *
 from Data.Geometry import Geometry
 from Data.Parameters import Parameters, Parameter
 from Data.Part import Part, Feature
@@ -53,8 +55,8 @@ class DocumentItemModel(QAbstractItemModel):
         self.populate_part(geom, geoms_item)
         # DocumentModelItem(geom, self, geoms_item)
     analyses_item = DocumentModelItem(self._doc.get_analyses(), self, self._root_item)
-    for analysis in self._doc.get_analyses().items():
-      self.populate_analysis(analysis, analyses_item)
+    for analysis_tuple in self._doc.get_analyses().items():
+      self.populate_analysis(analysis_tuple[1], analyses_item)
     self.populate_drawings()
     DocumentModelItem(None, self, self._root_item, "Reports")
 
@@ -94,6 +96,10 @@ class DocumentItemModel(QAbstractItemModel):
       self.populate_sketch(header, drawings_item)
     for dwg in self._doc.get_drawings().items:
       self.populate_drawing(dwg, drawings_item)
+
+  def populate_analysis(self, analysis, analyses_item):
+    analysis_item = self.create_model_item(analyses_item, analysis)
+    return analysis_item
 
   def parent(self, index: QModelIndex = None):
     if not index.isValid():
@@ -176,11 +182,11 @@ class DocumentItemModel(QAbstractItemModel):
       elif type(model_item.data) is CalcSheetAnalysis:
         return get_icon("calcsheet")
       elif type(model_item.data) is Feature:
-        if model_item.data.feature_type == Feature.SketchFeature:
+        if model_item.data.feature_type == FeatureType.SketchFeature:
           return get_icon("sketch")
-        if model_item.data.feature_type == Feature.RevolveFeature:
+        if model_item.data.feature_type == FeatureType.RevolveFeature:
           return get_icon("revolve")
-        if model_item.data.feature_type == Feature.ExtrudeFeature:
+        if model_item.data.feature_type == FeatureType.ExtrudeFeature:
           return get_icon("extrude")
       return get_icon("default")
     return None
@@ -211,6 +217,8 @@ class DocumentItemModel(QAbstractItemModel):
     if isinstance(model_item.data, Drawing):
       default_flags = default_flags | Qt.ItemIsEditable
     if isinstance(model_item.data, Feature):
+      default_flags = default_flags | Qt.ItemIsEditable
+    if isinstance(model_item.data, Analysis):
       default_flags = default_flags | Qt.ItemIsEditable
     return default_flags
 
@@ -270,10 +278,10 @@ class DocumentItemModel(QAbstractItemModel):
       new_item = DocumentModelItem(object, self, fields_item)
     elif type(parent_item.data) is Part and type(object) is Feature:
       if type(object) is Feature:
-        if object.feature_type == Feature.PlaneFeature:
+        if object.feature_type == FeatureType.PlaneFeature:
           planes_item = parent_item.children()[0]
           new_item = DocumentModelItem(object, self, planes_item)
-        elif object.feature_type == Feature.SketchFeature:
+        elif object.feature_type == FeatureType.SketchFeature:
           sketch = object.get_objects()[0]
           new_item = self.populate_sketch(sketch, parent_item)
         else:

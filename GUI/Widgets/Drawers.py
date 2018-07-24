@@ -4,11 +4,19 @@ from PyQt5.QtCore import QPointF, Qt, QRectF
 from PyQt5.QtGui import QBrush, QFont, QPen, QPainter, QFontMetrics, QColor, QPainterPath
 
 from Data.Nurbs import Nurbs
-from Data.Sketch import Edge, Text, Attribute
+from Data.Sketch import *
 from Data.Vertex import Vertex
 
 
+
 def create_pens(document, scale, color_override=None):
+  """
+  Creates pens for all edge styles that are defined in the document
+  :param document:
+  :param scale: The pen thickness scale to be used
+  :param color_override: Overrides the color defined in the style
+  :return:
+  """
   pens = {}
   color = color_override
   if color_override is None:
@@ -112,12 +120,12 @@ def draw_edge(edge: Edge, qp: QPainter, scale, offset, center, pens):
     qp.setPen(pens[edge.style.uid])
   if edge is not None:
     key_points = edge.get_key_points()
-    if edge.type == Edge.LineEdge:
+    if edge.type == EdgeType.LineEdge:
       edges_list = key_points[0].get_edges()
       fillet1 = None
       other_edge1 = None
       for edge_item in edges_list:
-        if edge_item.type == Edge.FilletLineEdge:
+        if edge_item.type == EdgeType.FilletLineEdge:
           fillet1 = edge_item
         elif edge_item is not edge:
           other_edge1 = edge_item
@@ -125,7 +133,7 @@ def draw_edge(edge: Edge, qp: QPainter, scale, offset, center, pens):
       fillet2 = None
       other_edge2 = None
       for edge_item in edges_list:
-        if edge_item.type == Edge.FilletLineEdge:
+        if edge_item.type == EdgeType.FilletLineEdge:
           fillet2 = edge_item
         elif edge_item is not edge:
           other_edge2 = edge_item
@@ -155,7 +163,7 @@ def draw_edge(edge: Edge, qp: QPainter, scale, offset, center, pens):
       x2 = (key_points[1].x + fillet_offset_x + offset.x) * scale + center.x
       y2 = -(key_points[1].y + fillet_offset_y + offset.y) * scale + center.y
       qp.drawLine(QPointF(x1, y1), QPointF(x2, y2))
-    elif edge.type == Edge.ArcEdge:
+    elif edge.type == EdgeType.ArcEdge:
       cx = (key_points[0].x + offset.x) * scale + center.x
       cy = -(key_points[0].y + offset.y) * scale + center.y
       radius = edge.get_meta_data("r") * scale
@@ -166,14 +174,14 @@ def draw_edge(edge: Edge, qp: QPainter, scale, offset, center, pens):
       if span < 0:
         span += 2 * 180 * 16
       qp.drawArc(rect, start_angle, span)
-    elif edge.type == Edge.CircleEdge:
+    elif edge.type == EdgeType.CircleEdge:
       cx = (key_points[0].x + offset.x) * scale + center.x
       cy = -(key_points[0].y + offset.y) * scale + center.y
       radius = edge.get_meta_data("r") * scale
       rect = QRectF(cx - radius, cy - 1 * radius, radius * 2, radius * 2)
 
       qp.drawEllipse(rect)
-    elif edge.type == Edge.FilletLineEdge:
+    elif edge.type == EdgeType.FilletLineEdge:
       kp = key_points[0]
       edges_list = kp.get_edges()
       if edge in edges_list:
@@ -221,7 +229,7 @@ def draw_edge(edge: Edge, qp: QPainter, scale, offset, center, pens):
             start_angle += pi * 180 * 16 / pi
         span = end_angle - start_angle
         qp.drawArc(rect, start_angle, span)
-    elif edge.type == Edge.NurbsEdge:
+    elif edge.type == EdgeType.NurbsEdge:
       draw_data = edge.get_draw_data()
       coords = draw_data['coords']
       x1 = None
@@ -248,7 +256,7 @@ def draw_area(area, qp, scale, offset, half_height, half_width, show_names, brus
   x_min = 0
   y_min = 0
   counter = 0
-  if area.get_edges()[0].type == Edge.CircleEdge:
+  if area.get_edges()[0].type == EdgeType.CircleEdge:
     kp = area.get_inside_key_points()[0]
     r = area.get_edges()[0].get_meta_data('r')
     x = (kp.x + offset.x) * scale + half_width
@@ -269,7 +277,7 @@ def draw_area(area, qp, scale, offset, half_height, half_width, show_names, brus
       is_fillet_kp = False
       fillet_dist = 0
       for edge in edges:
-        if edge.type == Edge.FilletLineEdge:
+        if edge.type == EdgeType.FilletLineEdge:
           r = edge.get_meta_data("r")
           is_fillet_kp = True
           edge1 = None
@@ -308,7 +316,7 @@ def draw_area(area, qp, scale, offset, half_height, half_width, show_names, brus
         y_min = y
       else:
         edge = area.get_edges()[counter - 1]
-        if edge.type == Edge.ArcEdge:
+        if edge.type == EdgeType.ArcEdge:
           center_kp = edge.get_key_points()[0]
           cx = (center_kp.x + offset.x) * scale + half_width
           cy = -(center_kp.y + offset.y) * scale + half_height
@@ -372,6 +380,7 @@ def draw_area(area, qp, scale, offset, half_height, half_width, show_names, brus
     qp.fillPath(path, brush)
 
   if show_names:
+    qp.setPen(QPen(QColor(0, 0, 0), 2))
     if x_max - x_min < (y_max - y_min) * 0.75:
       qp.rotate(-90)
       qp.drawText(QRectF(-y_min, x_min, y_min - y_max, x_max - x_min), Qt.AlignCenter, area.name)

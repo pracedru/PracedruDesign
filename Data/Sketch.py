@@ -1,5 +1,5 @@
 from Data.Areas import Area
-from Data.Edges import Edge
+from Data.Edges import *
 from Data.Events import ChangeEvent, ValueChangeEvent
 from Data.Geometry import Geometry
 from Data.Objects import IdObject, ObservableObject
@@ -134,7 +134,7 @@ class Sketch(Geometry):
   def create_circle_edge(self, kp, radius_param):
     circle_edge = None
     if kp.uid in self._key_points:
-      circle_edge = Edge(self, Edge.CircleEdge)
+      circle_edge = Edge(self, EdgeType.CircleEdge)
       circle_edge.name = "Edge" + str(self.edge_naming_index)
       circle_edge.add_key_point(kp)
       circle_edge.set_meta_data('r', radius_param.value)
@@ -149,7 +149,7 @@ class Sketch(Geometry):
   def create_fillet_edge(self, kp, radius_param):
     fillet_edge = None
     if kp.uid in self._key_points:
-      fillet_edge = Edge(self, Edge.FilletLineEdge)
+      fillet_edge = Edge(self, EdgeType.FilletLineEdge)
       fillet_edge.name = "Edge" + str(self.edge_naming_index)
       fillet_edge.add_key_point(kp)
       fillet_edge.set_meta_data('r', radius_param.value)
@@ -169,7 +169,7 @@ class Sketch(Geometry):
   def create_nurbs_edge(self, kp):
     nurbs_edge = None
     if kp.uid in self._key_points:
-      nurbs_edge = Edge(self, Edge.NurbsEdge)
+      nurbs_edge = Edge(self, EdgeType.NurbsEdge)
       nurbs_edge.name = "Edge" + str(self.edge_naming_index)
       nurbs_edge.add_key_point(kp)
       self.edge_naming_index += 1
@@ -196,7 +196,7 @@ class Sketch(Geometry):
     return attribute
 
   def create_line_edge(self, key_point1, key_point2):
-    line_edge = Edge(self, Edge.LineEdge)
+    line_edge = Edge(self, EdgeType.LineEdge)
     line_edge.name = "Edge" + str(self.edge_naming_index)
     self.edge_naming_index += 1
     line_edge.add_key_point(key_point1)
@@ -208,7 +208,7 @@ class Sketch(Geometry):
     return line_edge
 
   def create_arc_edge(self, center_key_point, start_angle, end_angle, radius):
-    arc_edge = Edge(self, Edge.ArcEdge)
+    arc_edge = Edge(self, EdgeType.ArcEdge)
     arc_edge.name = "Edge" + str(self.edge_naming_index)
     self.edge_naming_index += 1
     arc_edge.add_key_point(center_key_point)

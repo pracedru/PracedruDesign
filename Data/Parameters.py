@@ -30,7 +30,9 @@ funcs = {
   'atan': math.atan,
   'atan2': math.atan2,
   'sqrt': math.sqrt,
-  'pi': pi_func
+  'pi': pi_func,
+  'log': math.log,
+  'log10': math.log10
 }
 
 

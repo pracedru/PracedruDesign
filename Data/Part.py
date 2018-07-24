@@ -3,9 +3,9 @@ from math import *
 import numpy as np
 
 from Data.Axis import Axis
-from Data.Edges import Edge
+from Data.Edges import Edge, EdgeType
 from Data.Events import ChangeEvent, ValueChangeEvent
-from Data.Feature import Feature
+from Data.Feature import *
 from Data.Geometry import Geometry
 from Data.Objects import IdObject, NamedObservableObject, ObservableObject
 from Data.Parameters import Parameters
@@ -99,7 +99,7 @@ class Part(Geometry):
 
   def create_nurbs_surface(self, sketch_feature, nurbs_edges):
     name = self.get_new_unique_feature_name("New Surface")
-    nurbs_surface_feature = Feature(self._doc, self, Feature.NurbsSurfaceFeature, name)
+    nurbs_surface_feature = Feature(self._doc, self, FeatureType.NurbsSurfaceFeature, name)
     nurbs_surface_feature.add_feature(sketch_feature)
     for edge in nurbs_edges:
       nurbs_surface_feature.add_order_item(edge.uid)
@@ -111,7 +111,7 @@ class Part(Geometry):
 
   def create_plane_feature(self, name, position, x_direction, y_direction):
     name = self.get_new_unique_feature_name(name)
-    plane_feature = Feature(self._doc, self, Feature.PlaneFeature, name)
+    plane_feature = Feature(self._doc, self, FeatureType.PlaneFeature, name)
     plane_feature.add_vertex('p', position)
     plane_feature.add_vertex('xd', x_direction)
     plane_feature.add_vertex('yd', y_direction)
@@ -122,7 +122,7 @@ class Part(Geometry):
 
   def create_sketch_feature(self, sketch, plane_feature):
     name = self.get_new_unique_feature_name(sketch.name)
-    sketch_feature = Feature(self._doc, self, Feature.SketchFeature, name)
+    sketch_feature = Feature(self._doc, self, FeatureType.SketchFeature, name)
     sketch_feature.add_feature(plane_feature)
     sketch_feature.add_object(sketch)
     self._features[sketch_feature.uid] = sketch_feature
@@ -133,7 +133,7 @@ class Part(Geometry):
 
   def create_extrude_feature(self, name, sketch_feature, area, length):
     name = self.get_new_unique_feature_name(name)
-    extrude_feature = Feature(self._doc, self, Feature.ExtrudeFeature, name)
+    extrude_feature = Feature(self._doc, self, FeatureType.ExtrudeFeature, name)
     extrude_feature.add_feature(sketch_feature)
     extrude_feature.add_object(area)
     extrude_feature.add_vertex('ex_ls', Vertex(length[0], length[1]))
@@ -145,7 +145,7 @@ class Part(Geometry):
 
   def create_revolve_feature(self, name, sketch_feature, area, length, revolve_axis):
     name = self.get_new_unique_feature_name(name)
-    revolve_feature = Feature(self._doc, self, Feature.RevolveFeature, name)
+    revolve_feature = Feature(self._doc, self, FeatureType.RevolveFeature, name)
     revolve_feature.add_feature(sketch_feature)
     revolve_feature.add_object(area)
     revolve_feature.add_object(revolve_axis)
@@ -169,7 +169,7 @@ class Part(Geometry):
     return key_point
 
   def create_arc_edge(self, center, r, sa, span, plane):
-    arc_edge = Edge(self, Edge.ArcEdge, plane=plane)
+    arc_edge = Edge(self, EdgeType.ArcEdge, plane=plane)
     arc_edge.name = "edge"
     arc_edge.add_key_point(center)
     arc_edge.set_meta_data('sa', sa)
@@ -179,7 +179,7 @@ class Part(Geometry):
     return arc_edge
 
   def create_line_edge(self, key_point1, key_point2):
-    line_edge = Edge(self, Edge.LineEdge)
+    line_edge = Edge(self, EdgeType.LineEdge)
     line_edge.name = "Edge"
     line_edge.add_key_point(key_point1)
     line_edge.add_key_point(key_point2)
@@ -187,7 +187,7 @@ class Part(Geometry):
     return line_edge
 
   def create_nurbs_edge(self, kp):
-    nurbs_edge = Edge(self, Edge.NurbsEdge)
+    nurbs_edge = Edge(self, EdgeType.NurbsEdge)
     nurbs_edge.name = "Edge"
     nurbs_edge.add_key_point(kp)
     self._edges[nurbs_edge.uid] = nurbs_edge
@@ -246,7 +246,7 @@ class Part(Geometry):
     back_edges = []
     for edge in area.get_edges():
       draw_data = edge.get_draw_data()
-      if edge.type == Edge.LineEdge:
+      if edge.type == EdgeType.LineEdge:
         kps = draw_data['coords']
         kp = kps[0]
         r = axis.distance(kp)
@@ -274,7 +274,7 @@ class Part(Geometry):
         if abs(span) < 2 * pi:
           front_edges.append(edge3)
           back_edges.append(edge4)
-      elif edge.type == Edge.ArcEdge or edge.type == Edge.FilletLineEdge:
+      elif edge.type == EdgeType.ArcEdge or edge.type == EdgeType.FilletLineEdge:
         c = draw_data['c'].xyz - local_axis_origo.xyz
         r = draw_data['r']
         sa = draw_data['sa'] * pi / (180 * 16)
@@ -335,7 +335,7 @@ class Part(Geometry):
     back_edges = []
     for edge in area.get_edges():
       draw_data = edge.get_draw_data()
-      if edge.type == Edge.LineEdge:
+      if edge.type == EdgeType.LineEdge:
         c = draw_data['coords']
         c1 = p1 + pm.dot(c[0].xyz)
         c2 = p1 + pm.dot(c[1].xyz)
@@ -354,7 +354,7 @@ class Part(Geometry):
         surface = Surface(Surface.FlatSurface)
         surface.set_main_edges([edge1, edge2, edge3, edge4])
         surfaces.append(surface)
-      elif edge.type == Edge.NurbsEdge:
+      elif edge.type == EdgeType.NurbsEdge:
         coords = draw_data['coords']
         coord1 = None
         for coord2 in coords:
@@ -374,7 +374,7 @@ class Part(Geometry):
           coord1 = coord2
           surface = Surface(Surface.NurbsSurface)
 
-      elif edge.type == Edge.ArcEdge or edge.type == Edge.FilletLineEdge:
+      elif edge.type == EdgeType.ArcEdge or edge.type == EdgeType.FilletLineEdge:
         plane = Plane(xd, yd)
         c = draw_data['c']
         r = draw_data['r']
@@ -440,15 +440,15 @@ class Part(Geometry):
     self._surfaces.clear()
     for feature_key in self._feature_progression:
       feature = self._features[feature_key]
-      if feature.feature_type == Feature.ExtrudeFeature:
+      if feature.feature_type == FeatureType.ExtrudeFeature:
         surfaces = self.create_surfaces_from_extrude(feature)
         for surface in surfaces:
           self._surfaces[surface.uid] = surface
-      elif feature.feature_type == Feature.RevolveFeature:
+      elif feature.feature_type == FeatureType.RevolveFeature:
         surfaces = self.create_surfaces_from_revolve(feature)
         for surface in surfaces:
           self._surfaces[surface.uid] = surface
-      elif feature.feature_type == Feature.NurbsSurfaceFeature:
+      elif feature.feature_type == FeatureType.NurbsSurfaceFeature:
         surface = self.create_surface_from_nurbs_feature(feature)
         self._surfaces[surface.uid] = surface
     self._cal_limits()
@@ -466,7 +466,7 @@ class Part(Geometry):
   def get_plane_features(self):
     planes = []
     for feature in self._features.items():
-      if feature[1].feature_type == Feature.PlaneFeature:
+      if feature[1].feature_type == FeatureType.PlaneFeature:
         planes.append(feature[1])
     return planes
 
@@ -479,7 +479,7 @@ class Part(Geometry):
   def get_sketch_features(self):
     features = []
     for feature_tuple in self._features.items():
-      if feature_tuple[1].feature_type == Feature.SketchFeature:
+      if feature_tuple[1].feature_type == FeatureType.SketchFeature:
         features.append(feature_tuple[1])
     return features
 
@@ -556,10 +556,10 @@ class Part(Geometry):
     for edge_tuple in self._edges.items():
       edge = edge_tuple[1]
       kps = edge.get_end_key_points()
-      if edge.type == Edge.LineEdge:
+      if edge.type == EdgeType.LineEdge:
         lines.append(kps[0].xyz)
         lines.append(kps[1].xyz)
-      if edge.type == Edge.ArcEdge:
+      if edge.type == EdgeType.ArcEdge:
         radius = edge.get_meta_data("r")
         c = edge.get_key_points()[0]
         start_angle = edge.get_meta_data("sa")
@@ -655,13 +655,13 @@ class Part(Geometry):
     for feature_data_tuple in data.get('features', {}).items():
       feature = Feature.deserialize(feature_data_tuple[1], self, self._doc)
       self._features[feature.uid] = feature
-      if feature.feature_type == Feature.PlaneFeature:
+      if feature.feature_type == FeatureType.PlaneFeature:
         feature.add_change_handler(self.on_plane_feature_changed)
-      elif feature.feature_type == Feature.SketchFeature:
+      elif feature.feature_type == FeatureType.SketchFeature:
         feature.add_change_handler(self.on_sketch_feature_changed)
-      elif feature.feature_type == Feature.ExtrudeFeature:
+      elif feature.feature_type == FeatureType.ExtrudeFeature:
         feature.add_change_handler(self.on_extrude_feature_changed)
-      elif feature.feature_type == Feature.RevolveFeature:
+      elif feature.feature_type == FeatureType.RevolveFeature:
         feature.add_change_handler(self.on_revolve_feature_changed)
     self._feature_progression = data.get('feature_progression', [])
     self._color = data.get('color', [180, 180, 180, 255])

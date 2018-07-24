@@ -1,11 +1,11 @@
+from enum import Enum
 from math import pi
 
 from Data.Events import *
 from Data.Objects import *
 from Data.Vertex import Vertex
 
-
-class Feature(NamedObservableObject, IdObject):
+class FeatureType(Enum):
     ExtrudeFeature = 0
     RevolveFeature = 1
     FilletFeature = 2
@@ -13,6 +13,7 @@ class Feature(NamedObservableObject, IdObject):
     SketchFeature = 4
     NurbsSurfaceFeature = 5
 
+class Feature(NamedObservableObject, IdObject):
     AddOperation = 0
     SubtractOperation = 1
     DifferenceOperation = 2
@@ -21,13 +22,13 @@ class Feature(NamedObservableObject, IdObject):
     Backward = 1
     Both = 2
 
-    def __init__(self, document, feature_parent, feature_type=ExtrudeFeature, name="new feature"):
+    def __init__(self, document, feature_parent, feature_type=FeatureType.ExtrudeFeature, name="new feature"):
         IdObject.__init__(self)
         NamedObservableObject.__init__(self, name)
         self._doc = document
         self._feature_parent = feature_parent
-        if type(feature_type) is not int:
-            raise TypeError("feature type must be int")
+        if type(feature_type) is not FeatureType:
+            raise TypeError("feature type must be FeatureType")
         self._feature_type = feature_type
         self._vertexes = {}
         self._edges = []
@@ -42,7 +43,7 @@ class Feature(NamedObservableObject, IdObject):
     def on_value_changed(self, event):
         if event.type == ChangeEvent.ValueChanged:
             if event.object == 'name':
-                if self._feature_type == Feature.SketchFeature:
+                if self._feature_type == FeatureType.SketchFeature:
                     self.get_objects()[0].name = self.name
 
     def get_feature_parent(self):
@@ -50,15 +51,15 @@ class Feature(NamedObservableObject, IdObject):
 
     @property
     def distance(self):
-        if self._feature_type == Feature.ExtrudeFeature:
+        if self._feature_type == FeatureType.ExtrudeFeature:
             return "[%.6f,%.6f]" % (round(self._vertexes['ex_ls'].x, 6), round(self._vertexes['ex_ls'].y, 6))
-        if self._feature_type == Feature.RevolveFeature:
+        if self._feature_type == FeatureType.RevolveFeature:
             return [round(self._vertexes['ex_ls'].x*180/pi, 2), round(self._vertexes['ex_ls'].y*180/pi, 2)]
         return None
 
     @distance.setter
     def distance(self, value):
-        if self._feature_type == Feature.ExtrudeFeature:
+        if self._feature_type == FeatureType.ExtrudeFeature:
             if type(value) is str:
                 value = eval(value)
             self._vertexes['ex_ls'].x = value[0]
@@ -89,7 +90,7 @@ class Feature(NamedObservableObject, IdObject):
 
     def get_objects(self):
         if len(self._feature_objects_late_bind) > 0:
-            if self._feature_type == Feature.RevolveFeature:
+            if self._feature_type == FeatureType.RevolveFeature:
                 area_uid = self._feature_objects_late_bind[0]
                 axis_uid = self._feature_objects_late_bind[1]
                 area_object = None
@@ -107,9 +108,9 @@ class Feature(NamedObservableObject, IdObject):
 
             for feature_object_uid in self._feature_objects_late_bind:
                 feature_object = None
-                if self._feature_type == Feature.SketchFeature:
+                if self._feature_type == FeatureType.SketchFeature:
                     feature_object = self._doc.get_geometries().get_geometry(feature_object_uid)
-                if self._feature_type == Feature.ExtrudeFeature:
+                if self._feature_type == FeatureType.ExtrudeFeature:
                     for sketch in self._doc.get_geometries().get_sketches():
                         feature_object = sketch.get_area(feature_object_uid)
                         if feature_object is not None:
@@ -185,7 +186,7 @@ class Feature(NamedObservableObject, IdObject):
             'name': NamedObservableObject.serialize_json(self),
             'edges': self._get_edge_uids(),
             'vertexes': self._vertexes,
-            'type': self._feature_type,
+            'type': self._feature_type.value,
             'features': self._get_feature_uids(),
             'objects': self._get_object_uids(),
             'order_items': self._order_items
@@ -202,7 +203,7 @@ class Feature(NamedObservableObject, IdObject):
         IdObject.deserialize_data(self, data['uid'])
         NamedObservableObject.deserialize_data(self, data['name'])
         self._order_items = data.get('order_items', [])
-        self._feature_type = data['type']
+        self._feature_type = FeatureType(data['type'])
         for vertex_data_tuple in data.get('vertexes', {}).items():
             vertex_data = vertex_data_tuple[1]
             vertex = Vertex.deserialize(vertex_data)

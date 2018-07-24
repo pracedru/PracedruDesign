@@ -1,6 +1,6 @@
 from math import pi, cos, sin, tan
 
-from Data.Edges import Edge
+from Data.Edges import *
 from Data.Events import ChangeEvent
 from Data.Objects import IdObject, NamedObservableObject
 from Data.Point3d import KeyPoint
@@ -23,7 +23,7 @@ class Area(IdObject, NamedObservableObject):
   def inside(self, point):
     anglesum = 0.0
     last_point = None
-    if self._edges[0].type == Edge.CircleEdge:
+    if self._edges[0].type == EdgeType.CircleEdge:
       kp = self._edges[0].get_key_points()[0]
       r = self._edges[0].get_meta_data('r')
       if r > kp.distance(point):
@@ -44,7 +44,7 @@ class Area(IdObject, NamedObservableObject):
   def get_intersecting_edges(self, kp, gamma):
     intersecting_edges = []
     for edge in self._edges:
-      if edge.type is Edge.LineEdge:
+      if edge.type is EdgeType.LineEdge:
         kps = edge.get_end_key_points()
         x1 = kps[0].x
         y1 = kps[0].y
@@ -61,7 +61,7 @@ class Area(IdObject, NamedObservableObject):
           int_kp = Vertex(px, py)
           if edge.distance(int_kp) < 0.001:
             intersecting_edges.append([edge, int_kp])
-      elif edge.type is Edge.ArcEdge:
+      elif edge.type is EdgeType.ArcEdge:
         center_kp = edge.get_key_points()[0]
         radius = edge.get_meta_data('r')
         sa = edge.get_meta_data('sa')
@@ -101,7 +101,7 @@ class Area(IdObject, NamedObservableObject):
   def on_edge_changed(self, event: ChangeEvent):
     if event.type == ChangeEvent.Deleted:
       if type(event.object) is Edge:
-        if event.object.type != Edge.FilletLineEdge:
+        if event.object.type != EdgeType.FilletLineEdge:
           self.changed(ChangeEvent(self, ChangeEvent.Deleted, self))
         else:
           fillet_edge = event.object
@@ -127,7 +127,7 @@ class Area(IdObject, NamedObservableObject):
       self._key_points.append(next_kp)
       for i in range(1, len(self._edges)):
         edge = self._edges[i]
-        if edge.type != Edge.FilletLineEdge:
+        if edge.type != EdgeType.FilletLineEdge:
           if next_kp == edge.get_end_key_points()[0]:
             next_kp = edge.get_end_key_points()[1]
           else:
@@ -141,7 +141,7 @@ class Area(IdObject, NamedObservableObject):
     :return: list of points describing the outside limits
     """
     key_points = []
-    if self._edges[0].type == Edge.CircleEdge:
+    if self._edges[0].type == EdgeType.CircleEdge:
       key_points.append(self._edges[0].get_end_key_points()[0])
     else:
       this_kp = self._edges[0].get_end_key_points()[0]
@@ -150,7 +150,7 @@ class Area(IdObject, NamedObservableObject):
         this_kp = self._edges[0].get_end_key_points()[1]
         next_kp = self._edges[0].get_end_key_points()[0]
       key_points.append(this_kp)
-      if self._edges[0].type == Edge.ArcEdge:
+      if self._edges[0].type == EdgeType.ArcEdge:
         ckp = self._edges[0].get_key_points()[0]
         sa = self._edges[0].get_meta_data('sa')
         ea = self._edges[0].get_meta_data('ea')
@@ -163,8 +163,8 @@ class Area(IdObject, NamedObservableObject):
       key_points.append(next_kp)
       for i in range(1, len(self._edges)):
         edge = self._edges[i]
-        if edge.type != Edge.FilletLineEdge:
-          if edge.type == Edge.ArcEdge:
+        if edge.type != EdgeType.FilletLineEdge:
+          if edge.type == EdgeType.ArcEdge:
             ckp = edge.get_key_points()[0]
             sa = edge.get_meta_data('sa')
             ea = edge.get_meta_data('ea')
