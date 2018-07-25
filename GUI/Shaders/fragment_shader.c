@@ -45,7 +45,7 @@ void main(void)
         reflectedDirection = transpose(model_view_matrix) * reflectedDirection;
         //spec = pow( max( dot(r,v) , 0.0 ), 20*specular );
         spec = max((p-(1.0-spec_size))/spec_size,0)*2.0;
-        spec = min(pow(spec,3.0)/25.0, 0.25);
+        spec = min(pow(spec,3.0)/25.0, 0.5);
 
         p -= specular/2;
         p = p < 0. ? 0. : p * (1.0-ambient);

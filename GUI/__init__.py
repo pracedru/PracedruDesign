@@ -4,6 +4,7 @@ from PyQt5.QtWidgets import QWidget
 
 from Data import write_data_to_disk
 
+plugin_initializers = []
 
 def gui_scale():
     screen = QApplication.screens()[0];

@@ -36,8 +36,39 @@ class SketchEditorViewWidget(QWidget):
     self._edge_hover = None
     self._text_hover = None
     self._area_hover = None
+    self._mouse_press_event_handlers = []
+    self._mouse_move_event_handlers = []
+    self._escape_event_handlers = []
     self.similar_threshold = 1
     self.installEventFilter(self)
+
+  @property
+  def sketch(self):
+    return self._sketch
+
+  @property
+  def kp_hover(self):
+    return self._kp_hover
+
+  @property
+  def edge_hover(self):
+      return self._edge_hover
+
+  @property
+  def area_hover(self):
+      return self._area_hover
+
+  @property
+  def selected_key_points(self):
+    return self._selected_key_points
+
+  @property
+  def selected_edges(self):
+    return self._selected_edges
+
+  @property
+  def selected_areas(self):
+    return self._selected_areas
 
   def eventFilter(self, obj, event):
     if event.type() == QEvent.KeyPress:
@@ -55,14 +86,18 @@ class SketchEditorViewWidget(QWidget):
       print("double click")
     return False
 
+  def add_mouse_press_event_handler(self, event_handler):
+    self._mouse_press_event_handlers.append(event_handler)
+
+  def add_mouse_move_event_handler(self, event_handler):
+    self._mouse_move_event_handlers.append(event_handler)
+
+  def add_escape_event_handler(self, event_handler):
+    self._escape_event_handlers.append(event_handler)
+
   def on_find_all_similar(self):
     if self._sketch is not None:
       find_all_similar(self._doc, self._sketch, int(round(log10(1 / self.similar_threshold))))
-
-  def on_insert_text(self):
-    self.on_escape()
-    self._states.select_kp = True
-    self._states.add_text = True
 
   def on_zoom_fit(self):
     if self._sketch is None:
@@ -110,33 +145,18 @@ class SketchEditorViewWidget(QWidget):
     self._selected_edges = selected_edges
     self.update()
 
-  def on_add_fillet(self):
-    self.on_escape()
-    if self._sketch is None:
-      return
-    self.setCursor(Qt.CrossCursor)
-    self._states.select_kp = True
-    self._states.set_fillet_kp = True
-    self._main_window.update_ribbon_state()
-
   def on_escape(self):
     self._states.set_similar_x = False
     self._states.set_similar_y = False
-    self._states.draw_line_edge = False
-    self._states.create_area = False
-    self._states.set_fillet_kp = False
-    self._states.add_text = False
-    self._states.add_circle_edge = False
-    self._states.add_attribute = False
-    self._states.add_arc_edge = False
-    self._states.draw_nurbs_edge = False
     self._states.create_composite_area = False
     self._states.select_edge = True
     self._selected_key_points.clear()
     self._selected_edges.clear()
     self.setCursor(Qt.ArrowCursor)
-    self._main_window.update_ribbon_state()
     self._doc.set_status("", 0, True)
+    for event_handler in self._escape_event_handlers:
+      event_handler()
+    self._main_window.update_ribbon_state()
 
   def on_set_similar_x_coordinates(self):
     self.on_escape()
@@ -148,52 +168,6 @@ class SketchEditorViewWidget(QWidget):
     self.on_escape()
     self._states.set_similar_y = True
     self._states.select_kp = True
-    self._main_window.update_ribbon_state()
-
-  def on_add_line(self):
-    self.on_escape()
-    if self._sketch is None:
-      return
-    self.setCursor(Qt.CrossCursor)
-    self._states.select_kp = True
-    self._states.draw_line_edge = True
-    self._main_window.update_ribbon_state()
-
-  def on_add_circle(self):
-    self.on_escape()
-    if self._sketch is None:
-      return
-    self.setCursor(Qt.CrossCursor)
-    self._states.select_kp = True
-    self._states.add_circle_edge = True
-    self._main_window.update_ribbon_state()
-
-  def on_add_nurbs(self):
-    self.on_escape()
-    if self._sketch is None:
-      return
-    self.setCursor(Qt.CrossCursor)
-    self._states.select_kp = True
-    self._states.draw_nurbs_edge = True
-    self._states.select_edge = False
-    self._main_window.update_ribbon_state()
-
-  def on_add_arc(self):
-    self.on_escape()
-    if self._sketch is None:
-      return
-    self.setCursor(Qt.CrossCursor)
-    self._states.select_kp = True
-    self._states.add_arc_edge = True
-    self._main_window.update_ribbon_state()
-
-  def on_insert_attribute(self):
-    self.on_escape()
-    if self._sketch is None:
-      return
-    self.setCursor(Qt.CrossCursor)
-    self._states.select_kp = True
-    self._states.add_attribute = True
     self._main_window.update_ribbon_state()
 
   def set_sketch(self, sketch):
@@ -210,43 +184,11 @@ class SketchEditorViewWidget(QWidget):
       self._kp_move = None
       return
 
-  def on_create_areas(self):
-    self.on_escape()
-    if self._sketch is None:
-      return
-    go = False
-    if len(self._sketch.get_areas()) > 0:
-      txt = "This will replace all existing areas with new areas generated from the edges."
-      txt += "Are you sure you want to do this?"
-      ret = QMessageBox.warning(self, "Create areas?", txt, QMessageBox.Yes | QMessageBox.Cancel)
-      if ret == QMessageBox.Yes:
-        go = True
-    else:
-      go = True
-    if go:
-      create_all_areas(self._doc, self._sketch)
-      self.update()
-
-  def on_create_area(self):
-    self.on_escape()
-    self._states.create_area = True
-    self._doc.set_status("Select edges for new area")
-    self._main_window.update_ribbon_state()
-
   def on_create_composite_area(self):
     self.on_escape()
     self._states.create_composite_area = True
     self._doc.set_status("Select base area for new area", 0, True)
     self._main_window.update_ribbon_state()
-
-  def check_edge_loop(self):
-    branches = find_all_areas(self._selected_edges)
-    for branch in branches:
-      if branch['enclosed']:
-        create_area(self._sketch, branch)
-        self.on_escape()
-        self.update()
-        break
 
   def mouseMoveEvent(self, q_mouse_event):
     self.update_status()
@@ -374,6 +316,8 @@ class SketchEditorViewWidget(QWidget):
     scale = self._scale
     x = (self._mouse_position.x() - half_width) / scale - self._offset.x
     y = -((self._mouse_position.y() - half_height) / scale + self._offset.y)
+
+    #                             ****    Find Similar params    ****
     if self._states.set_similar_x or self._states.set_similar_y:
       params = []
       for param_tuple in self._sketch.get_all_parameters():
@@ -390,6 +334,7 @@ class SketchEditorViewWidget(QWidget):
       else:
         self._states.set_similar_y = False
 
+    #                             ****    Text select    ****
     if self._states.select_text:
       if self._text_hover is not None:
         if self._states.multi_select:
@@ -400,9 +345,12 @@ class SketchEditorViewWidget(QWidget):
         self._selected_texts = []
       self._main_window.on_text_selection_changed_in_view(self._selected_texts)
 
+    #                             ****    Keypoint move    ****
     if self._states.left_button_hold and self._kp_hover is not None:
       if self._kp_hover in self._selected_key_points:
         self._kp_move = self._kp_hover
+
+    #                             ****    Edge select    ****
     if self._states.select_edge and self._edge_hover is not None and self._kp_hover is None:
       if self._states.multi_select:
         if self._edge_hover in self._selected_edges:
@@ -418,8 +366,9 @@ class SketchEditorViewWidget(QWidget):
       self.update()
       self._main_window.on_edge_selection_changed_in_view(self._selected_edges)
 
+    #                             ****    Keypoint select    ****
     if self._kp_hover is not None and self._states.select_kp:
-      if self._states.multi_select or self._states.draw_line_edge or self._states.set_fillet_kp:
+      if self._states.multi_select:
         self._selected_key_points.append(self._kp_hover)
       else:
         self._selected_key_points = [self._kp_hover]
@@ -431,6 +380,7 @@ class SketchEditorViewWidget(QWidget):
       self.update()
       self._main_window.on_kp_selection_changed_in_view(self._selected_key_points)
 
+    #                             ****    Area select    ****
     if self._states.select_area:
       if self._area_hover is not None:
         if self._states.multi_select:
@@ -449,101 +399,8 @@ class SketchEditorViewWidget(QWidget):
           self._selected_areas = []
           self.update()
 
-    if self._states.draw_line_edge:
-      doc = self._doc
-      sketch = self._sketch
-      if self._kp_hover is None:
-        coincident_threshold = 5 / scale
-        kp = create_key_point(doc, sketch, x, y, 0.0, coincident_threshold)
-        self._selected_key_points.append(kp)
-      if len(self._selected_key_points) == 2:
-        sketch.create_line_edge(self._selected_key_points[0], self._selected_key_points[1])
-        if not self._states.multi_select:
-          self._selected_key_points.clear()
-          self.on_escape()
-        else:
-          self._selected_key_points.remove(self._selected_key_points[0])
-    if self._states.draw_nurbs_edge:
-      doc = self._doc
-      sketch = self._sketch
-      if self._kp_hover is None:
-        coincident_threshold = 5 / scale
-        kp = create_key_point(doc, sketch, x, y, 0.0, coincident_threshold)
-        self._selected_key_points.append(kp)
-      else:
-        kp = self._kp_hover
-      if len(self._selected_edges) == 0:
-        nurbs_edge = create_nurbs_edge(doc, sketch, kp)
-        self._selected_edges.append(nurbs_edge)
-      else:
-        nurbs_edge = self._selected_edges[0]
-        nurbs_edge.add_key_point(kp)
-
-    if self._states.set_fillet_kp:
-      if self._kp_hover is not None:
-        edges = self._kp_hover.get_edges()
-        if len(edges) != 2:
-          self._selected_key_points.remove(self._kp_hover)
-        if not self._states.multi_select:
-          params = []
-          params.sort()
-          for param_tuple in self._sketch.get_all_parameters():
-            params.append(param_tuple[1].name)
-          value = QInputDialog.getItem(self, "Set radius parameter", "Parameter:", params, 0, True)
-          if value[1] == QDialog.Accepted:
-            radius_param = self._sketch.get_parameter_by_name(value[0])
-            if radius_param is None:
-              radius_param = self._sketch.create_parameter(value[0], 1.0)
-            for kp in self._selected_key_points:
-              create_fillet(self._doc, self._sketch, kp, radius_param)
-            self.on_escape()
-        else:
-          pass
-    if self._states.add_text:
-      coincident_threshold = 5 / scale
-      kp = create_key_point(self._doc, self._sketch, x, y, 0.0, coincident_threshold)
-      create_text(self._doc, self._sketch, kp, "New Text", 0.003)
-      self.on_escape()
-    if self._states.add_circle_edge:
-      coincident_threshold = 5 / scale
-      kp = create_key_point(self._doc, self._sketch, x, y, 0.0, coincident_threshold)
-      params = []
-      params.sort()
-      for param_tuple in self._sketch.get_all_parameters():
-        params.append(param_tuple[1].name)
-      value = QInputDialog.getItem(self, "Set radius parameter", "Parameter:", params, 0, True)
-      if value[1] == QDialog.Accepted:
-        radius_param = self._sketch.get_parameter_by_name(value[0])
-        if radius_param is None:
-          radius_param = self._sketch.create_parameter(value[0], 1.0)
-        create_circle(self._doc, self._sketch, kp, radius_param)
-      self.on_escape()
-    if self._states.add_arc_edge:
-      coincident_threshold = 5 / scale
-      add_arc_widget = AddArcDialog(self, self._sketch)
-      result = add_arc_widget.exec_()
-      if result == QDialog.Accepted:
-        kp = create_key_point(self._doc, self._sketch, x, y, 0.0, coincident_threshold)
-        radius_param = self._sketch.get_parameter_by_name(add_arc_widget.radius_param())
-        start_angle_param = self._sketch.get_parameter_by_name(add_arc_widget.start_angle_param())
-        end_angle_param = self._sketch.get_parameter_by_name(add_arc_widget.end_angle_param())
-        if radius_param is None:
-          radius_param = self._sketch.create_parameter(add_arc_widget.radius_param(), 1.0)
-        if start_angle_param is None:
-          start_angle_param = self._sketch.create_parameter(add_arc_widget.start_angle_param(), 0.0)
-        if end_angle_param is None:
-          end_angle_param = self._sketch.create_parameter(add_arc_widget.end_angle_param(), pi)
-        add_arc(self._doc, self._sketch, kp, radius_param, start_angle_param, end_angle_param)
-      self.on_escape()
-
-    if self._states.add_attribute:
-      coincident_threshold = 5 / scale
-      kp = create_key_point(self._doc, self._sketch, x, y, 0.0, coincident_threshold)
-      create_attribute(self._doc, self._sketch, kp, "Attribute name", "Default value", 0.007)
-      self.on_escape()
-
-    if self._states.create_area:
-      self.check_edge_loop()
+    for event_handler in self._mouse_press_event_handlers:
+      event_handler(scale, x, y)
 
   def wheelEvent(self, event):
     if self._mouse_position is not None:
@@ -700,13 +557,6 @@ class SketchEditorViewWidget(QWidget):
       if area == self._area_hover:
         brush = area_hover_brush
       draw_area(area, qp, scale, self._offset, half_height, half_width, True, brush)
-
-      # for area_tuple in areas:
-      #   area = area_tuple[1]
-      #   if area in self._selected_areas:
-      #     for edge_tuple in area.get_edges():
-      #       edge = edge_tuple  # [1]
-      #       draw_edge(edge, qp, scale, self._offset, center, pens_select_high)
 
   def update_status(self):
     self._doc.set_status("")

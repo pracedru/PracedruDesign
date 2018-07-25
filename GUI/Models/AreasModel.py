@@ -124,10 +124,10 @@ class AreasModel(QAbstractTableModel):
   def on_sketch_changed(self, event: ChangeEvent):
     if type(event.object) is Area:
       if event.type == event.BeforeObjectAdded:
-        print("area before object added " + event.object.name)
+        # print("area before object added " + event.object.name)
         self.beginInsertRows(QModelIndex(), len(self._rows), len(self._rows))
       if event.type == event.ObjectAdded:
-        print("area ObjectAdded " + event.object.name)
+        # print("area ObjectAdded " + event.object.name)
         self._rows.append(event.object.uid)
         self.endInsertRows()
       if event.type == event.BeforeObjectRemoved:

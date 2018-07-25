@@ -12,10 +12,10 @@ class RibbonButton(QToolButton):
         QPushButton.__init__(self, owner)
         # sc = 1
         sc = gui_scale()
-        self._actionOwner = action
+        self._action = action
         self.update_button_status_from_action()
-        self.clicked.connect(self._actionOwner.trigger)
-        self._actionOwner.changed.connect(self.update_button_status_from_action)
+        self.clicked.connect(self._action.trigger)
+        self._action.changed.connect(self.update_button_status_from_action)
 
         if is_large:
             self.setMaximumWidth(80 * sc)
@@ -32,10 +32,10 @@ class RibbonButton(QToolButton):
             self.setStyleSheet(get_stylesheet("ribbonSmallButton"))
 
     def update_button_status_from_action(self):
-        self.setText(self._actionOwner.text())
-        self.setStatusTip(self._actionOwner.statusTip())
-        self.setToolTip(self._actionOwner.toolTip())
-        self.setIcon(self._actionOwner.icon())
-        self.setEnabled(self._actionOwner.isEnabled())
-        self.setCheckable(self._actionOwner.isCheckable())
-        self.setChecked(self._actionOwner.isChecked())
+        self.setText(self._action.text())
+        self.setStatusTip(self._action.statusTip())
+        self.setToolTip(self._action.toolTip())
+        self.setIcon(self._action.icon())
+        self.setEnabled(self._action.isEnabled())
+        self.setCheckable(self._action.isCheckable())
+        self.setChecked(self._action.isChecked())

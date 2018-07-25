@@ -16,6 +16,7 @@ from PyQt5.QtWidgets import QProgressBar
 from PyQt5.QtWidgets import QToolBar
 
 import Business
+import GUI.Plugins
 from Business.DrawingActions import create_default_header
 from Data.Areas import Area
 from Data.CalcSheetAnalysis import CalcSheetAnalysis
@@ -43,7 +44,6 @@ from GUI.Widgets.ViewWidget import ViewWidget
 
 main_windows = []
 
-
 class MainWindow(QMainWindow):
   def __init__(self, document: Document):
     QMainWindow.__init__(self, None)
@@ -55,6 +55,7 @@ class MainWindow(QMainWindow):
     self.setWindowIcon(get_icon("icon"))
     self._Title = "Pracedru Design"
     self._states = ActionStates()
+    self.plugins = []
     # Action initialization
 
     self.new_action = self.add_action("New\nFile", "newicon", "New Document", True, self.on_new_document, QKeySequence.New)
@@ -71,18 +72,8 @@ class MainWindow(QMainWindow):
     self._set_sim_x_action = self.add_action("Set simil.\nx coords", "setsimx", "Set similar x coordinate values", True, self.on_set_sim_x, checkable=True)
     self._set_sim_y_action = self.add_action("Set simil.\ny coords", "setsimy", "Set similar y coordinate values", True, self.on_set_sim_y, checkable=True)
     self._find_all_sim_action = self.add_action("Find all\nsimmilar", "allsim", "find all similar coordinate values and make parameters", True, self.on_find_all_similar)
-    self._add_line_action = self.add_action("Add\nline", "addline", "Add line edge to edges", True, self.on_add_line, checkable=True)
-    self._add_arc_action = self.add_action("Add\narc", "addarc", "Add arc edge to edges", True, self.on_add_arc)
-    self._add_fillet_action = self.add_action("Add\nfillet", "addfillet", "Add fillet edge to existing edges", True, self.on_add_fillet, checkable=True)
-    self._add_divide_action = self.add_action("Divide\nedge", "divideline", "Divide edge with keypoint", True, self.on_divide_edge, checkable=True)
-    self._add_text_action = self.add_action("Insert\ntext", "addtext", "Insert text in sketch", True, self.on_insert_text, checkable=True)
-    self._add_attribute_action = self.add_action("Insert\nattribute", "addattribute", "Insert attribute in sketch", True, self.on_insert_attribute, checkable=True)
-    self._add_circle_action = self.add_action("Insert\ncircle", "addcircle", "Insert circle in sketch", True, self.on_add_circle, checkable=True)
-    self._add_nurbs_action = self.add_action("Insert\nspline", "addnurbs", "Insert spline in sketch", True, self.on_add_nurbs, checkable=True)
     self._create_sketch_action = self.add_action("Create\nSketch", "addsketch", "Create Sketch", True, self.on_create_sketch)
-    self._create_areas_action = self.add_action("Create\nAreas", "createareas", "Create areas from existing edges", True, self.on_create_areas)
-    self._create_area_action = self.add_action("Create\nArea", "createarea", "Create area from existing edges", True, self.on_create_area, checkable=True)
-    self._create_composite_area_action = self.add_action("Create\nComp. Area", "createcomparea", "Create composite area from existing areas", True,self.on_create_composite_area, checkable=True)
+    # self._create_composite_area_action = self.add_action("Create\nComp. Area", "createcomparea", "Create composite area from existing areas", True,self.on_create_composite_area, checkable=True)
     self._show_area_names_action = self.add_action("Show area\nNames", "showareanames", "Show area names", True, self.on_show_area_names, checkable=True)
     self._scale_selected_action = self.add_action("Scale", "scale", "Scale selected items", True, self.on_scale_selected)
     self._pattern_selected_action = self.add_action("Pattern", "pattern", "Pattern selected items", True, self.on_pattern_selected)
@@ -133,6 +124,9 @@ class MainWindow(QMainWindow):
     self._properties_dock = PropertiesDock(self, document)
     self.addDockWidget(Qt.RightDockWidgetArea, self._properties_dock)
 
+    for initializer in plugin_initializers:
+      self.plugins.append(initializer(self))
+
     self.read_settings()
     self.statusBar().showMessage("Ready")
     self.progress_bar = QProgressBar()
@@ -142,6 +136,22 @@ class MainWindow(QMainWindow):
     self.statusBar().addPermanentWidget(self.progress_bar, 0)
     self.setWindowTitle("{s[0]} - {s[1]}".format(s=[self._document.name, self._Title]))
     self.update_ribbon_state()
+
+  @property
+  def document(self):
+    return self._document
+
+  @property
+  def ribbon(self):
+    return self._ribbon_widget
+
+  @property
+  def states(self):
+    return self._states
+
+  @property
+  def sketch_editor_view(self):
+    return self._viewWidget.sketch_view
 
   def get_states(self) -> ActionStates:
     return self._states
@@ -317,41 +327,8 @@ class MainWindow(QMainWindow):
   def on_set_sim_y(self):
     self._viewWidget.on_set_similar_y_coordinates()
 
-  def on_add_line(self):
-    self._viewWidget.on_add_line()
-
-  def on_add_fillet(self):
-    self._viewWidget.on_add_fillet()
-
-  def on_insert_text(self):
-    self._viewWidget.on_insert_text()
-
-  def on_insert_attribute(self):
-    self._viewWidget.on_insert_attribute()
-
-  def on_add_circle(self):
-    self._viewWidget.on_add_circle()
-
-  def on_add_nurbs(self):
-    self._viewWidget.on_add_nurbs()
-
-  def on_create_areas(self):
-    self._viewWidget.sketch_view.on_create_areas()
-
-  def on_create_area(self):
-    self._viewWidget.sketch_view.on_create_area()
-
-  def on_create_composite_area(self):
-    self._viewWidget.sketch_view.on_create_composite_area()
-
   def on_show_area_names(self, event):
     self._states.show_area_names = self._show_area_names_action.isChecked()
-
-  def on_add_arc(self):
-    self._viewWidget.sketch_view.on_add_arc()
-
-  def on_divide_edge(self):
-    pass
 
   def on_scale_selected(self):
     pass
@@ -371,23 +348,19 @@ class MainWindow(QMainWindow):
     self._viewWidget.sketch_view.on_similar_thresshold_changed(value)
 
   def update_ribbon_state(self):
-    self._add_line_action.setChecked(self._states.draw_line_edge)
+
     self._set_sim_x_action.setChecked(self._states.set_similar_x)
     self._set_sim_y_action.setChecked(self._states.set_similar_y)
-    self._add_fillet_action.setChecked(self._states.add_fillet_edge)
-    # self._add_arc_action.setEnabled(False)
-    self._add_divide_action.setEnabled(False)
+
     self._scale_selected_action.setEnabled(False)
     self._pattern_selected_action.setEnabled(False)
-    self._add_circle_action.setChecked(self._states.add_circle_edge)
-    self._add_attribute_action.setChecked(self._states.add_attribute)
-    self._add_text_action.setChecked(self._states.add_text)
-    self._create_area_action.setChecked(self._states.create_area)
+
     self._show_surfs_action.setChecked(self._viewWidget.part_view.show_surfaces)
     self._show_lines_action.setChecked(self._viewWidget.part_view.show_lines)
     self._show_planes_action.setChecked(self._viewWidget.part_view.show_planes)
-    self._add_nurbs_action.setChecked(self._states.draw_nurbs_edge)
-    self._create_composite_area_action.setChecked(self._states.create_composite_area)
+
+    for plugin in self.plugins:
+      plugin.update_ribbon_state()
 
   def init_ribbon(self):
     self.init_home_tab()
@@ -415,17 +388,6 @@ class MainWindow(QMainWindow):
   def init_sketch_tab(self):
     sketch_tab = self._ribbon_widget.add_ribbon_tab("Sketch")
     insert_pane = sketch_tab.add_ribbon_pane("Insert")
-    insert_pane.add_ribbon_widget(RibbonButton(self, self._add_line_action, True))
-    insert_pane.add_ribbon_widget(RibbonButton(self, self._add_nurbs_action, True))
-    insert_pane.add_ribbon_widget(RibbonButton(self, self._add_arc_action, True))
-    insert_pane.add_ribbon_widget(RibbonButton(self, self._add_circle_action, True))
-    insert_pane.add_ribbon_widget(RibbonButton(self, self._add_fillet_action, True))
-    insert_pane.add_ribbon_widget(RibbonButton(self, self._add_divide_action, True))
-    insert_pane.add_ribbon_widget(RibbonButton(self, self._add_text_action, True))
-    insert_pane.add_ribbon_widget(RibbonButton(self, self._add_attribute_action, True))
-    insert_pane.add_ribbon_widget(RibbonButton(self, self._create_areas_action, True))
-    insert_pane.add_ribbon_widget(RibbonButton(self, self._create_area_action, True))
-    insert_pane.add_ribbon_widget(RibbonButton(self, self._create_composite_area_action, True))
 
     operate_pane = sketch_tab.add_ribbon_pane("Operate")
     operate_pane.add_ribbon_widget(RibbonButton(self, self._scale_selected_action, True))
