@@ -73,10 +73,9 @@ class MainWindow(QMainWindow):
     self._set_sim_y_action = self.add_action("Set simil.\ny coords", "setsimy", "Set similar y coordinate values", True, self.on_set_sim_y, checkable=True)
     self._find_all_sim_action = self.add_action("Find all\nsimmilar", "allsim", "find all similar coordinate values and make parameters", True, self.on_find_all_similar)
     self._create_sketch_action = self.add_action("Create\nSketch", "addsketch", "Create Sketch", True, self.on_create_sketch)
-    # self._create_composite_area_action = self.add_action("Create\nComp. Area", "createcomparea", "Create composite area from existing areas", True,self.on_create_composite_area, checkable=True)
     self._show_area_names_action = self.add_action("Show area\nNames", "showareanames", "Show area names", True, self.on_show_area_names, checkable=True)
-    self._scale_selected_action = self.add_action("Scale", "scale", "Scale selected items", True, self.on_scale_selected)
-    self._pattern_selected_action = self.add_action("Pattern", "pattern", "Pattern selected items", True, self.on_pattern_selected)
+
+    # self._pattern_selected_action = self.add_action("Pattern", "pattern", "Pattern selected items", True, self.on_pattern_selected)
     self._show_key_points_action = self.add_action("Show key\npoints", "showkeypoints", "Show keypoints as circles", True, self.on_show_key_points, checkable=True)
     self._insert_sketch_in_action = self.add_action("Insert\nsketch", "addsketch", "Insert sketch ", True, self.on_insert_sketch)
     self._insert_sketch_in_drawing_action = self.add_action("Insert\nsketch", "addsketchview", "Insert sketch in drawing", True, self.on_insert_sketch)
@@ -330,9 +329,6 @@ class MainWindow(QMainWindow):
   def on_show_area_names(self, event):
     self._states.show_area_names = self._show_area_names_action.isChecked()
 
-  def on_scale_selected(self):
-    pass
-
   def on_pattern_selected(self):
     pass
 
@@ -351,9 +347,6 @@ class MainWindow(QMainWindow):
 
     self._set_sim_x_action.setChecked(self._states.set_similar_x)
     self._set_sim_y_action.setChecked(self._states.set_similar_y)
-
-    self._scale_selected_action.setEnabled(False)
-    self._pattern_selected_action.setEnabled(False)
 
     self._show_surfs_action.setChecked(self._viewWidget.part_view.show_surfaces)
     self._show_lines_action.setChecked(self._viewWidget.part_view.show_lines)
@@ -388,10 +381,7 @@ class MainWindow(QMainWindow):
   def init_sketch_tab(self):
     sketch_tab = self._ribbon_widget.add_ribbon_tab("Sketch")
     insert_pane = sketch_tab.add_ribbon_pane("Insert")
-
     operate_pane = sketch_tab.add_ribbon_pane("Operate")
-    operate_pane.add_ribbon_widget(RibbonButton(self, self._scale_selected_action, True))
-    operate_pane.add_ribbon_widget(RibbonButton(self, self._pattern_selected_action, True))
 
     parametry_pane = sketch_tab.add_ribbon_pane("Parametry")
     parametry_pane.add_ribbon_widget(RibbonButton(self, self._set_sim_x_action, True))

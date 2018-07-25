@@ -17,6 +17,7 @@ class Sketch(Geometry):
     self._edges = {}
     self._texts = {}
     self._areas = {}
+    self._patterns = []
     self.threshold = 0.1
     self.edge_naming_index = 1
 
@@ -495,3 +496,20 @@ class Attribute(Text):
   def deserialize_data(self, data):
     Text.deserialize_data(self, data['text'])
     self._name = data['name']
+
+class PatternType(Enum):
+  Circular = 0
+  Diamond = 1
+  Triangular = 2
+  Square = 3
+  Rectangular = 4
+
+class Pattern(IdObject, NamedObservableObject):
+  def __init__(self, sketch, type=PatternType.Circular, name="New pattern"):
+    IdObject.__init__(self)
+    NamedObservableObject.__init__(self, name)
+    self._sketch = sketch
+    self._type = type
+    self._kps = []
+    self._edges = []
+    self._areas = []
