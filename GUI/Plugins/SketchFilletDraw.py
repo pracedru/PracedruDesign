@@ -64,7 +64,7 @@ class SketchFilletDraw():
               radius_param = sketch.create_parameter(value[0], 1.0)
             for kp in view.selected_key_points:
               create_fillet(doc, sketch, kp, radius_param)
-            self.on_escape()
+            view.on_escape()
         else:
           pass
 

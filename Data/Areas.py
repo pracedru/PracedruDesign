@@ -213,3 +213,10 @@ class Area(IdObject, NamedObservableObject):
       self._edges.append(edge)
       edge.add_change_handler(self.on_edge_changed)
     self._name = data['name']
+
+class CompositeArea(IdObject, NamedObservableObject):
+  def __init__(self):
+    IdObject.__init__(self)
+    NamedObservableObject.__init__(self, "New Area")
+    self._edges = []
+    self._key_points = None

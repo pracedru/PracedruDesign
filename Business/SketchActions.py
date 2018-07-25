@@ -194,6 +194,10 @@ def create_all_areas(docs: Document, sketch: Sketch):
       find_fillets(sketch, area)
 
 
+def create_composite_area(sketch, base_area, subtract_areas):
+  print("create_composite_area")
+
+
 def find_fillets(sketch, area):
   fillet_edges = []
   for edge_tuple in sketch.get_edges():

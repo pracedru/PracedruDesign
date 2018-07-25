@@ -66,7 +66,7 @@ class SketchArcDraw():
         if end_angle_param is None:
           end_angle_param = sketch.create_parameter(add_arc_widget.end_angle_param(), pi)
         add_arc(doc, sketch, kp, radius_param, start_angle_param, end_angle_param)
-      self.on_escape()
+      view.on_escape()
 
   def on_escape(self):
     self._states.draw_arc_edge = False

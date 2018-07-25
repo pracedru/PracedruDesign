@@ -1,6 +1,7 @@
 from PyQt5.QtCore import Qt
 
-from Business.SketchActions import create_key_point, create_attribute, find_all_areas, create_area
+from Business.SketchActions import create_key_point, create_attribute, find_all_areas, create_area, \
+  create_composite_area
 from GUI import plugin_initializers
 
 from GUI.Ribbon.RibbonButton import RibbonButton
@@ -54,11 +55,20 @@ class SketchCreateCompositeArea():
       sketch = view.sketch
       if view.area_hover is not None and self._base_area is None:
         self._base_area = view.area_hover
-        doc.set_status("Area Accepted", 33, True)
-      elif self._base_area is not None:
-        pass
+        doc.set_status("Select areas to subtract. Hold CTRL to select multiple areas.", 33, True)
+      elif view.area_hover is not None and self._base_area is not None:
+        if view.area_hover != self._base_area:
+          self._subtracted_areas.append(view.area_hover)
+          if self._states.multi_select:
+            pass
+          else:
+            create_composite_area(sketch, self._base_area, self._subtracted_areas)
+            view.update()
+            view.on_escape()
 
   def on_escape(self):
+    self._base_area = None
+    self._subtracted_areas = []
     self._states.create_composite_area = False
 
   def update_ribbon_state(self):
