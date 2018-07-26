@@ -127,7 +127,7 @@ def find_all_similar(doc, sketch, digits):
       kp.set_y_parameter(param.uid)
   for edge_tuple in sketch.get_edges():
     edge = edge_tuple[1]
-    if edge.type == Edge.ArcEdge:
+    if edge.type == EdgeType.ArcEdge:
       r = edge.get_meta_data("r")
       ea = edge.get_meta_data("ea")
       sa = edge.get_meta_data("sa")

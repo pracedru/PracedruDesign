@@ -30,7 +30,6 @@ class SketchEditorViewWidget(QWidget):
     self._selected_key_points = []
     self._selected_texts = []
     self._selected_areas = []
-    self._similar_coords = set()
     self._kp_hover = None
     self._kp_move = None
     self._edge_hover = None
@@ -39,7 +38,6 @@ class SketchEditorViewWidget(QWidget):
     self._mouse_press_event_handlers = []
     self._mouse_move_event_handlers = []
     self._escape_event_handlers = []
-    self.similar_threshold = 1
     self.installEventFilter(self)
 
   @property
@@ -156,9 +154,6 @@ class SketchEditorViewWidget(QWidget):
     self._scale = scale
     self.update()
 
-  def on_similar_thresshold_changed(self, value):
-    self.similar_threshold = value
-
   def on_delete(self):
     txt = "Are you sure you want to delete these geometries?"
     ret = QMessageBox.warning(self, "Delete geometries?", txt, QMessageBox.Yes | QMessageBox.Cancel)
@@ -183,6 +178,7 @@ class SketchEditorViewWidget(QWidget):
 
   def on_escape(self):
     self._states.select_edge = True
+    self._states.allow_move = True
     self._selected_key_points.clear()
     self._selected_edges.clear()
     self.setCursor(Qt.ArrowCursor)
@@ -190,18 +186,6 @@ class SketchEditorViewWidget(QWidget):
     for event_handler in self._escape_event_handlers:
       event_handler()
     self._main_window.update_ribbon_state()
-
-  # def on_set_similar_x_coordinates(self):
-  #   self.on_escape()
-  #   self._states.set_similar_x = True
-  #   self._states.select_kp = True
-  #   self._main_window.update_ribbon_state()
-  #
-  # def on_set_similar_y_coordinates(self):
-  #   self.on_escape()
-  #   self._states.set_similar_y = True
-  #   self._states.select_kp = True
-  #   self._main_window.update_ribbon_state()
 
   def set_sketch(self, sketch):
     self._sketch = sketch
@@ -242,7 +226,7 @@ class SketchEditorViewWidget(QWidget):
     sketch = self._sketch
     if sketch is None:
       return
-    key_points = sketch.get_key_points()
+
     if self._states.middle_button_hold:
       self._offset.x -= mouse_move_x / scale
       self._offset.y += mouse_move_y / scale
@@ -255,25 +239,6 @@ class SketchEditorViewWidget(QWidget):
         if self._kp_move.get_y_parameter() is None:
           self._kp_move.y = y
           update_view = True
-
-    if self._states.set_similar_x and self._kp_hover is not None:
-      self._similar_coords.clear()
-      for kp_tuple in key_points:
-        key_point = kp_tuple[1]
-        x1 = key_point.x
-        if abs(x1 - self._kp_hover.x) < self.similar_threshold:
-          self._similar_coords.add(key_point)
-          update_view = True
-
-    if self._states.set_similar_y and self._kp_hover is not None:
-      self._similar_coords.clear()
-      for kp_tuple in key_points:
-        key_point = kp_tuple[1]
-        y1 = key_point.y
-        if abs(y1 - self._kp_hover.y) < self.similar_threshold:
-          self._similar_coords.add(key_point)
-          update_view = True
-
 
     for event_handler in self._mouse_move_event_handlers:
       if event_handler(scale, x, y):
@@ -299,25 +264,8 @@ class SketchEditorViewWidget(QWidget):
     x = (self._mouse_position.x() - half_width) / scale - self._offset.x
     y = -((self._mouse_position.y() - half_height) / scale + self._offset.y)
 
-    #                             ****    Find Similar params    ****
-    if self._states.set_similar_x or self._states.set_similar_y:
-      params = []
-      for param_tuple in self._sketch.get_all_parameters():
-        params.append(param_tuple[1].name)
-      value = QInputDialog.getItem(self, "Set parameter", "Parameter:", params, 0, True)
-      if self._states.set_similar_x and value[1] == QDialog.Accepted:
-        self._states.set_similar_x = False
-        set_similar_x(self._doc, self._sketch, self._similar_coords, value[0])
-      else:
-        self._states.set_similar_x = False
-      if self._states.set_similar_y and value[1] == QDialog.Accepted:
-        self._states.set_similar_y = False
-        set_similar_y(self._doc, self._sketch, self._similar_coords, value[0])
-      else:
-        self._states.set_similar_y = False
-
     #                             ****    Keypoint move    ****
-    if self._states.left_button_hold and self._kp_hover is not None:
+    if self._states.left_button_hold and self._kp_hover is not None and self._states.allow_move:
       if self._kp_hover in self._selected_key_points:
         self._kp_move = self._kp_hover
 
@@ -444,9 +392,6 @@ class SketchEditorViewWidget(QWidget):
       qp.setPen(kp_pen)
       key_point = kp_tuple[1]
 
-      if self._states.set_similar_x or self._states.set_similar_y:
-        if key_point in self._similar_coords:
-          qp.setPen(kp_pen_hl)
       if self._kp_hover is key_point and self._states.select_kp:
         qp.setPen(kp_pen_hover)
 
@@ -478,7 +423,7 @@ class SketchEditorViewWidget(QWidget):
         brush = area_selected_brush
       if area == self._area_hover:
         brush = area_hover_brush
-      draw_area(area, qp, scale, self._offset, half_height, half_width, True, brush)
+      draw_area(area, qp, scale, self._offset, half_height, half_width, self._states.show_area_names, brush)
 
   def update_status(self):
     self._doc.set_status("")

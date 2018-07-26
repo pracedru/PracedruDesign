@@ -12,3 +12,4 @@ import GUI.Plugins.SketchCreateCompositeArea
 import GUI.Plugins.SketchScale
 import GUI.Plugins.SketchPattern
 import GUI.Plugins.SketchParametry
+import GUI.Plugins.GenericView
