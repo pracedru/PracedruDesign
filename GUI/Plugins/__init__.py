@@ -1,3 +1,4 @@
+import GUI.Plugins.SketchSelect
 import GUI.Plugins.SketchLineDraw
 import GUI.Plugins.SketchSplineDraw
 import GUI.Plugins.SketchArcDraw
@@ -10,3 +11,4 @@ import GUI.Plugins.SketchCreateArea
 import GUI.Plugins.SketchCreateCompositeArea
 import GUI.Plugins.SketchScale
 import GUI.Plugins.SketchPattern
+import GUI.Plugins.SketchParametry

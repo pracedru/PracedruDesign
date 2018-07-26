@@ -69,9 +69,9 @@ class MainWindow(QMainWindow):
     self._add_calc_table_analysis = self.add_action("Add Calc\nTable", "addcalctable", "Add calculation table analysis to document", True, self.on_add_calc_table_analysis)
     self._add_calc_sheet_analysis = self.add_action("Add Calc\nSheet", "addcalcsheet", "Add calculation sheet analysis to document", True, self.on_add_calc_sheet_analysis)
     self._show_hidden_params_action = self.add_action("Show hidden\nparameters", "hideparams", "Show hidden parameters", True, self.on_show_hidden_parameters, checkable=True)
-    self._set_sim_x_action = self.add_action("Set simil.\nx coords", "setsimx", "Set similar x coordinate values", True, self.on_set_sim_x, checkable=True)
-    self._set_sim_y_action = self.add_action("Set simil.\ny coords", "setsimy", "Set similar y coordinate values", True, self.on_set_sim_y, checkable=True)
-    self._find_all_sim_action = self.add_action("Find all\nsimmilar", "allsim", "find all similar coordinate values and make parameters", True, self.on_find_all_similar)
+    # self._set_sim_x_action = self.add_action("Set simil.\nx coords", "setsimx", "Set similar x coordinate values", True, self.on_set_sim_x, checkable=True)
+    # self._set_sim_y_action = self.add_action("Set simil.\ny coords", "setsimy", "Set similar y coordinate values", True, self.on_set_sim_y, checkable=True)
+    # self._find_all_sim_action = self.add_action("Find all\nsimmilar", "allsim", "find all similar coordinate values and make parameters", True, self.on_find_all_similar)
     self._create_sketch_action = self.add_action("Create\nSketch", "addsketch", "Create Sketch", True, self.on_create_sketch)
     self._show_area_names_action = self.add_action("Show area\nNames", "showareanames", "Show area names", True, self.on_show_area_names, checkable=True)
 
@@ -339,14 +339,7 @@ class MainWindow(QMainWindow):
     self._states.show_key_points = self._show_key_points_action.isChecked()
     self._viewWidget.update()
 
-  def on_similar_thresshold_changed(self, event):
-    value = float(event)
-    self._viewWidget.sketch_view.on_similar_thresshold_changed(value)
-
   def update_ribbon_state(self):
-
-    self._set_sim_x_action.setChecked(self._states.set_similar_x)
-    self._set_sim_y_action.setChecked(self._states.set_similar_y)
 
     self._show_surfs_action.setChecked(self._viewWidget.part_view.show_surfaces)
     self._show_lines_action.setChecked(self._viewWidget.part_view.show_lines)
@@ -384,13 +377,13 @@ class MainWindow(QMainWindow):
     operate_pane = sketch_tab.add_ribbon_pane("Operate")
 
     parametry_pane = sketch_tab.add_ribbon_pane("Parametry")
-    parametry_pane.add_ribbon_widget(RibbonButton(self, self._set_sim_x_action, True))
-    parametry_pane.add_ribbon_widget(RibbonButton(self, self._set_sim_y_action, True))
-    parametry_pane.add_ribbon_widget(RibbonButton(self, self._find_all_sim_action, True))
-    thresshold_text_box = RibbonTextbox(str(1), self.on_similar_thresshold_changed)
-    grid = parametry_pane.add_grid_widget(200)
-    grid.addWidget(QLabel("Thresshold"), 0, 0)
-    grid.addWidget(thresshold_text_box, 0, 1)
+    # parametry_pane.add_ribbon_widget(RibbonButton(self, self._set_sim_x_action, True))
+    # parametry_pane.add_ribbon_widget(RibbonButton(self, self._set_sim_y_action, True))
+    # parametry_pane.add_ribbon_widget(RibbonButton(self, self._find_all_sim_action, True))
+    # thresshold_text_box = RibbonTextbox(str(1), self.on_similar_thresshold_changed)
+    # grid = parametry_pane.add_grid_widget(200)
+    # grid.addWidget(QLabel("Thresshold"), 0, 0)
+    # grid.addWidget(thresshold_text_box, 0, 1)
 
     view_pane = sketch_tab.add_ribbon_pane("View")
     view_pane.add_ribbon_widget(RibbonButton(self, self._show_key_points_action, True))

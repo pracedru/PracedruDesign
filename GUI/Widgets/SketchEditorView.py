@@ -50,25 +50,65 @@ class SketchEditorViewWidget(QWidget):
   def kp_hover(self):
     return self._kp_hover
 
+  @kp_hover.setter
+  def kp_hover(self, value):
+    self._kp_hover = value
+
   @property
   def edge_hover(self):
       return self._edge_hover
+
+  @edge_hover.setter
+  def edge_hover(self, value):
+    self._edge_hover = value
 
   @property
   def area_hover(self):
       return self._area_hover
 
+  @area_hover.setter
+  def area_hover(self, value):
+    self._area_hover = value
+
+  @property
+  def text_hover(self):
+    return self._text_hover
+
+  @text_hover.setter
+  def text_hover(self, value):
+    self._text_hover = value
+
+  @property
+  def selected_texts(self):
+    return self._selected_texts
+
+  @selected_texts.setter
+  def selected_texts(self, value):
+    self._selected_texts = value
+
   @property
   def selected_key_points(self):
     return self._selected_key_points
+
+  @selected_key_points.setter
+  def selected_key_points(self, value):
+    self._selected_key_points = value
 
   @property
   def selected_edges(self):
     return self._selected_edges
 
+  @selected_edges.setter
+  def selected_edges(self, value):
+    self._selected_edges = value
+
   @property
   def selected_areas(self):
     return self._selected_areas
+
+  @selected_areas.setter
+  def selected_areas(self, value):
+    self._selected_areas = value
 
   def eventFilter(self, obj, event):
     if event.type() == QEvent.KeyPress:
@@ -94,10 +134,6 @@ class SketchEditorViewWidget(QWidget):
 
   def add_escape_event_handler(self, event_handler):
     self._escape_event_handlers.append(event_handler)
-
-  def on_find_all_similar(self):
-    if self._sketch is not None:
-      find_all_similar(self._doc, self._sketch, int(round(log10(1 / self.similar_threshold))))
 
   def on_zoom_fit(self):
     if self._sketch is None:
@@ -146,9 +182,6 @@ class SketchEditorViewWidget(QWidget):
     self.update()
 
   def on_escape(self):
-    self._states.set_similar_x = False
-    self._states.set_similar_y = False
-    self._states.create_composite_area = False
     self._states.select_edge = True
     self._selected_key_points.clear()
     self._selected_edges.clear()
@@ -158,17 +191,17 @@ class SketchEditorViewWidget(QWidget):
       event_handler()
     self._main_window.update_ribbon_state()
 
-  def on_set_similar_x_coordinates(self):
-    self.on_escape()
-    self._states.set_similar_x = True
-    self._states.select_kp = True
-    self._main_window.update_ribbon_state()
-
-  def on_set_similar_y_coordinates(self):
-    self.on_escape()
-    self._states.set_similar_y = True
-    self._states.select_kp = True
-    self._main_window.update_ribbon_state()
+  # def on_set_similar_x_coordinates(self):
+  #   self.on_escape()
+  #   self._states.set_similar_x = True
+  #   self._states.select_kp = True
+  #   self._main_window.update_ribbon_state()
+  #
+  # def on_set_similar_y_coordinates(self):
+  #   self.on_escape()
+  #   self._states.set_similar_y = True
+  #   self._states.select_kp = True
+  #   self._main_window.update_ribbon_state()
 
   def set_sketch(self, sketch):
     self._sketch = sketch
@@ -223,53 +256,6 @@ class SketchEditorViewWidget(QWidget):
           self._kp_move.y = y
           update_view = True
 
-    self._kp_hover = None
-    self._edge_hover = None
-    self._text_hover = None
-    self._area_hover = None
-
-    if self._states.select_kp:
-      for kp_tuple in key_points:
-        key_point = kp_tuple[1]
-        x1 = key_point.x
-        y1 = key_point.y
-        if abs(x1 - x) < 5 / scale and abs(y1 - y) < 5 / scale:
-          self._kp_hover = key_point
-          update_view = True
-          break
-
-    if self._states.select_edge and self._kp_hover is None:
-      smallest_dist = 10e10
-      closest_edge = None
-      for edge_tuple in sketch.get_edges():
-        edge = edge_tuple[1]
-        dist = edge.distance(Vertex(x, y, 0))
-        if dist < smallest_dist:
-          smallest_dist = dist
-          closest_edge = edge
-      if smallest_dist * scale < 10:
-        self._edge_hover = closest_edge
-        update_view = True
-
-    if self._states.select_text and self._edge_hover is None and self._kp_hover is None:
-      for text_tuple in sketch.get_texts():
-        text = text_tuple[1]
-        key_point = text.key_point
-        x1 = key_point.x
-        y1 = key_point.y
-        if text.horizontal_alignment == Text.Left:
-          x1 -= text.height * len(text.value) / 2
-        elif text.horizontal_alignment == Text.Right:
-          x1 += text.height * len(text.value) / 2
-        if text.vertical_alignment == Text.Top:
-          y1 += text.height / 2
-        elif text.vertical_alignment == Text.Bottom:
-          y1 -= text.height / 2
-        if abs(y1 - y) < text.height and abs(x1 - x) < text.height * len(text.value) / 2:
-          self._text_hover = text
-          update_view = True
-          break
-
     if self._states.set_similar_x and self._kp_hover is not None:
       self._similar_coords.clear()
       for kp_tuple in key_points:
@@ -289,12 +275,9 @@ class SketchEditorViewWidget(QWidget):
           update_view = True
 
 
-    if self._states.select_area and self._kp_hover is None and self._edge_hover is None:
-      for area_tuple in sketch.get_areas():
-        area = area_tuple[1]
-        if area.inside(Vertex(x, y, 0)):
-          self._area_hover = area
-          update_view = True
+    for event_handler in self._mouse_move_event_handlers:
+      if event_handler(scale, x, y):
+        update_view = True
 
     if update_view:
       self.update()
@@ -309,7 +292,6 @@ class SketchEditorViewWidget(QWidget):
     if q_mouse_event.button() == 1:
       self._states.left_button_hold = True
       self._move_ref_pos = position
-    position = q_mouse_event.pos()
 
     half_width = self.width() / 2
     half_height = self.height() / 2
@@ -334,70 +316,10 @@ class SketchEditorViewWidget(QWidget):
       else:
         self._states.set_similar_y = False
 
-    #                             ****    Text select    ****
-    if self._states.select_text:
-      if self._text_hover is not None:
-        if self._states.multi_select:
-          self._selected_texts.append(self._text_hover)
-        else:
-          self._selected_texts = [self._text_hover]
-      else:
-        self._selected_texts = []
-      self._main_window.on_text_selection_changed_in_view(self._selected_texts)
-
     #                             ****    Keypoint move    ****
     if self._states.left_button_hold and self._kp_hover is not None:
       if self._kp_hover in self._selected_key_points:
         self._kp_move = self._kp_hover
-
-    #                             ****    Edge select    ****
-    if self._states.select_edge and self._edge_hover is not None and self._kp_hover is None:
-      if self._states.multi_select:
-        if self._edge_hover in self._selected_edges:
-          self._selected_edges.remove(self._edge_hover)
-        else:
-          self._selected_edges.append(self._edge_hover)
-      else:
-        self._selected_edges = [self._edge_hover]
-      self.update()
-      self._main_window.on_edge_selection_changed_in_view(self._selected_edges)
-    elif self._states.select_edge and self._edge_hover is None:
-      self._selected_edges = []
-      self.update()
-      self._main_window.on_edge_selection_changed_in_view(self._selected_edges)
-
-    #                             ****    Keypoint select    ****
-    if self._kp_hover is not None and self._states.select_kp:
-      if self._states.multi_select:
-        self._selected_key_points.append(self._kp_hover)
-      else:
-        self._selected_key_points = [self._kp_hover]
-      self.update()
-      self._main_window.on_kp_selection_changed_in_view(self._selected_key_points)
-    elif self._kp_hover is None and self._states.select_kp and len(
-        self._selected_edges) == 0 and not self._states.draw_line_edge:
-      self._selected_key_points = []
-      self.update()
-      self._main_window.on_kp_selection_changed_in_view(self._selected_key_points)
-
-    #                             ****    Area select    ****
-    if self._states.select_area:
-      if self._area_hover is not None:
-        if self._states.multi_select:
-          self._selected_areas.append(self._area_hover)
-        else:
-          self._selected_areas = [self._area_hover]
-
-        self._selected_edges = []
-        for area in self._selected_areas:
-          for edge in area.get_edges():
-            self._selected_edges.append(edge)
-        self._main_window.on_edge_selection_changed_in_view(self._selected_edges)
-        self.update()
-      else:
-        if not self._states.multi_select:
-          self._selected_areas = []
-          self.update()
 
     for event_handler in self._mouse_press_event_handlers:
       event_handler(scale, x, y)

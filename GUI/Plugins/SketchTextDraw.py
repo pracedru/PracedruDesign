@@ -50,7 +50,7 @@ class SketchTextDraw():
       coincident_threshold = 5 / scale
       kp = create_key_point(doc, sketch, x, y, 0.0, coincident_threshold)
       create_text(doc, sketch, kp, "New Text", 0.003)
-      self.on_escape()
+      view.on_escape()
 
   def on_escape(self):
     self._states.add_text = False

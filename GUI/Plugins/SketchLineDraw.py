@@ -13,7 +13,7 @@ class SketchLineDraw():
     self._states = main_window.states
     self._sketch_editor_view = main_window.sketch_editor_view
     self._sketch_editor_view.add_mouse_press_event_handler(self.on_mouse_press)
-    self._sketch_editor_view.add_mouse_move_event_handler(self.on_mouse_move)
+    #self._sketch_editor_view.add_mouse_move_event_handler(self.on_mouse_move)
     self._sketch_editor_view.add_escape_event_handler(self.on_escape)
     self._states.draw_line_edge = False
     self._last_kp = None
@@ -39,6 +39,8 @@ class SketchLineDraw():
     self._states.select_kp = True
     self._states.draw_line_edge = True
     self._main_window.update_ribbon_state()
+    doc = self._main_window.document
+    doc.set_status("Click on sketch to select or add point.", 0, True)
 
   def on_mouse_move(self, scale, x, y):
     pass
@@ -65,6 +67,8 @@ class SketchLineDraw():
           return
         else:
           view.selected_key_points.remove(view.selected_key_points[0])
+      else:
+        doc.set_status("Click on sketch to select or add point. Hold CTRL to conintue drawing.", 50, True)
       self._last_kp = current_kp
 
   def on_escape(self):

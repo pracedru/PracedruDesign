@@ -39,6 +39,8 @@ class SketchCreateArea():
     self._states.select_edges = True
     self._states.create_area = True
     self._main_window.update_ribbon_state()
+    doc = self._main_window.document
+    doc.set_status("Click on edges to create area. Hold CTRL to multi select.", 0, True)
 
   def on_mouse_move(self, scale, x, y):
     pass
