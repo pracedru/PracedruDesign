@@ -14,7 +14,7 @@ from PyQt5.QtWidgets import QWidget
 
 from Business.DrawingActions import *
 from Data.Vertex import Vertex
-from GUI import is_dark_theme
+from GUI.init import is_dark_theme
 from GUI.Widgets.Drawers import draw_sketch, create_pens
 
 

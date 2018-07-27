@@ -41,6 +41,7 @@ from GUI.Widgets.ParametersWidget import ParametersWidget
 from GUI.Widgets.PropertiesView import PropertiesDock
 from GUI.Widgets.TreeView import TreeViewDock
 from GUI.Widgets.ViewWidget import ViewWidget
+from GUI.init import tr, is_dark_theme, get_stylesheet, plugin_initializers
 
 main_windows = []
 

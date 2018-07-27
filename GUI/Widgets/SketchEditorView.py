@@ -7,7 +7,7 @@ from PyQt5.QtWidgets import QDialog, QInputDialog, QMessageBox, QWidget
 from Business.SketchActions import *
 
 from Data.Vertex import Vertex
-from GUI import is_dark_theme
+from GUI.init import is_dark_theme
 from GUI.Widgets.Drawers import *
 from GUI.Widgets.SimpleDialogs import AddArcDialog
 

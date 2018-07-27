@@ -2,7 +2,7 @@ from PyQt5.QtCore import QMargins, QItemSelection, QEvent, Qt
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QListView, QTableView, QDockWidget
 
 from Data import Document
-from GUI import gui_scale
+from GUI.init import gui_scale
 
 from GUI.Models.AreasModel import AreasModel
 from GUI.Widgets.AreaTableView import AreaTableView

@@ -1,7 +1,7 @@
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import Qt
 
-from GUI import tr
+from GUI.init import tr
 from GUI.Ribbon.RibbonButton import RibbonButton
 from GUI.Ribbon.RibbonPane import RibbonPane
 

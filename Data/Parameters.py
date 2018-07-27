@@ -1,5 +1,3 @@
-from math import sin
-from PyQt5.QtCore import QVariant
 from Data.Events import ChangeEvent, ValueChangeEvent
 from Data.Objects import IdObject, ObservableObject, NamedObservableObject
 import ast

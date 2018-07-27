@@ -4,7 +4,7 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QDialog
 
 from Business.SketchActions import create_key_point, add_arc
-from GUI import plugin_initializers
+from GUI.init import plugin_initializers
 
 from GUI.Ribbon.RibbonButton import RibbonButton
 from GUI.Widgets.SimpleDialogs import AddArcDialog

@@ -5,7 +5,7 @@ from PyQt5.QtGui import QLinearGradient, QColor, QPen
 from PyQt5.QtWidgets import QWidget
 
 from Data.Vertex import Vertex
-from GUI import is_dark_theme
+from GUI.init import is_dark_theme
 from GUI.Widgets.Drawers import create_pens
 
 

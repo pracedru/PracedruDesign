@@ -2,7 +2,7 @@ from PyQt5 import Qt
 from PyQt5.QtCore import QSize
 from PyQt5.QtWidgets import *
 
-from GUI import gui_scale, get_stylesheet
+from GUI.init import gui_scale, get_stylesheet
 
 __author__ = 'magnus'
 

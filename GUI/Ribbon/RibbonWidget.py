@@ -1,6 +1,6 @@
 from PyQt5.QtWidgets import *
 from GUI.Ribbon.RibbonTab import RibbonTab
-from GUI import gui_scale, tr
+from GUI.init import gui_scale, tr
 
 __author__ = 'magnus'
 

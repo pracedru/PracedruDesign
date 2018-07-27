@@ -1,4 +1,4 @@
-from Data.Areas import Area
+from Data.Areas import Area, CompositeArea
 from Data.Edges import *
 from Data.Events import ChangeEvent, ValueChangeEvent
 from Data.Geometry import Geometry
@@ -240,6 +240,15 @@ class Sketch(Geometry):
   def create_area(self):
 
     area = Area()
+    self.changed(ChangeEvent(self, ChangeEvent.BeforeObjectAdded, area))
+    self._areas[area.uid] = area
+    area.name = self.get_new_unique_area_name("New Area")
+    self.changed(ChangeEvent(self, ChangeEvent.ObjectAdded, area))
+    area.add_change_handler(self.on_area_changed)
+    return area
+
+  def create_composite_area(self):
+    area = CompositeArea(self)
     self.changed(ChangeEvent(self, ChangeEvent.BeforeObjectAdded, area))
     self._areas[area.uid] = area
     area.name = self.get_new_unique_area_name("New Area")

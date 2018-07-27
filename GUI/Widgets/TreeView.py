@@ -12,7 +12,7 @@ from Data.Drawings import Drawing
 from Data.Geometry import Geometry
 from Data.Part import Part
 from Data.Sketch import Sketch
-from GUI import tr
+from GUI.init import tr
 from GUI.Models.DocumentModel import DocumentItemModel
 
 

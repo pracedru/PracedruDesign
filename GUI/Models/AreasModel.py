@@ -122,7 +122,7 @@ class AreasModel(QAbstractTableModel):
     return self.index(row, 0)
 
   def on_sketch_changed(self, event: ChangeEvent):
-    if type(event.object) is Area:
+    if type(event.object) is Area or type(event.object) is CompositeArea:
       if event.type == event.BeforeObjectAdded:
         # print("area before object added " + event.object.name)
         self.beginInsertRows(QModelIndex(), len(self._rows), len(self._rows))

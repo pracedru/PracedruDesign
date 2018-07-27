@@ -1,5 +1,5 @@
 from PyQt5.QtWidgets import QTableView
-from GUI import gui_scale
+from GUI.init import gui_scale
 from GUI.Models.CalcTableModel import CalcTableModel
 
 

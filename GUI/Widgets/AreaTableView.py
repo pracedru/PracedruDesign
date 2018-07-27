@@ -3,7 +3,7 @@ from PyQt5.QtCore import QSortFilterProxyModel
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QTableView, QMessageBox
 
-from GUI import gui_scale
+from GUI.init import gui_scale
 from GUI.Models.AreasModel import AreasModel
 
 

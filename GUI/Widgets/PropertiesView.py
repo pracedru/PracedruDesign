@@ -2,7 +2,7 @@ from PyQt5.QtWidgets import QDockWidget
 from PyQt5.QtWidgets import QTableView
 
 from Data.Document import Document
-from GUI import gui_scale
+from GUI.init import gui_scale
 from GUI.Models.PropertiesModel import PropertiesModel
 
 

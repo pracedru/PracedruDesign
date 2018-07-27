@@ -3,9 +3,10 @@ from PyQt5.QtCore import Qt
 from Business.SketchActions import create_key_point
 from Data.Sketch import Text
 from Data.Vertex import Vertex
-from GUI import plugin_initializers
+#from GUI import plugin_initializers
 
 from GUI.Ribbon.RibbonButton import RibbonButton
+from GUI.init import plugin_initializers
 
 
 class SketchSelect():

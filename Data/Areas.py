@@ -215,8 +215,33 @@ class Area(IdObject, NamedObservableObject):
     self._name = data['name']
 
 class CompositeArea(IdObject, NamedObservableObject):
-  def __init__(self):
+  def __init__(self, sketch):
     IdObject.__init__(self)
     NamedObservableObject.__init__(self, "New Area")
-    self._edges = []
-    self._key_points = None
+    self._sketch = sketch
+    self._base_area = None
+    self._subtracted_areas = []
+    self._added_areas = []
+
+  @property
+  def base_area(self):
+    return self._base_area
+
+  @base_area.setter
+  def base_area(self, value):
+    self._base_area = value
+
+  @property
+  def subtracted_areas(self):
+    return self._subtracted_areas
+
+  def add_subtract_area(self, area):
+    self._subtracted_areas.append(area)
+
+  def add_added_area(self, area):
+    self._added_areas.append(area)
+
+  def inside(self, vertex):
+    return False
+
+

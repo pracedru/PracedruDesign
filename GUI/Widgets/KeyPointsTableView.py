@@ -4,7 +4,7 @@ from PyQt5.QtCore import QItemSelection
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QTableView, QMessageBox
 
-from GUI import gui_scale
+from GUI.init import gui_scale
 from GUI.Models.KeyPointsModel import KeyPointsModel
 
 

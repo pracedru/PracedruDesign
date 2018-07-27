@@ -6,7 +6,7 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QWidget, QTableView, QVBoxLayout, QHBoxLayout, QPushButton, QInputDialog, QMessageBox
 
 import Business
-from GUI import gui_scale
+from GUI.init import gui_scale
 from GUI.Models.ParametersModel import ParametersModel
 
 

@@ -17,7 +17,7 @@ from Data.Part import Part, Feature
 from Data.Point3d import KeyPoint
 from Data.Sketch import Sketch, Edge, Text, Attribute
 from Data.Style import EdgeStyle
-from GUI import tr
+from GUI.init import tr
 from GUI.Icons import get_icon
 
 

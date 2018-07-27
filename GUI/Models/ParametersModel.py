@@ -1,7 +1,7 @@
 from PyQt5.QtCore import *
 from PyQt5.QtWidgets import QMessageBox
 from Data.Parameters import *
-from GUI import formula_from_locale, formula_to_locale
+from GUI.init import formula_from_locale, formula_to_locale
 
 __author__ = 'mamj'
 

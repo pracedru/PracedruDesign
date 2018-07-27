@@ -4,7 +4,7 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QLabel
 
 from Business.SketchActions import create_key_point, find_all_similar
-from GUI import plugin_initializers
+from GUI.init import plugin_initializers
 
 from GUI.Ribbon.RibbonButton import RibbonButton
 from GUI.Ribbon.RibbonTextbox import RibbonTextbox
@@ -71,12 +71,15 @@ class GenericView():
 
   def on_zoom_fit(self):
     self._main_window.on_zoom_fit()
+    self._sketch_editor_view.update()
 
   def on_show_area_names(self):
     self._states.show_area_names = not self._states.show_area_names
+    self._sketch_editor_view.update()
 
   def on_show_kp(self):
     self._states.show_key_points = not self._states.show_key_points
+    self._sketch_editor_view.update()
 
   def on_show_params(self):
     self._states.show_params = not self._states.show_params

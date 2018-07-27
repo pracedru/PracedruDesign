@@ -4,7 +4,7 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QLabel, QInputDialog, QDialog
 
 from Business.SketchActions import create_key_point, find_all_similar, set_similar_x, set_similar_y
-from GUI import plugin_initializers
+from GUI.init import plugin_initializers
 
 from GUI.Ribbon.RibbonButton import RibbonButton
 from GUI.Ribbon.RibbonTextbox import RibbonTextbox
@@ -59,7 +59,6 @@ class SketchParametry():
     grid = param_pane.add_grid_widget(200)
     grid.addWidget(QLabel("Thresshold"), 0, 0)
     grid.addWidget(thresshold_text_box, 0, 1)
-
 
   def on_set_sim_x(self):
     self._sketch_editor_view.on_escape()

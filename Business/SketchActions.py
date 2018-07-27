@@ -194,10 +194,6 @@ def create_all_areas(docs: Document, sketch: Sketch):
       find_fillets(sketch, area)
 
 
-def create_composite_area(sketch, base_area, subtract_areas):
-  print("create_composite_area")
-
-
 def find_fillets(sketch, area):
   fillet_edges = []
   for edge_tuple in sketch.get_edges():
@@ -328,6 +324,14 @@ def follow_branch(branch, branches, connections):
 
     # areas.append(branch)
 
+
+def create_composite_area(sketch, base_area, subtract_areas):
+  print("create_composite_area")
+  comp_area = sketch.create_composite_area()
+  comp_area.base_area = base_area
+  for area in subtract_areas:
+    comp_area.add_subtract_area(area)
+  return comp_area
 
 def angle_between_edges(common_kp, kp1, kp2):
   alpha1 = common_kp.angle2d(kp1)

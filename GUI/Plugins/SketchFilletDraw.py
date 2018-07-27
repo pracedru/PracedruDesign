@@ -2,7 +2,7 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QInputDialog, QDialog
 
 from Business.SketchActions import create_key_point, create_fillet
-from GUI import plugin_initializers
+from GUI.init import plugin_initializers
 
 from GUI.Ribbon.RibbonButton import RibbonButton
 

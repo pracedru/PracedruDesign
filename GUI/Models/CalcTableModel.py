@@ -2,7 +2,7 @@ from PyQt5.QtCore import QAbstractTableModel, QModelIndex, Qt, QLocale
 from PyQt5.QtWidgets import QMessageBox
 
 from Data.CalcTableAnalysis import col_index_to_letter
-from GUI import formula_from_locale, formula_to_locale
+from GUI.init import formula_from_locale, formula_to_locale
 
 
 

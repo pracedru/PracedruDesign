@@ -3,7 +3,7 @@ from PyQt5.Qt import Qt
 from PyQt5.QtCore import QPointF
 from PyQt5.QtGui import QPen
 from PyQt5.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QLabel, QGridLayout, QSizePolicy, QSpacerItem
-from GUI import gui_scale, get_stylesheet
+from GUI.init import gui_scale, get_stylesheet
 from GUI.Ribbon.RibbonButton import RibbonButton
 
 __author__ = 'mamj'

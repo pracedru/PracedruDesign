@@ -1,8 +1,7 @@
 from PyQt5.QtCore import Qt
 
-from Business.SketchActions import create_key_point, create_attribute, find_all_areas, create_area, \
-  create_composite_area
-from GUI import plugin_initializers
+from Business.SketchActions import *
+from GUI.init import plugin_initializers
 
 from GUI.Ribbon.RibbonButton import RibbonButton
 

@@ -1,7 +1,7 @@
 from PyQt5.QtCore import Qt
 
 from Business.SketchActions import create_key_point, create_text
-from GUI import plugin_initializers
+from GUI.init import plugin_initializers
 
 from GUI.Ribbon.RibbonButton import RibbonButton
 

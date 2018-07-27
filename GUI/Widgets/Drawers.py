@@ -249,6 +249,38 @@ def draw_kp(qp, key_point, scale, offset, center):
 
 
 def draw_area(area, qp, scale, offset, half_height, half_width, show_names, brush):
+
+  first_kp = True
+  x_max = 0
+  y_max = 0
+  x_min = 0
+  y_min = 0
+  counter = 0
+
+  if type(area) == CompositeArea:
+    area_path = get_area_path(area.base_area, scale, offset, half_height, half_width)
+    path = area_path[0]
+    for subarea in area.subtracted_areas:
+      sub_area_path = get_area_path(subarea, scale, offset, half_height, half_width)
+      subpath = sub_area_path[0]
+      path = path.subtracted(subpath)
+    qp.fillPath(path, brush)
+  else:
+    path = get_area_path(area, scale, offset, half_height, half_width)
+    qp.fillPath(path[0], brush)
+
+
+  if show_names:
+    qp.setPen(QPen(QColor(0, 0, 0), 2))
+    if x_max - x_min < (y_max - y_min) * 0.75:
+      qp.rotate(-90)
+      qp.drawText(QRectF(-y_min, x_min, y_min - y_max, x_max - x_min), Qt.AlignCenter, area.name)
+      qp.rotate(90)
+    else:
+      qp.drawText(QRectF(x_min, y_min, x_max - x_min, y_max - y_min), Qt.AlignCenter, area.name)
+
+
+def get_area_path(area, scale, offset, half_height, half_width):
   path = QPainterPath()
   first_kp = True
   x_max = 0
@@ -261,16 +293,13 @@ def draw_area(area, qp, scale, offset, half_height, half_width, show_names, brus
     r = area.get_edges()[0].get_meta_data('r')
     x = (kp.x + offset.x) * scale + half_width
     y = -(kp.y + offset.y) * scale + half_height
-    qp.setBrush(brush)
-    oldPen = qp.pen()
-    qp.setPen(Qt.NoPen)
+
     x_max = x + r * scale
     x_min = x - r * scale
     y_max = y + r * scale
     y_min = y - r * scale
-    qp.drawEllipse(QRectF(x-r*scale, y-r*scale, 2*r*scale, 2*r*scale))
-    qp.setBrush(QBrush())
-    qp.setPen(oldPen)
+    path.addEllipse(QRectF(x-r*scale, y-r*scale, 2*r*scale, 2*r*scale))
+
   else:
     for kp in area.get_key_points():
       edges = kp.get_edges()
@@ -372,18 +401,4 @@ def draw_area(area, qp, scale, offset, half_height, half_width, show_names, brus
           y_min = y
       counter += 1
 
-    #  if area in selected_areas:
-    #    qp.fillPath(path, QBrush(QColor(150, 150, 250, 180)))
-    # elif area == self._area_hover:
-    #    qp.fillPath(path, QBrush(QColor(150, 150, 180, 180)))
-    # else:
-    qp.fillPath(path, brush)
-
-  if show_names:
-    qp.setPen(QPen(QColor(0, 0, 0), 2))
-    if x_max - x_min < (y_max - y_min) * 0.75:
-      qp.rotate(-90)
-      qp.drawText(QRectF(-y_min, x_min, y_min - y_max, x_max - x_min), Qt.AlignCenter, area.name)
-      qp.rotate(90)
-    else:
-      qp.drawText(QRectF(x_min, y_min, x_max - x_min, y_max - y_min), Qt.AlignCenter, area.name)
+  return path, x_max, x_min, y_max, y_min
