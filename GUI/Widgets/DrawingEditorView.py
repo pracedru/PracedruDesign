@@ -221,7 +221,7 @@ class DrawingEditorViewWidget(QWidget):
       scale = sc * view.scale
       offset = Vertex(self._offset.x / view.scale, self._offset.y / view.scale)
       c = Vertex(center.x + view.offset.x * sc, center.y - view.offset.y * sc)
-      draw_sketch(qp, view.sketch, scale, offset, c, pens, {})
+      draw_sketch(qp, view.sketch, scale, 0.0002 * sc, offset, c, pens, {})
 
   def draw_header(self, event, qp, cx, cy, center, pens):
     sketch = self._drawing.header_sketch
@@ -231,7 +231,7 @@ class DrawingEditorViewWidget(QWidget):
     m = self._drawing.margins
     sz = self._drawing.size
     offset = Vertex(sz[0] - header_width - m[2] + self._offset.x, m[3] + self._offset.y)
-    draw_sketch(qp, sketch, self._scale, offset, center, pens, self._drawing.get_fields())
+    draw_sketch(qp, sketch, self._scale,  0.0002 * self._scale, offset, center, pens, self._drawing.get_fields())
 
   def draw_sketch_view(self, event, qp, cx, cy, contour_pen, hatch_pen, annotation_pen, sketch_view):
     pass

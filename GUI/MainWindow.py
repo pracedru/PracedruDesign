@@ -41,7 +41,7 @@ from GUI.Widgets.ParametersWidget import ParametersWidget
 from GUI.Widgets.PropertiesView import PropertiesDock
 from GUI.Widgets.TreeView import TreeViewDock
 from GUI.Widgets.ViewWidget import ViewWidget
-from GUI.init import tr, is_dark_theme, get_stylesheet, plugin_initializers
+from GUI.init import tr, is_dark_theme, get_stylesheet, plugin_initializers, write_language_file
 
 main_windows = []
 
@@ -296,6 +296,11 @@ class MainWindow(QMainWindow):
 
   def on_edge_selection_changed_in_table(self, selected_edges):
     self._viewWidget.on_edge_selection_changed_in_table(selected_edges)
+
+  def on_area_selection_changed_in_view(self, selected_areas):
+    self._geometry_dock.on_area_selection_changed(selected_areas)
+    if len(selected_areas) > 0:
+      self._properties_dock.set_item(selected_areas[0])
 
   def on_edge_selection_changed_in_view(self, selected_edges):
     self._geometry_dock.on_edge_selection_changed(selected_edges)

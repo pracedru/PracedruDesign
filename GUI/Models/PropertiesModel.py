@@ -20,9 +20,14 @@ rows_by_type = {
     ['Style', 'style_name'],
     ['Type', 'type_name'],
     ['Radius', {'name':'get_meta_data', 'args': ['r'], 'setName': 'set_meta_data'}, {'condition': ['type', EdgeType.CircleEdge]}]],
-  "Area": [
+  "EdgeLoopArea": [
     ['Name', 'name'],
-    ['Hatch', 'hatch']],
+    ['Brush', 'brush_name'],
+    ['Brush angle', 'brush_rotation']],
+  "CompositeArea": [
+    ['Name', 'name'],
+    ['Brush', 'brush_name'],
+    ['Brush angle', 'brush_rotation']],
   "Attribute": [
     ['Attribute Name', 'name'],
     ['Default Value', 'value'],
@@ -56,6 +61,8 @@ rows_by_type = {
     ['Thickness', 'thickness'],
     ['Color', 'color'],
     ['Line type', 'line_type']],
+  "Brush": [
+    ['Name', 'name']],
   "HatchStyle": [
     ['Name', 'name']],
   "Feature": [
@@ -171,11 +178,12 @@ class PropertiesModel(QAbstractTableModel):
     return data
 
   def setData(self, model_index: QModelIndex, value, role=None):
+    success = False
     col = model_index.column()
     row = model_index.row()
     if type(self._rows[row][1]) is str:
       attr_name = self._rows[row][1]
-    else:
+    else: # This is a meta data object
       attr_name = self._rows[row][1]['setName']
     origin_type = type(getattr(self._item,  attr_name))
     if role == Qt.EditRole:

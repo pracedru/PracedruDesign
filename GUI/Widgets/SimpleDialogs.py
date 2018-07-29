@@ -134,7 +134,7 @@ class ExtrudeDialog(QDialog):
         sketch = sketch_feature.get_objects()[0]
         self._sketch_view.set_sketch(sketch)
         for area in sketch.get_areas():
-          areas.append(area[1].name)
+          areas.append(area.name)
     self._area_combo_box.addItems(areas)
 
   @property
@@ -157,9 +157,9 @@ class ExtrudeDialog(QDialog):
     for sketch_feature in self._part.get_sketch_features():
       if sketch_feature.name == self._sketch_combo_box.currentText():
         sketch = sketch_feature.get_objects()[0]
-        for area_tuple in sketch.get_areas():
-          if area_tuple[1].name == self._area_combo_box.currentText():
-            return area_tuple[1]
+        for area in sketch.get_areas():
+          if area.name == self._area_combo_box.currentText():
+            return area
     return None
 
   @property
@@ -239,10 +239,10 @@ class RevolveDialog(QDialog):
         sketch = sketch_feature.get_objects()[0]
         self._sketch_view.set_sketch(sketch)
         for area in sketch.get_areas():
-          areas.append(area[1].name)
+          areas.append(area.name)
         areas.sort()
         for edge in sketch.get_edges():
-          edge_names.append(edge[1].name)
+          edge_names.append(edge.name)
         edge_names.sort()
     self._axis_combo_box.addItems(edge_names)
     self._area_combo_box.addItems(areas)
@@ -267,9 +267,9 @@ class RevolveDialog(QDialog):
     for sketch_feature in self._part.get_sketch_features():
       if sketch_feature.name == self._sketch_combo_box.currentText():
         sketch = sketch_feature.get_objects()[0]
-        for area_tuple in sketch.get_areas():
-          if area_tuple[1].name == self._area_combo_box.currentText():
-            return area_tuple[1]
+        for a in sketch.get_areas():
+          if a.name == self._area_combo_box.currentText():
+            return a
     return None
 
   def get_axis(self):

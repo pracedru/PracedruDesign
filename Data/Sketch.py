@@ -1,4 +1,4 @@
-from Data.Areas import Area, CompositeArea
+from Data.Areas import *
 from Data.Edges import *
 from Data.Events import ChangeEvent, ValueChangeEvent
 from Data.Geometry import Geometry
@@ -75,7 +75,7 @@ class Sketch(Geometry):
     return None
 
   def get_areas(self):
-    return self._areas.items()
+    return self._areas.values()
 
   def get_fillet(self, uid):
     if uid in self._fillets:
@@ -162,9 +162,10 @@ class Sketch(Geometry):
       fillet_edge.add_change_handler(self.on_edge_changed)
       for area_tuple in self._areas.items():
         area = area_tuple[1]
-        kps = area.get_key_points()
-        if kp in kps:
-          area.add_edge(fillet_edge)
+        if area.type == AreaType.EdgeLoop:
+          kps = area.get_key_points()
+          if kp in kps:
+            area.add_edge(fillet_edge)
     return fillet_edge
 
   def create_nurbs_edge(self, kp):
@@ -238,8 +239,7 @@ class Sketch(Geometry):
     return new_name
 
   def create_area(self):
-
-    area = Area()
+    area = EdgeLoopArea(self)
     self.changed(ChangeEvent(self, ChangeEvent.BeforeObjectAdded, area))
     self._areas[area.uid] = area
     area.name = self.get_new_unique_area_name("New Area")
@@ -257,13 +257,13 @@ class Sketch(Geometry):
     return area
 
   def get_edges(self):
-    return self._edges.items()
+    return self._edges.values()
 
   def get_key_points(self):
-    return self._key_points.items()
+    return self._key_points.values()
 
   def get_texts(self):
-    return self._texts.items()
+    return self._texts.values()
 
   def clear_areas(self):
     areas_to_delete = []
@@ -349,7 +349,7 @@ class Sketch(Geometry):
 
     for area_data_tuple in data.get('areas', {}).items():
       area_data = area_data_tuple[1]
-      area = Area.deserialize(area_data, self._doc, self)
+      area = Area.deserialize(area_data, self)
       self._areas[area.uid] = area
       area.add_change_handler(self.on_area_changed)
 

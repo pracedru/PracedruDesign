@@ -1,5 +1,6 @@
 from math import pi, cos, sin, tan
 
+from Data import get_uids
 from Data.Edges import *
 from Data.Events import ChangeEvent
 from Data.Objects import IdObject, NamedObservableObject
@@ -8,17 +9,87 @@ from Data.Vertex import Vertex
 
 __author__ = 'mamj'
 
+class AreaType(Enum):
+  EdgeLoop = 0
+  Composite = 1
+
 
 class Area(IdObject, NamedObservableObject):
-  def __init__(self):
+  def __init__(self, sketch):
     IdObject.__init__(self)
     NamedObservableObject.__init__(self, "New Area")
-    self._edges = []
-    self._key_points = None
+    self._sketch = sketch
+    self._brush = None
+    self._brush_rotation = 50
+    self._type = None
 
   @property
-  def hatch(self):
-    return None
+  def type(self):
+    return self._type
+
+  @property
+  def brush(self):
+    return self._brush
+
+  @property
+  def brush_name(self):
+    if self._brush is None:
+      return "None"
+    else:
+      return self._brush.name
+
+  @property
+  def brush_rotation(self):
+    return self._brush_rotation
+
+  @brush_rotation.setter
+  def brush_rotation(self, value):
+    self._brush_rotation = value
+
+  @brush_name.setter
+  def brush_name(self, value):
+    styles = self._sketch.get_document().get_styles()
+    brush = styles.get_brush_by_name(value)
+    self._brush = brush
+
+  @staticmethod
+  def deserialize(data, sketch):
+    if data['area']['type'] == AreaType.EdgeLoop.value:
+      area = EdgeLoopArea(sketch)
+      area.deserialize_data(data, sketch)
+      return area
+    elif data['area']['type'] == AreaType.Composite.value:
+      area = CompositeArea(sketch)
+      area.deserialize_data(data, sketch)
+      return area
+
+  def serialize_json(self):
+    brush_uid = None
+    if self._brush is not None:
+      brush_uid = self._brush.uid
+    return \
+      {
+        'uid': IdObject.serialize_json(self),
+        'no': NamedObservableObject.serialize_json(self),
+        'type': self._type.value,
+        'brush': brush_uid,
+        'brush_rot': self._brush_rotation
+      }
+
+  def deserialize_data(self, data):
+    IdObject.deserialize_data(self, data['uid'])
+    NamedObservableObject.deserialize_data(self, data.get('no', None))
+    brush_uid = data.get('brush')
+    self._brush = self._sketch.get_document().get_styles().get_brush(brush_uid)
+    self._brush_rotation = data.get("brush_rot", 50)
+
+
+class EdgeLoopArea(Area):
+  def __init__(self, sketch):
+    Area.__init__(self, sketch)
+    self._edges = []
+    self._key_points = None
+    self._type = AreaType.EdgeLoop
 
   def inside(self, point):
     anglesum = 0.0
@@ -190,38 +261,28 @@ class Area(IdObject, NamedObservableObject):
       edge_uids.append(edge.uid)
     return edge_uids
 
-  @staticmethod
-  def deserialize(data, doc, sketch):
-    area = Area()
-    area.deserialize_data(data, doc, sketch)
-    return area
-
   def serialize_json(self):
     return \
       {
-        'uid': IdObject.serialize_json(self),
-        'no': NamedObservableObject.serialize_json(self),
-        'edges': self.get_edge_uids(),
-        'name': self.name
+        'area': Area.serialize_json(self),
+        'edges': self.get_edge_uids()
       }
 
-  def deserialize_data(self, data, doc, sketch):
-    IdObject.deserialize_data(self, data['uid'])
-    NamedObservableObject.deserialize_data(self, data.get('no', None))
+  def deserialize_data(self, data, sketch):
+    Area.deserialize_data(self, data['area'])
     for edge_uid in data['edges']:
       edge = sketch.get_edge(edge_uid)
       self._edges.append(edge)
       edge.add_change_handler(self.on_edge_changed)
-    self._name = data['name']
 
-class CompositeArea(IdObject, NamedObservableObject):
+
+class CompositeArea(Area):
   def __init__(self, sketch):
-    IdObject.__init__(self)
-    NamedObservableObject.__init__(self, "New Area")
-    self._sketch = sketch
+    Area.__init__(self, sketch)
     self._base_area = None
     self._subtracted_areas = []
     self._added_areas = []
+    self._type = AreaType.Composite
 
   @property
   def base_area(self):
@@ -235,13 +296,54 @@ class CompositeArea(IdObject, NamedObservableObject):
   def subtracted_areas(self):
     return self._subtracted_areas
 
+  def delete(self):
+    self.changed(ChangeEvent(self, ChangeEvent.Deleted, self))
+
   def add_subtract_area(self, area):
-    self._subtracted_areas.append(area)
+    if area not in self._subtracted_areas:
+      self._subtracted_areas.append(area)
+      area.add_change_handler(self.on_area_changed)
 
   def add_added_area(self, area):
-    self._added_areas.append(area)
+    if area not in self._added_areas:
+      self._added_areas.append(area)
+      area.add_change_handler(self.on_area_changed)
 
   def inside(self, vertex):
-    return False
+    if self._base_area.inside(vertex):
+      for area in self._subtracted_areas:
+        if area.inside(vertex):
+          return False
+      return True
+
+  def get_edges(self):
+    edges = list(self.base_area.get_edges())
+    for area in self._subtracted_areas:
+      edges.extend(area.get_edges())
+    return edges
+
+  def on_area_changed(self, event: ChangeEvent):
+    if event.type == ChangeEvent.Deleted:
+      self.changed(ChangeEvent(self, ChangeEvent.Deleted, self))
 
 
+  def serialize_json(self):
+    return \
+      {
+        'area': Area.serialize_json(self),
+        'base_area': self._base_area.uid,
+        'subtracted_areas': get_uids(self._subtracted_areas),
+        'added_areas': get_uids(self._added_areas)
+      }
+
+  def deserialize_data(self, data, sketch):
+    Area.deserialize_data(self, data['area'])
+    self._base_area = sketch.get_area(data['base_area'])
+    for area_uid in data['subtracted_areas']:
+      area = sketch.get_area(area_uid)
+      self._subtracted_areas.append(area)
+      area.add_change_handler(self.on_area_changed)
+    for area_uid in data['added_areas']:
+      area = sketch.get_area(area_uid)
+      self._added_areas.append(area)
+      area.add_change_handler(self.on_area_changed)

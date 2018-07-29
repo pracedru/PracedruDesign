@@ -8,8 +8,7 @@ from Data.Sketch import *
 def create_key_point(doc, sketch, x, y, param, coincident_threshold):
   kp = sketch.create_key_point(x, y, 0.0, coincident_threshold)
   edge_to_split = None
-  for edge_tuple in sketch.get_edges():
-    edge = edge_tuple[1]
+  for edge in sketch.get_edges():
     if edge.coincident(kp, coincident_threshold):
       edge_to_split = edge
   if edge_to_split is not None:
@@ -168,8 +167,8 @@ def create_area(sketch, branch):
 
 def create_all_areas(docs: Document, sketch: Sketch):
   edges = []
-  for edge_tuple in sketch.get_edges():
-    edges.append(edge_tuple[1])
+  for edge in sketch.get_edges():
+    edges.append(edge)
   branches = find_all_areas(edges)
   sketch.clear_areas()
   unique_branches = []
@@ -196,8 +195,7 @@ def create_all_areas(docs: Document, sketch: Sketch):
 
 def find_fillets(sketch, area):
   fillet_edges = []
-  for edge_tuple in sketch.get_edges():
-    edge = edge_tuple[1]
+  for edge in sketch.get_edges():
     if edge.type == EdgeType.FilletLineEdge:
       fillet_edges.append(edge)
   kps = area.get_inside_key_points()

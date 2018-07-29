@@ -29,8 +29,8 @@ class AreasModel(QAbstractTableModel):
       self._sketch.remove_change_handler(self.on_sketch_changed)
       self._rows.clear()
     self._sketch = sketch
-    for area_tuple in self._sketch.get_areas():
-      self._rows.append(area_tuple[1].uid)
+    for area in self._sketch.get_areas():
+      self._rows.append(area.uid)
     self._sketch.add_change_handler(self.on_sketch_changed)
     self.layoutChanged.emit()
 
@@ -122,7 +122,7 @@ class AreasModel(QAbstractTableModel):
     return self.index(row, 0)
 
   def on_sketch_changed(self, event: ChangeEvent):
-    if type(event.object) is Area or type(event.object) is CompositeArea:
+    if issubclass(type(event.object), Area):
       if event.type == event.BeforeObjectAdded:
         # print("area before object added " + event.object.name)
         self.beginInsertRows(QModelIndex(), len(self._rows), len(self._rows))

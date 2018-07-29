@@ -43,8 +43,8 @@ class DocumentItemModel(QAbstractItemModel):
   def populate(self):
     glocal_params_item = DocumentModelItem(self._doc.get_parameters(), self, self._root_item)
     styles_item = DocumentModelItem(self._doc.get_styles(), self, self._root_item, "Styles")
-    for style_tuple in self._doc.get_styles().get_edge_styles():
-      DocumentModelItem(style_tuple[1], self, styles_item)
+    for style in self._doc.get_styles().get_edge_styles():
+      DocumentModelItem(style, self, styles_item)
     for param_tuple in self._doc.get_parameters().get_all_parameters():
       DocumentModelItem(param_tuple[1], self, glocal_params_item)
     geoms_item = DocumentModelItem(self._doc.get_geometries(), self, self._root_item)
@@ -64,14 +64,14 @@ class DocumentItemModel(QAbstractItemModel):
     geom_item = self.create_model_item(parent_item, sketch)
     for param_tuple in sketch.get_all_local_parameters():
       param_item = DocumentModelItem(param_tuple[1], self, geom_item.children()[0])
-    for kp_tuple in sketch.get_key_points():
-      kp_item = DocumentModelItem(kp_tuple[1], self, geom_item.children()[1], "Key point")
-    for edge_tuple in sketch.get_edges():
-      edge_item = DocumentModelItem(edge_tuple[1], self, geom_item.children()[2])
-    for text_tuple in sketch.get_texts():
-      text_item = DocumentModelItem(text_tuple[1], self, geom_item.children()[3])
-    for area_tuple in sketch.get_areas():
-      area_item = DocumentModelItem(area_tuple[1], self, geom_item.children()[4])
+    for kp in sketch.get_key_points():
+      kp_item = DocumentModelItem(kp, self, geom_item.children()[1], "Key point")
+    for edge in sketch.get_edges():
+      edge_item = DocumentModelItem(edge, self, geom_item.children()[2])
+    for text in sketch.get_texts():
+      text_item = DocumentModelItem(text, self, geom_item.children()[3])
+    for area in sketch.get_areas():
+      area_item = DocumentModelItem(area, self, geom_item.children()[4])
     return geom_item
 
   def populate_drawing(self, drawing, parent_item):

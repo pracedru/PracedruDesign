@@ -1,7 +1,7 @@
 from math import *
 
 from PyQt5.QtCore import QEvent, QPoint
-from PyQt5.QtGui import QColor, QLinearGradient
+from PyQt5.QtGui import QColor, QLinearGradient, QTransform
 from PyQt5.QtWidgets import QDialog, QInputDialog, QMessageBox, QWidget
 
 from Business.SketchActions import *
@@ -304,7 +304,7 @@ class SketchEditorViewWidget(QWidget):
       gradient.setColorAt(0, QColor(220, 220, 230))
       gradient.setColorAt(1, QColor(170, 170, 180))
     qp.fillRect(event.rect(), gradient)
-    qp.setRenderHint(QPainter.Antialiasing)
+    qp.setRenderHint(QPainter.HighQualityAntialiasing)
 
     cx = self._offset.x * self._scale + self.width() / 2
     cy = -self._offset.y * self._scale + self.height() / 2
@@ -331,8 +331,7 @@ class SketchEditorViewWidget(QWidget):
     kp_pen_hover = QPen(QColor(0, 120, 255), 3)
     kp_pen_hl = QPen(QColor(180, 50, 0), 3)
     qp.setPen(normal_pen)
-    for text_tuple in self._sketch.get_texts():
-      text = text_tuple[1]
+    for text in self._sketch.get_texts():
       if type(text) is Text:
         draw_text(text, qp, sc, self._offset, center)
       elif type(text) is Attribute:
@@ -372,8 +371,7 @@ class SketchEditorViewWidget(QWidget):
 
     edges = self._sketch.get_edges()
 
-    for edge_tuple in edges:
-      edge = edge_tuple[1]
+    for edge in edges:
       draw_edge(edge, qp, scale, self._offset, center, pens)
 
     for edge in self._selected_edges:
@@ -388,9 +386,9 @@ class SketchEditorViewWidget(QWidget):
     qp.setPen(pens['default'])
 
     key_points = self._sketch.get_key_points()
-    for kp_tuple in key_points:
+    for kp in key_points:
       qp.setPen(kp_pen)
-      key_point = kp_tuple[1]
+      key_point = kp
 
       if self._kp_hover is key_point and self._states.select_kp:
         qp.setPen(kp_pen_hover)
@@ -411,19 +409,23 @@ class SketchEditorViewWidget(QWidget):
     area_hover_brush = QBrush(QColor(150, 150, 200, 80))
     area_selected_brush = QBrush(QColor(150, 150, 200, 120))
     areas = self._sketch.get_areas()
+    scale = self._scale
     qp.setPen(Qt.NoPen)
     half_width = self.width() / 2
     half_height = self.height() / 2
-    scale = self._scale
-    center = Vertex(half_width, half_height)
-    for area_tuple in areas:
-      area = area_tuple[1]
+    for area in areas:
       brush = area_brush
       if area in self._selected_areas:
         brush = area_selected_brush
       if area == self._area_hover:
         brush = area_hover_brush
-      draw_area(area, qp, scale, self._offset, half_height, half_width, self._states.show_area_names, brush)
+
+      draw_area(area, qp, scale, self._offset, half_height, half_width, self._states.show_area_names or area in self._selected_areas, brush)
+      if area.brush is not None:
+        brush = QBrush(QColor(0, 0, 0), Qt.HorPattern)
+        transform = QTransform().translate(self._offset.x*scale, -self._offset.y*scale).scale(2, 2).rotate(area.brush_rotation)
+        brush.setTransform(transform)
+        draw_area(area, qp, scale, self._offset, half_height, half_width, self._states.show_area_names or area in self._selected_areas, brush)
 
   def update_status(self):
     self._doc.set_status("")

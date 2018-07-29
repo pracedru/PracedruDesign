@@ -511,8 +511,7 @@ class Part(Geometry):
       n = cp / np.linalg.norm(cp)
       pm = np.array([xd.xyz, yd.xyz, n]).transpose()
       sketch = sketch_feature.get_objects()[0]
-      for edge_tuple in sketch.get_edges():
-        edge = edge_tuple[1]
+      for edge in sketch.get_edges():
         draw_data = edge.get_draw_data()
         if draw_data['type'] == 1:
           c = draw_data['coords']

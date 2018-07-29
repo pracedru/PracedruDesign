@@ -1,7 +1,7 @@
 from math import *
 
 from PyQt5.QtCore import QPointF, Qt, QRectF
-from PyQt5.QtGui import QBrush, QFont, QPen, QPainter, QFontMetrics, QColor, QPainterPath
+from PyQt5.QtGui import QBrush, QFont, QPen, QPainter, QFontMetrics, QColor, QPainterPath, QTransform
 
 from Data.Nurbs import Nurbs
 from Data.Sketch import *
@@ -25,19 +25,25 @@ def create_pens(document, scale, color_override=None):
   for style in document.get_styles().get_edge_styles():
     color = color_override
     if color_override is None:
-      c = style[1].color
+      c = style.color
       color = QColor(c[0], c[1], c[2])
-    pens[style[1].uid] = QPen(color, style[1].thickness * scale)
+    pens[style.uid] = QPen(color, style.thickness * scale)
   return pens
 
 
-def draw_sketch(qp: QPainter, sketch, scale, offset, center, pens, fields):
+def draw_sketch(qp: QPainter, sketch, scale, brush_scale, offset, center, pens, fields):
   edges = sketch.get_edges()
-  for edge_tuple in edges:
-    edge = edge_tuple[1]
+  areas = sketch.get_areas()
+
+  for area in areas:
+    if area.brush is not None:
+      brush = QBrush(QColor(0, 0, 0), Qt.HorPattern)
+      transform = QTransform().translate(offset.x * brush_scale, -offset.y * brush_scale).scale(brush_scale, brush_scale).rotate(area.brush_rotation)
+      brush.setTransform(transform)
+      draw_area(area, qp, scale, offset, center.y, center.x, False, brush)
+  for edge in edges:
     draw_edge(edge, qp, scale, offset, center, pens)
-  for text_tuple in sketch.get_texts():
-    text = text_tuple[1]
+  for text in sketch.get_texts():
     if type(text) is Attribute:
       value = None
       if text.name in fields:
@@ -248,45 +254,57 @@ def draw_kp(qp, key_point, scale, offset, center):
   qp.drawEllipse(QPointF(x1, y1), 4, 4)
 
 
+class Limits():
+  def __init__(self):
+    self.x_max = 0
+    self.y_max = 0
+    self.x_min = 0
+    self.y_min = 0
+
+  def check_limits(self, other_limits):
+    if other_limits.x_max > self.x_max:
+      self.x_max = other_limits.x_max
+    if other_limits.x_min < self.x_min:
+      self.x_min = other_limits.x_min
+    if other_limits.y_max > self.y_max:
+      self.y_max = other_limits.y_max
+    if other_limits.y_min < self.y_min:
+      self.y_min = other_limits.y_min
+
+
 def draw_area(area, qp, scale, offset, half_height, half_width, show_names, brush):
 
   first_kp = True
-  x_max = 0
-  y_max = 0
-  x_min = 0
-  y_min = 0
+  limits = Limits()
+
   counter = 0
 
   if type(area) == CompositeArea:
-    area_path = get_area_path(area.base_area, scale, offset, half_height, half_width)
-    path = area_path[0]
+    path = get_area_path(area.base_area, scale, offset, half_height, half_width, limits)
     for subarea in area.subtracted_areas:
-      sub_area_path = get_area_path(subarea, scale, offset, half_height, half_width)
-      subpath = sub_area_path[0]
-      path = path.subtracted(subpath)
+      other_limits = Limits()
+      sub_area_path = get_area_path(subarea, scale, offset, half_height, half_width, other_limits)
+      limits.check_limits(other_limits)
+      path = path.subtracted(sub_area_path)
     qp.fillPath(path, brush)
   else:
-    path = get_area_path(area, scale, offset, half_height, half_width)
-    qp.fillPath(path[0], brush)
+    path = get_area_path(area, scale, offset, half_height, half_width, limits)
+    qp.fillPath(path, brush)
 
 
   if show_names:
     qp.setPen(QPen(QColor(0, 0, 0), 2))
-    if x_max - x_min < (y_max - y_min) * 0.75:
+    if limits.x_max - limits.x_min < (limits.y_max - limits.y_min) * 0.75:
       qp.rotate(-90)
-      qp.drawText(QRectF(-y_min, x_min, y_min - y_max, x_max - x_min), Qt.AlignCenter, area.name)
+      qp.drawText(QRectF(-limits.y_min, limits.x_min, limits.y_min - limits.y_max, limits.x_max - limits.x_min), Qt.AlignCenter, area.name)
       qp.rotate(90)
     else:
-      qp.drawText(QRectF(x_min, y_min, x_max - x_min, y_max - y_min), Qt.AlignCenter, area.name)
+      qp.drawText(QRectF(limits.x_min, limits.y_min, limits.x_max - limits.x_min, limits.y_max - limits.y_min), Qt.AlignCenter, area.name)
 
 
-def get_area_path(area, scale, offset, half_height, half_width):
+def get_area_path(area, scale, offset, half_height, half_width, limits):
   path = QPainterPath()
   first_kp = True
-  x_max = 0
-  y_max = 0
-  x_min = 0
-  y_min = 0
   counter = 0
   if area.get_edges()[0].type == EdgeType.CircleEdge:
     kp = area.get_inside_key_points()[0]
@@ -294,10 +312,10 @@ def get_area_path(area, scale, offset, half_height, half_width):
     x = (kp.x + offset.x) * scale + half_width
     y = -(kp.y + offset.y) * scale + half_height
 
-    x_max = x + r * scale
-    x_min = x - r * scale
-    y_max = y + r * scale
-    y_min = y - r * scale
+    limits.x_max = x + r * scale
+    limits.x_min = x - r * scale
+    limits.y_max = y + r * scale
+    limits.y_min = y - r * scale
     path.addEllipse(QRectF(x-r*scale, y-r*scale, 2*r*scale, 2*r*scale))
 
   else:
@@ -339,10 +357,10 @@ def get_area_path(area, scale, offset, half_height, half_width):
       if first_kp:
         path.moveTo(QPointF(x, y))
         first_kp = False
-        x_max = x
-        y_max = y
-        x_min = x
-        y_min = y
+        limits.x_max = x
+        limits.y_max = y
+        limits.x_min = x
+        limits.y_min = y
       else:
         edge = area.get_edges()[counter - 1]
         if edge.type == EdgeType.ArcEdge:
@@ -391,14 +409,14 @@ def get_area_path(area, scale, offset, half_height, half_width):
 
         else:
           path.lineTo(QPointF(x, y))
-        if x > x_max:
-          x_max = x
-        if x < x_min:
-          x_min = x
-        if y > y_max:
-          y_max = y
-        if y < y_min:
-          y_min = y
+        if x > limits.x_max:
+          limits.x_max = x
+        if x < limits.x_min:
+          limits.x_min = x
+        if y > limits.y_max:
+          limits.y_max = y
+        if y < limits.y_min:
+          limits.y_min = y
       counter += 1
 
-  return path, x_max, x_min, y_max, y_min
+  return path

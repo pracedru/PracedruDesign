@@ -41,8 +41,7 @@ class SketchSelect():
 
     #                             ****    Keypoint Hover    ****
     if self._states.select_kp:
-      for kp_tuple in key_points:
-        key_point = kp_tuple[1]
+      for key_point in key_points:
         x1 = key_point.x
         y1 = key_point.y
         if abs(x1 - x) < 5 / scale and abs(y1 - y) < 5 / scale:
@@ -54,8 +53,7 @@ class SketchSelect():
     if self._states.select_edge and view.kp_hover is None:
       smallest_dist = 10e10
       closest_edge = None
-      for edge_tuple in sketch.get_edges():
-        edge = edge_tuple[1]
+      for edge in sketch.get_edges():
         dist = edge.distance(Vertex(x, y, 0))
         if dist < smallest_dist:
           smallest_dist = dist
@@ -66,16 +64,14 @@ class SketchSelect():
 
     #                             ****    Area Hover    ****
     if self._states.select_area and view.kp_hover is None and view.edge_hover is None:
-      for area_tuple in sketch.get_areas():
-        area = area_tuple[1]
+      for area in sketch.get_areas():
         if area.inside(Vertex(x, y, 0)):
           view.area_hover = area
           update_view = True
 
     #                             ****    Text Hover    ****
     if self._states.select_text and view.edge_hover is None and view.kp_hover is None:
-      for text_tuple in sketch.get_texts():
-        text = text_tuple[1]
+      for text in sketch.get_texts():
         key_point = text.key_point
         x1 = key_point.x
         y1 = key_point.y
@@ -142,6 +138,7 @@ class SketchSelect():
           for edge in area.get_edges():
             view.selected_edges.append(edge)
         self._main_window.on_edge_selection_changed_in_view(view.selected_edges)
+        self._main_window.on_area_selection_changed_in_view(view.selected_areas)
         view.update()
       else:
         if not self._states.multi_select:
