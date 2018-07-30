@@ -134,13 +134,18 @@ class Brush(NamedObservableObject, IdObject):
     self._type = BrushType(data.get("type", 0))
 
 
+class EdgeLineType(Enum):
+  Continous = 0
+  Dashed = 1
+  DashDot = 2
+  DashDotDot = 3
+  DotDot = 4
+
+
 class EdgeStyle(NamedObservableObject, IdObject):
   Black = [0, 0, 0]
-  Continuous = 0
-  Dashed = 1
-  DotDashed = 2
 
-  def __init__(self, name="New style", thickness=0.00033, color=Black, line_type=Continuous):
+  def __init__(self, name="New style", thickness=0.00033, color=Black, line_type=EdgeLineType.Continous):
     NamedObservableObject.__init__(self, name)
     IdObject.__init__(self)
     self._thickness = thickness
@@ -165,13 +170,20 @@ class EdgeStyle(NamedObservableObject, IdObject):
   def line_type(self):
     return self._line_type
 
+  @line_type.setter
+  def line_type(self, value):
+    if value is EdgeLineType:
+      self._line_type = value
+    else:
+      self._line_type = EdgeLineType(value)
+
   def serialize_json(self):
     return {
       'uid': IdObject.serialize_json(self),
       'no': NamedObservableObject.serialize_json(self),
       'thk': self._thickness,
       'color': self._color,
-      'lt': self._line_type
+      'lt': self._line_type.value
     }
 
   @staticmethod
@@ -186,7 +198,7 @@ class EdgeStyle(NamedObservableObject, IdObject):
     NamedObservableObject.deserialize_data(self, data['no'])
     self._color = data['color']
     self._thickness = data['thk']
-    self._line_type = data['lt']
+    self._line_type = EdgeLineType(data['lt'])
 
 
 class HatchStyle(NamedObservableObject, IdObject):

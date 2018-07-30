@@ -3,13 +3,10 @@ from PyQt5.QtCore import QAbstractTableModel
 from PyQt5.QtCore import QLocale
 from PyQt5.QtCore import QModelIndex
 from PyQt5.QtCore import Qt
-# from scipy.linalg._solve_toeplitz import float64
 
-from Data.Drawings import Drawing
 from Data.Feature import FeatureType
-from Data.Point3d import KeyPoint
 from Data.Sketch import *
-from Data.Style import EdgeStyle
+
 
 col_header = ["Value"]
 
@@ -91,6 +88,8 @@ rows_by_type = {
 
 
 class PropertiesModel(QAbstractTableModel):
+  ComboBoxRole = 9878
+
   def __init__(self, document):
     QAbstractTableModel.__init__(self)
     self._document = document
@@ -160,11 +159,17 @@ class PropertiesModel(QAbstractTableModel):
         else:
           return data
       if isinstance(data, Enum):
-        row_spec = self._rows[row][2]
-        if 'choices' in row_spec:
-          data = row_spec['choices'][data.value]
+        if len(self._rows[row]) == 3:
+          row_spec = self._rows[row][2]
+          if 'choices' in row_spec:
+            if data.value in row_spec['choices']:
+              data = row_spec['choices'][data.value]
+            else:
+              data = data.name
+          else:
+            data = data.name
         else:
-          data = row_spec['choices'][data.name]
+          data = data.name
       data = str(data)
     elif int_role == Qt.EditRole:
       #data = getattr(self._item, self._rows[row][1])
@@ -172,6 +177,12 @@ class PropertiesModel(QAbstractTableModel):
         data = float(data)
       if type(data) is float:
         data = QLocale().toString(data)
+      if isinstance(data, Enum):
+        enumData = data
+        data = []
+        for item in type(enumData):
+          data.append(item.name)
+        return data
       data = str(data)
     else:
       data = None
@@ -209,6 +220,7 @@ class PropertiesModel(QAbstractTableModel):
         success = True
       except Exception as e:
         success = False
+
     return success
 
   def headerData(self, p_int, orientation, int_role=None):

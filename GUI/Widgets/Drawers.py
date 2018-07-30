@@ -5,11 +5,44 @@ from PyQt5.QtGui import QBrush, QFont, QPen, QPainter, QFontMetrics, QColor, QPa
 
 from Data.Nurbs import Nurbs
 from Data.Sketch import *
+from Data.Style import EdgeLineType
 from Data.Vertex import Vertex
 
+def scale_dash_pattern(dash_pattern, fat):
+  new_dash_pattern = []
+  for dash in dash_pattern:
+    if fat != 0:
+      dash = dash*(1/(1+fat))
+    new_dash_pattern.append(dash)
+  return new_dash_pattern
 
+def get_pen_from_style(style, scale, color_override, fat):
+  color = color_override
+  if color_override is None:
+    c = style.color
+    color = QColor(c[0], c[1], c[2])
+  pen = None
 
-def create_pens(document, scale, color_override=None):
+  if style.line_type == EdgeLineType.Continous:
+    pen = QPen(color, style.thickness * scale + style.thickness * scale * fat, Qt.SolidLine)
+  elif style.line_type == EdgeLineType.DashDot:
+    pen = QPen(color, style.thickness * scale + style.thickness * scale * fat)
+    pen.setDashPattern(scale_dash_pattern([10.0, 4.0, 1.0, 4.0], fat))
+  elif style.line_type == EdgeLineType.DashDotDot:
+    pen = QPen(color, style.thickness * scale + style.thickness * scale * fat)
+    pen.setDashPattern(scale_dash_pattern([10.0, 4.0, 1.0, 4.0, 1.0, 4.0], fat))
+  elif style.line_type == EdgeLineType.Dashed:
+    pen = QPen(color, style.thickness * scale + style.thickness * scale * fat)
+    pen.setDashPattern(scale_dash_pattern([10.0, 4.0], fat))
+  elif style.line_type == EdgeLineType.DotDot:
+    pen = QPen(color, style.thickness * scale + style.thickness * scale * fat, Qt.DotLine)
+    pen.setDashPattern(scale_dash_pattern([2.0, 4.0], fat))
+  else:
+    pen = QPen(color, style.thickness * scale + style.thickness * scale * fat, Qt.SolidLine)
+
+  return pen
+
+def create_pens(document, scale, color_override=None, fat=0):
   """
   Creates pens for all edge styles that are defined in the document
   :param document:
@@ -18,16 +51,9 @@ def create_pens(document, scale, color_override=None):
   :return:
   """
   pens = {}
-  color = color_override
-  if color_override is None:
-    color = QColor(0, 0, 0)
   pens['default'] = QPen(QColor(0, 0, 0), 0.0002 * scale)
   for style in document.get_styles().get_edge_styles():
-    color = color_override
-    if color_override is None:
-      c = style.color
-      color = QColor(c[0], c[1], c[2])
-    pens[style.uid] = QPen(color, style.thickness * scale)
+    pens[style.uid] = get_pen_from_style(style, scale, color_override, fat)
   return pens
 
 
