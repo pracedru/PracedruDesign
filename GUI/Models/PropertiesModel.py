@@ -16,7 +16,10 @@ rows_by_type = {
     ['Name', 'name'],
     ['Style', 'style_name'],
     ['Type', 'type_name'],
-    ['Radius', {'name':'get_meta_data', 'args': ['r'], 'setName': 'set_meta_data'}, {'condition': ['type', EdgeType.CircleEdge]}]],
+    ['Radius', {'name':'get_meta_data', 'args': ['r'], 'setName': 'set_meta_data'}, {'condition': ['type', EdgeType.CircleEdge]}],
+    ['Radius', {'name': 'get_meta_data', 'args': ['r'], 'setName': 'set_meta_data'},  {'condition': ['type', EdgeType.ArcEdge]}],
+    ['Start angle', {'name': 'get_meta_data', 'args': ['sa'], 'setName': 'set_meta_data'}, {'condition': ['type', EdgeType.ArcEdge]}],
+    ['End angle', {'name': 'get_meta_data', 'args': ['ea'], 'setName': 'set_meta_data'}, {'condition': ['type', EdgeType.ArcEdge]}]],
   "EdgeLoopArea": [
     ['Name', 'name'],
     ['Brush', 'brush_name'],
@@ -194,9 +197,14 @@ class PropertiesModel(QAbstractTableModel):
     row = model_index.row()
     if type(self._rows[row][1]) is str:
       attr_name = self._rows[row][1]
+      origin_type = type(getattr(self._item, attr_name))
     else: # This is a meta data object
+      func_name = self._rows[row][1]['name']
+      args = self._rows[row][1]['args']
+      data = getattr(self._item, func_name)(*args)
+      origin_type = type(data)
       attr_name = self._rows[row][1]['setName']
-    origin_type = type(getattr(self._item,  attr_name))
+
     if role == Qt.EditRole:
       try:
         if origin_type is float:

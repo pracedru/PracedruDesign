@@ -400,9 +400,11 @@ def get_area_path(area, scale, offset, half_height, half_width, limits):
           end_angle *= 180 / pi
           start_angle *= 180 / pi
           sweep_length = end_angle - start_angle
-          if abs(diff) > 0.01 * radius * scale:
-            start_angle = end_angle
-            sweep_length = -sweep_length
+          #if abs(diff) > 0.01 * radius * scale:
+          #  start_angle = end_angle
+          #  sweep_length = -sweep_length
+          if sweep_length < 0:
+            sweep_length += 360
 
           path.arcTo(cx - radius * scale, cy - radius * scale, scale * radius * 2, scale * radius * 2, start_angle,
                      sweep_length)
