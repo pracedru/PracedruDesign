@@ -93,6 +93,8 @@ class SketchSelect():
   def on_mouse_press(self, scale, x, y):
     view = self._sketch_editor_view
     sketch = view.sketch
+    if sketch is None:
+      return
     key_points = sketch.get_key_points()
 
     #                             ****    Keypoint select    ****

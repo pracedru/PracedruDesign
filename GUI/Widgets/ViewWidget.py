@@ -43,7 +43,13 @@ class ViewWidget(QStackedWidget):
 
   def set_drawing_view(self, drawing):
     self.setCurrentIndex(2)
-    self._drawingView.set_drawing(drawing)
+    self._drawingView.drawing = drawing
+
+  def on_zoom_fit(self):
+    if self.currentIndex() == 0:
+      self._sketchView.on_zoom_fit()
+    elif self.currentIndex() == 2:
+      self._drawingView.on_zoom_fit()
 
   def set_part_view(self, part):
     self.setCurrentIndex(1)
@@ -57,18 +63,6 @@ class ViewWidget(QStackedWidget):
     self.setCurrentIndex(4)
     self._calcSheetView.set_calc_sheet(calc_sheet)
 
-  def on_add_line(self):
-    if self.currentIndex() == 0:
-      self._sketchView.on_add_line()
-
-  def on_find_all_similar(self):
-    if self.currentIndex() == 0:
-      self._sketchView.on_find_all_similar()
-
-  def on_insert_text(self):
-    if self.currentIndex() == 0:
-      self._sketchView.on_insert_text()
-
   def on_area_selection_changed_in_table(self, selected_areas):
     self.sketch_view.set_selected_areas(selected_areas)
 
@@ -77,38 +71,6 @@ class ViewWidget(QStackedWidget):
 
   def on_edge_selection_changed_in_table(self, selected_edges):
     self._sketchView.set_selected_edges(selected_edges)
-
-  def on_zoom_fit(self):
-    if self.currentIndex() == 0:
-      self._sketchView.on_zoom_fit()
-    elif self.currentIndex() == 2:
-      self._drawingView.on_zoom_fit()
-
-  def on_add_fillet(self):
-    if self.currentIndex() == 0:
-      self._sketchView.on_add_fillet()
-
-  def on_add_circle(self):
-    if self.currentIndex() == 0:
-      self._sketchView.on_add_circle()
-
-  def on_add_nurbs(self):
-    if self.currentIndex() == 0:
-      self._sketchView.on_add_nurbs()
-
-  def on_set_similar_x_coordinates(self):
-    if self.currentIndex() == 0:
-      self._sketchView.on_set_similar_x_coordinates()
-
-  def on_insert_attribute(self):
-    if self.currentIndex() == 0:
-      self._sketchView.on_insert_attribute()
-
-  def on_insert_sketch(self):
-    if self.currentIndex() == 2:
-      self._drawingView.on_insert_sketch()
-    if self.currentIndex() == 1:
-      self._partView.on_insert_sketch()
 
   def on_create_sketch(self):
     if self.currentIndex() == 0:

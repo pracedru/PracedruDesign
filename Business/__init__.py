@@ -10,8 +10,6 @@ from Data.Part import Part
 from Data.Sketch import Sketch, Attribute
 from Data.Vertex import Vertex
 
-undo_stacks = {}
-
 
 def load_document(file_path):
   data = Data.read_json_data_from_disk(file_path)
@@ -79,3 +77,5 @@ def delete_items(doc, items):
     if object is not None:
       if "delete" in dir(object):
         object.delete()
+
+

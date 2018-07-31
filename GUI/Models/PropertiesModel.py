@@ -80,7 +80,7 @@ rows_by_type = {
     ['Value', 'value']],
   "SketchView": [
     ['Name', 'name'],
-    ['Scale', 'scale'],
+    ['Scale', 'scale_name'],
     ['Position', 'offset_values']],
   "PartView": [
     ['Name', 'name'],

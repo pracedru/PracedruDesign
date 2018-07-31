@@ -15,7 +15,7 @@ from PyQt5.QtWidgets import QWidget
 from Business.DrawingActions import *
 from Data.Vertex import Vertex
 from GUI.init import is_dark_theme
-from GUI.Widgets.Drawers import draw_sketch, create_pens
+from GUI.Widgets.Drawers import draw_sketch, create_pens, draw_kp
 
 
 class DrawingEditorViewWidget(QWidget):
@@ -30,11 +30,54 @@ class DrawingEditorViewWidget(QWidget):
     self._offset = Vertex()
     self._mouse_position = None
     self.setMouseTracking(True)
+    self._view_hover = None
+    self._selected_views = []
+    self._mouse_press_event_handlers = []
+    self._mouse_move_event_handlers = []
+    self._mouse_release_event_handlers = []
+    self._escape_event_handlers = []
+    if self._is_dark_theme:
+      self._kp_pen = QPen(QColor(0, 200, 200), 1)
+      self._kp_pen_hl = QPen(QColor(190, 0, 0), 3)
+      self._kp_pen_hover = QPen(QColor(0, 60, 150), 3)
+    else:
+      self._kp_pen = QPen(QColor(0, 100, 200), 1)
+      self._kp_pen_hl = QPen(QColor(180, 50, 0), 3)
+      self._kp_pen_hover = QPen(QColor(0, 120, 255), 3)
     self.installEventFilter(self)
 
-  def set_drawing(self, drawing):
+  @property
+  def drawing(self):
+    return self._drawing
+
+  @drawing.setter
+  def drawing(self, drawing):
     self._drawing = drawing
     self.update()
+
+  @property
+  def view_hover(self):
+    return self._view_hover
+
+  @view_hover.setter
+  def view_hover(self, value):
+    self._view_hover = value
+
+  @property
+  def selected_views(self):
+    return self._selected_views
+
+  def add_mouse_press_event_handler(self, event_handler):
+    self._mouse_press_event_handlers.append(event_handler)
+
+  def add_mouse_move_event_handler(self, event_handler):
+    self._mouse_move_event_handlers.append(event_handler)
+
+  def add_mouse_release_event_handler(self, event_handler):
+    self._mouse_release_event_handlers.append(event_handler)
+
+  def add_escape_event_handler(self, event_handler):
+    self._escape_event_handlers.append(event_handler)
 
   def on_zoom_fit(self):
     if self._drawing is None:
@@ -60,18 +103,12 @@ class DrawingEditorViewWidget(QWidget):
     add_field_to_drawing(self._doc, self._drawing)
 
   def on_escape(self):
-    self._states.add_sketch = False
     self._states.add_part = False
     self.setCursor(Qt.ArrowCursor)
+    for event_handler in self._escape_event_handlers:
+      event_handler()
     self._main_window.update_ribbon_state()
-
-  def on_insert_sketch(self):
-    self.on_escape()
-    if self._drawing is None:
-      return
-    self.setCursor(Qt.CrossCursor)
-    self._states.add_sketch = True
-    self._main_window.update_ribbon_state()
+    self.update()
 
   def on_create_header(self):
     create_empty_header()
@@ -106,11 +143,10 @@ class DrawingEditorViewWidget(QWidget):
   def mouseReleaseEvent(self, q_mouse_event):
     if q_mouse_event.button() == 4:
       self._states.middle_button_hold = False
-      return
     if q_mouse_event.button() == 1:
       self._states.left_button_hold = False
-      self._kp_move = None
-      return
+    for event_handler in self._mouse_release_event_handlers:
+      event_handler(q_mouse_event)
 
   def mousePressEvent(self, q_mouse_event):
     self.setFocus()
@@ -128,16 +164,7 @@ class DrawingEditorViewWidget(QWidget):
       self._states.left_button_hold = True
       self._move_ref_pos = position
     position = q_mouse_event.pos()
-    if self._states.add_sketch:
-      offset = Vertex(x, y)
-      scale = 1
-      parts = []
-      for sketch in self._doc.get_geometries().get_sketches():
-        parts.append(sketch.name)
-      value = QInputDialog.getItem(self, "Select sketch", "sketch:", parts, 0, True)
-      sketch = self._doc.get_geometries().get_sketch_by_name(value[0])
-      add_sketch_to_drawing(self._doc, self._drawing, sketch, scale, offset)
-      self.on_escape()
+
     if self._states.add_part:
       offset = Vertex(x, y)
       scale = 1
@@ -149,7 +176,11 @@ class DrawingEditorViewWidget(QWidget):
       add_part_to_drawing(self._doc, self._drawing, part, scale, offset)
       self.on_escape()
 
+    for event_handler in self._mouse_press_event_handlers:
+      event_handler(scale, x, y)
+
   def mouseMoveEvent(self, q_mouse_event):
+    update_view = False
     position = q_mouse_event.pos()
     if self._mouse_position is not None:
       mouse_move_x = self._mouse_position.x() - position.x()
@@ -164,6 +195,22 @@ class DrawingEditorViewWidget(QWidget):
 
     if self._states.middle_button_hold:
       self.update()
+
+    half_width = self.width() / 2
+    half_height = self.height() / 2
+    scale = self._scale
+    x = (self._mouse_position.x() - half_width) / scale - self._offset.x
+    y = -((self._mouse_position.y() - half_height) / scale + self._offset.y)
+
+
+    for event_handler in self._mouse_move_event_handlers:
+      if event_handler(scale, x, y):
+        update_view = True
+
+    if update_view:
+      self.update()
+
+
 
   def wheelEvent(self, event):
     if self._mouse_position is not None:
@@ -222,6 +269,12 @@ class DrawingEditorViewWidget(QWidget):
       offset = Vertex(self._offset.x / view.scale, self._offset.y / view.scale)
       c = Vertex(center.x + view.offset.x * sc, center.y - view.offset.y * sc)
       draw_sketch(qp, view.sketch, scale, 0.0002 * sc, offset, c, pens, {})
+    if self._view_hover is not None:
+      qp.setPen(self._kp_pen_hover)
+      draw_kp(qp, self._view_hover._offset, self._scale, self._offset, center)
+    for view in self._selected_views:
+      qp.setPen(self._kp_pen_hl)
+      draw_kp(qp, view._offset, self._scale, self._offset, center)
 
   def draw_header(self, event, qp, cx, cy, center, pens):
     sketch = self._drawing.header_sketch

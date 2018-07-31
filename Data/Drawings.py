@@ -264,6 +264,19 @@ class View(NamedObservableObject):
     self.changed(ValueChangeEvent(self, 'scale', old_value, value))
 
   @property
+  def scale_name(self):
+    if self._scale < 1:
+      return  "1 : " + str(1/self._scale)
+    else:
+      return str(1/self._scale) + " : 1"
+
+  @scale_name.setter
+  def scale_name(self, value):
+    values = value.split(":")
+    if len(values) == 2:
+      self._scale = float(values[0]) / float (values[1])
+
+  @property
   def offset(self):
     return self._offset
 

@@ -31,6 +31,8 @@ class Document(IdObject, ObservableObject):
     self._sweeps = Sweeps(self)
     self._drawings = Drawings(self)
     self._analyses = Analyses(self)
+    self._undo_stack = []
+    self._redo_stack = []
     self.path = ""
     self.name = "New document.jadoc"
     self.do_update = True
@@ -49,6 +51,14 @@ class Document(IdObject, ObservableObject):
     self._mesh.add_change_handler(self.on_object_changed)
     self._sweeps.add_change_handler(self.on_object_changed)
     self._drawings.add_change_handler(self.on_object_changed)
+
+  @property
+  def undo_stack(self):
+    return self._undo_stack
+
+  @property
+  def redo_stack(self):
+    return self._redo_stack
 
   def get_axes(self):
     return self._axes

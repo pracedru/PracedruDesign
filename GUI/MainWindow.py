@@ -18,6 +18,7 @@ from PyQt5.QtWidgets import QToolBar
 import Business
 import GUI.Plugins
 from Business.DrawingActions import create_default_header
+from Business.Undo import on_undo, on_redo
 from Data.Areas import Area
 from Data.CalcSheetAnalysis import CalcSheetAnalysis
 from Data.CalcTableAnalysis import CalcTableAnalysis
@@ -63,6 +64,10 @@ class MainWindow(QMainWindow):
     self.open_action = self.add_action("Open\nFile", "open", "Open file", True, self.on_open_file, QKeySequence.Open)
     self.save_action = self.add_action("Save", "save", "Save these data", True, self.on_save, QKeySequence.Save)
     self.save_as_action = self.add_action("Save\nas", "saveas", "Save these data as ...", True, self.on_save_as, QKeySequence.SaveAs)
+
+    self.undo_action = self.add_action("Undo", "undo", "Undo last action", True, self.on_undo, QKeySequence.Undo)
+    self.uredo_action = self.add_action("Redo", "redo", "Redo last undone action", True, self.on_redo, QKeySequence.Redo)
+
     # self._zoom_fit_action = self.add_action("Zoom\nfit", "zoomfit", "Zoom to fit contents", True, self.on_zoom_fit)
     self.add_sketch_to_document_action = self.add_action("Add\nSketch", "addsketch", "Add Sketch to the document", True, self.on_add_sketch_to_document)
     self.add_drawing_action = self.add_action("Add\nDrawing", "adddrawing", "Add drawing to the document", True, self.on_add_drawing)
@@ -74,8 +79,8 @@ class MainWindow(QMainWindow):
     # self._show_area_names_action = self.add_action("Show area\nNames", "showareanames", "Show area names", True, self.on_show_area_names, checkable=True)
 
     # self._show_key_points_action = self.add_action("Show key\npoints", "showkeypoints", "Show keypoints as circles", True, self.on_show_key_points, checkable=True)
-    self._insert_sketch_in_action = self.add_action("Insert\nsketch", "addsketch", "Insert sketch ", True, self.on_insert_sketch)
-    self._insert_sketch_in_drawing_action = self.add_action("Insert\nsketch", "addsketchview", "Insert sketch in drawing", True, self.on_insert_sketch)
+    # self._insert_sketch_in_action = self.add_action("Insert\nsketch", "addsketch", "Insert sketch ", True, self.on_insert_sketch)
+    # self._insert_sketch_in_drawing_action = self.add_action("Insert\nsketch", "addsketchview", "Insert sketch in drawing", True, self.on_insert_sketch)
     self._insert_part_action = self.add_action("Insert\npart", "addpartview", "Insert part in drawing", True, self.on_insert_part_in_drawing)
     self._insert_dim_annotation = self.add_action("Dim", "insertdimannotation", "Insert dimension annotation in drawing", True, self.on_insert_dim_ann_in_drawing)
     self._add_revolve_action = self.add_action("Revolve\nArea", "addrevolve", "Revolve an area on this part", True, self.on_revolve_area)
@@ -149,6 +154,10 @@ class MainWindow(QMainWindow):
   def sketch_editor_view(self):
     return self._viewWidget.sketch_view
 
+  @property
+  def drawing_editor_view(self):
+    return self._viewWidget.drawing_view
+
   def get_states(self) -> ActionStates:
     return self._states
 
@@ -179,8 +188,8 @@ class MainWindow(QMainWindow):
         self.close()
     return
 
-  def on_insert_sketch(self):
-    self._viewWidget.on_insert_sketch()
+  #def on_insert_sketch(self):
+    #self._viewWidget.on_insert_sketch()
 
   def on_insert_part_in_drawing(self):
     self._viewWidget.drawing_view.on_insert_part()
@@ -214,6 +223,14 @@ class MainWindow(QMainWindow):
 
   def on_about(self):
     pass
+
+  def on_undo(self):
+    print("NOO UNDOOOO")
+    on_undo(self._document)
+
+  def on_redo(self):
+    print("NOO REDOOOO")
+    on_redo(self._document)
 
   def on_write_lang(self):
     write_language_file()
@@ -384,7 +401,7 @@ class MainWindow(QMainWindow):
   def init_part_tab(self):
     part_tab = self._ribbon_widget.add_ribbon_tab(tr("Part"))
     insert_pane = part_tab.add_ribbon_pane(tr("Insert"))
-    insert_pane.add_ribbon_widget(RibbonButton(self, self._insert_sketch_in_action, True))
+    # insert_pane.add_ribbon_widget(RibbonButton(self, self._insert_sketch_in_action, True))
     insert_pane.add_ribbon_widget(RibbonButton(self, self._create_sketch_action, True))
     insert_pane.add_ribbon_widget(RibbonButton(self, self._add_extrude_action, True))
     insert_pane.add_ribbon_widget(RibbonButton(self, self._add_revolve_action, True))
@@ -400,7 +417,7 @@ class MainWindow(QMainWindow):
   def init_drawing_tab(self):
     drawing_tab = self._ribbon_widget.add_ribbon_tab("Drawing")
     insert_pane = drawing_tab.add_ribbon_pane("Insert")
-    insert_pane.add_ribbon_widget(RibbonButton(self, self._insert_sketch_in_drawing_action, True))
+    # insert_pane.add_ribbon_widget(RibbonButton(self, self._insert_sketch_in_drawing_action, True))
     insert_pane.add_ribbon_widget(RibbonButton(self, self._insert_part_action, True))
     annotation_pane = drawing_tab.add_ribbon_pane("Annotation")
     annotation_pane.add_ribbon_widget(RibbonButton(self, self._insert_dim_annotation, True))
