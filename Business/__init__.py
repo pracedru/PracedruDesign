@@ -28,12 +28,8 @@ def new_document():
 def save_document(doc: Document):
   data = json.dumps(doc, default=Data.complex_handler)
   Data.write_data_to_disk(doc.path + "/" + doc.name, data)
-  doc.set_modified(False)
+  doc.is_modified = False
   doc.set_status('Document saved')
-
-
-def add_parameter(parameters_object: Parameters):
-  parameters_object.create_parameter()
 
 
 def create_add_sketch_to_document(document):

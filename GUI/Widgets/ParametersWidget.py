@@ -6,6 +6,7 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QWidget, QTableView, QVBoxLayout, QHBoxLayout, QPushButton, QInputDialog, QMessageBox
 
 import Business
+from Business.ParameterActions import add_parameter
 from GUI.init import gui_scale
 from GUI.Models.ParametersModel import ParametersModel
 
@@ -27,6 +28,7 @@ class ParametersWidget(QWidget):
         layout.addWidget(self.parameters_table)
         layout.setContentsMargins(QMargins(0, 0, 0, 0))
         guiscale = gui_scale()
+        self._gui_scale = gui_scale()
         self.parameters_table.setColumnWidth(0, 120*guiscale)
         self.parameters_table.setColumnWidth(1, 150*guiscale)
         self.parameters_table.setColumnWidth(2, 80*guiscale)
@@ -51,10 +53,11 @@ class ParametersWidget(QWidget):
     def set_parameters(self, params):
         self._parameters = params
         self.parameters_model.set_parameters(params)
+        self.parameters_table.resizeColumnsToContents()
 
     def on_add_parameter(self):
         # self.parent().parent().on_add_parameter()
-        Business.add_parameter(self._parameters)
+        add_parameter(self._parameters)
         ndx = self.parameters_model.index(self.parameters_model.rowCount()-1, 0)
         index = self.parameters_sort_model.mapFromSource(ndx)
         self.parameters_table.scrollTo(index)

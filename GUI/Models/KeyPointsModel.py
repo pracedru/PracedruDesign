@@ -3,6 +3,7 @@ from Business import *
 from Business.SketchActions import remove_key_points
 from Data.Parameters import *
 from Data.Point3d import KeyPoint
+from GUI.init import gui_scale
 
 __author__ = 'mamj'
 
@@ -12,6 +13,7 @@ col_header = ["X coord", "Y coord"]
 class KeyPointsModel(QAbstractTableModel):
   def __init__(self, doc):
     QAbstractItemModel.__init__(self)
+    self._gui_scale = gui_scale()
     self._doc = doc
     self._sketch = None  # doc.get_edges()
     self._rows = []
@@ -153,9 +155,11 @@ class KeyPointsModel(QAbstractTableModel):
         return p_int
       else:
         return col_header[p_int]
-
+    elif int_role == Qt.SizeHintRole:
+      if orientation == Qt.Horizontal:
+        return QSize(110*self._gui_scale, 22*self._gui_scale);
     else:
-      return
+      return None
 
   def get_key_points_object(self):
     return self._sketch

@@ -65,22 +65,17 @@ class MainWindow(QMainWindow):
     self.save_action = self.add_action("Save", "save", "Save these data", True, self.on_save, QKeySequence.Save)
     self.save_as_action = self.add_action("Save\nas", "saveas", "Save these data as ...", True, self.on_save_as, QKeySequence.SaveAs)
 
-    self.undo_action = self.add_action("Undo", "undo", "Undo last action", True, self.on_undo, QKeySequence.Undo)
-    self.uredo_action = self.add_action("Redo", "redo", "Redo last undone action", True, self.on_redo, QKeySequence.Redo)
+    self._undo_action = self.add_action("Undo", "undo", "Undo last action", True, self.on_undo, QKeySequence.Undo)
+    self._redo_action = self.add_action("Redo", "redo", "Redo last undone action", True, self.on_redo, QKeySequence.Redo)
+    self._undo_action.setEnabled(False)
+    self._redo_action.setEnabled(False)
 
-    # self._zoom_fit_action = self.add_action("Zoom\nfit", "zoomfit", "Zoom to fit contents", True, self.on_zoom_fit)
     self.add_sketch_to_document_action = self.add_action("Add\nSketch", "addsketch", "Add Sketch to the document", True, self.on_add_sketch_to_document)
     self.add_drawing_action = self.add_action("Add\nDrawing", "adddrawing", "Add drawing to the document", True, self.on_add_drawing)
     self.add_part_action = self.add_action("Add\nPart", "addpart", "Add part to the document", True, self.on_add_part)
     self._add_calc_table_analysis = self.add_action("Add Calc\nTable", "addcalctable", "Add calculation table analysis to document", True, self.on_add_calc_table_analysis)
     self._add_calc_sheet_analysis = self.add_action("Add Calc\nSheet", "addcalcsheet", "Add calculation sheet analysis to document", True, self.on_add_calc_sheet_analysis)
-    # self._show_hidden_params_action = self.add_action("Show hidden\nparameters", "hideparams", "Show hidden parameters", True, self.on_show_hidden_parameters, checkable=True)
     self._create_sketch_action = self.add_action("Create\nSketch", "addsketch", "Create Sketch", True, self.on_create_sketch)
-    # self._show_area_names_action = self.add_action("Show area\nNames", "showareanames", "Show area names", True, self.on_show_area_names, checkable=True)
-
-    # self._show_key_points_action = self.add_action("Show key\npoints", "showkeypoints", "Show keypoints as circles", True, self.on_show_key_points, checkable=True)
-    # self._insert_sketch_in_action = self.add_action("Insert\nsketch", "addsketch", "Insert sketch ", True, self.on_insert_sketch)
-    # self._insert_sketch_in_drawing_action = self.add_action("Insert\nsketch", "addsketchview", "Insert sketch in drawing", True, self.on_insert_sketch)
     self._insert_part_action = self.add_action("Insert\npart", "addpartview", "Insert part in drawing", True, self.on_insert_part_in_drawing)
     self._insert_dim_annotation = self.add_action("Dim", "insertdimannotation", "Insert dimension annotation in drawing", True, self.on_insert_dim_ann_in_drawing)
     self._add_revolve_action = self.add_action("Revolve\nArea", "addrevolve", "Revolve an area on this part", True, self.on_revolve_area)
@@ -93,6 +88,9 @@ class MainWindow(QMainWindow):
     self._about_action = self.add_action("About", "about", "About this programme", True, self.on_about)
     self._write_language_action = self.add_action("Write\nlang", "writelang", "Write language translation file", True, self.on_write_lang)
     self._add_sqrt_action = self.add_action("Add Square\nRoot", "squareroot", "Add square root to analysis", True, self.on_add_sqr_formula)
+
+    document.undo_stack.add_change_handler(self.on_undo_stack_changed)
+    document.redo_stack.add_change_handler(self.on_redo_stack_changed)
 
     # Ribbon initialization
     self._ribbon = QToolBar(self)
@@ -161,6 +159,12 @@ class MainWindow(QMainWindow):
   def get_states(self) -> ActionStates:
     return self._states
 
+  def on_undo_stack_changed(self, event):
+    self._undo_action.setEnabled(len(self._document.undo_stack)>0)
+
+  def on_redo_stack_changed(self, event):
+    self._redo_action.setEnabled(len(self._document.redo_stack) > 0)
+
   def on_new_document(self):
     Business.new_document()
 
@@ -184,7 +188,7 @@ class MainWindow(QMainWindow):
       main_window = MainWindow(doc)
       main_window.show()
 
-      if (self._document.is_modified() is False) and self._document.path == "":
+      if (self._document.is_modified is False) and self._document.path == "":
         self.close()
     return
 
@@ -225,11 +229,9 @@ class MainWindow(QMainWindow):
     pass
 
   def on_undo(self):
-    print("NOO UNDOOOO")
     on_undo(self._document)
 
   def on_redo(self):
-    print("NOO REDOOOO")
     on_redo(self._document)
 
   def on_write_lang(self):
@@ -383,6 +385,9 @@ class MainWindow(QMainWindow):
     file_pane.add_ribbon_widget(RibbonButton(self, self.open_action, True))
     file_pane.add_ribbon_widget(RibbonButton(self, self.save_action, True))
     file_pane.add_ribbon_widget(RibbonButton(self, self.save_as_action, True))
+    edit_pane = home_tab.add_ribbon_pane("Edit")
+    edit_pane.add_ribbon_widget(RibbonButton(self, self._undo_action, True))
+    edit_pane.add_ribbon_widget(RibbonButton(self, self._redo_action, True))
     insert_pane = home_tab.add_ribbon_pane("Insert")
     insert_pane.add_ribbon_widget(RibbonButton(self, self.add_sketch_to_document_action, True))
     insert_pane.add_ribbon_widget(RibbonButton(self, self.add_part_action, True))
@@ -393,7 +398,9 @@ class MainWindow(QMainWindow):
   def init_sketch_tab(self):
     sketch_tab = self._ribbon_widget.add_ribbon_tab("Sketch")
     insert_pane = sketch_tab.add_ribbon_pane("Insert")
-    operate_pane = sketch_tab.add_ribbon_pane("Operate")
+    edit_pane = sketch_tab.add_ribbon_pane("Edit")
+    edit_pane.add_ribbon_widget(RibbonButton(self, self._undo_action, True))
+    edit_pane.add_ribbon_widget(RibbonButton(self, self._redo_action, True))
     parametry_pane = sketch_tab.add_ribbon_pane("Parametry")
     view_pane = sketch_tab.add_ribbon_pane("View")
     sketch_tab.add_spacer()
@@ -422,6 +429,8 @@ class MainWindow(QMainWindow):
     annotation_pane = drawing_tab.add_ribbon_pane("Annotation")
     annotation_pane.add_ribbon_widget(RibbonButton(self, self._insert_dim_annotation, True))
     edit_pane = drawing_tab.add_ribbon_pane("Edit")
+    edit_pane.add_ribbon_widget(RibbonButton(self, self._undo_action, True))
+    edit_pane.add_ribbon_widget(RibbonButton(self, self._redo_action, True))
     edit_pane.add_ribbon_widget(RibbonButton(self, self._add_field_action, True))
     view_pane = drawing_tab.add_ribbon_pane("View")
     # view_pane.add_ribbon_widget(RibbonButton(self, self._zoom_fit_action, True))
@@ -483,7 +492,7 @@ class MainWindow(QMainWindow):
       event.ignore()
 
   def maybe_save(self):
-    if self._document.is_modified():
+    if self._document.is_modified:
       msg = tr("The document has been modified.\nDo you want to save your changes?")
       ret = QMessageBox.warning(self, tr("Application"), msg, QMessageBox.Save | QMessageBox.Discard | QMessageBox.Cancel)
       if ret == QMessageBox.Save:

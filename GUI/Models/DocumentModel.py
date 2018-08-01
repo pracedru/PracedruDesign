@@ -41,7 +41,7 @@ class DocumentItemModel(QAbstractItemModel):
       listener(index)
 
   def populate(self):
-    glocal_params_item = DocumentModelItem(self._doc.get_parameters(), self, self._root_item)
+    glocal_params_item = DocumentModelItem(self._doc.get_parameters(), self, self._root_item, "Parameters")
     styles_item = DocumentModelItem(self._doc.get_styles(), self, self._root_item, "Styles")
     for style in self._doc.get_styles().get_edge_styles():
       DocumentModelItem(style, self, styles_item)
@@ -91,7 +91,9 @@ class DocumentItemModel(QAbstractItemModel):
 
   def populate_drawings(self):
     drawings = self._doc.get_drawings()
-    drawings_item = self.create_model_item(self._root_item, drawings)
+    #drawings_item = self.create_model_item(self._root_item, drawings)
+    drawings_item = DocumentModelItem(drawings, self, self._root_item)
+    DocumentModelItem(None, self, drawings_item, "Headers")
     for header in drawings.get_headers():
       self.populate_sketch(header, drawings_item)
     for dwg in self._doc.get_drawings().items:
@@ -149,9 +151,7 @@ class DocumentItemModel(QAbstractItemModel):
     if role == Qt.DisplayRole or role == Qt.EditRole:
       return model_item.name
     elif role == Qt.DecorationRole:
-      if type(model_item.data) is Parameters:
-        return get_icon("params")
-      elif type(model_item.data) is Parameter:
+      if type(model_item.data) is Parameter:
         return get_icon("param")
       elif type(model_item.data) is Sketch:
         return get_icon("sketch")
@@ -188,6 +188,8 @@ class DocumentItemModel(QAbstractItemModel):
           return get_icon("revolve")
         if model_item.data.feature_type == FeatureType.ExtrudeFeature:
           return get_icon("extrude")
+      elif issubclass(type(model_item.data),  Parameters):
+        return get_icon("params")
       return get_icon("default")
     return None
 
@@ -252,6 +254,9 @@ class DocumentItemModel(QAbstractItemModel):
 
   def create_model_item(self, parent_item, object):
     new_item = None
+    if parent_item == self._root_item:
+      print("root item is parent")
+      return
     if type(parent_item.data) is Sketch:
       if type(object) is Parameter:
         parameters_item = parent_item.children()[0]
@@ -294,8 +299,6 @@ class DocumentItemModel(QAbstractItemModel):
         DocumentModelItem(None, self, new_item, "Edges")
         DocumentModelItem(None, self, new_item, "Annotation")
         DocumentModelItem(None, self, new_item, "Areas")
-      if type(object) is Drawings:
-        DocumentModelItem(None, self, new_item, "Headers")
       if type(object) is Drawing:
         DocumentModelItem(None, self, new_item, "Fields")
         self.populate_sketch(object.header_sketch, new_item)
@@ -306,10 +309,12 @@ class DocumentItemModel(QAbstractItemModel):
 
 
 class DocumentModelItem(QObject):
-  def __init__(self, data, model, parent=None, name="No name"):
+  def __init__(self, data, model, parent=None, name=None):
     QObject.__init__(self, parent)
     self._data = data
-    self._name = tr(name, 'model')
+    self._name = name
+    if name is not None:
+      self._name = tr(name, 'model')
     self._model = model
     if data is not None:
       data.add_change_handler(self.data_changed)
@@ -324,6 +329,8 @@ class DocumentModelItem(QObject):
 
   @property
   def name(self):
+    if self._name is not None:
+      return self._name
     if self._data is not None:
       if hasattr(self._data, "name"):
         return self._data.name

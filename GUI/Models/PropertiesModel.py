@@ -1,12 +1,12 @@
 import numpy
-from PyQt5.QtCore import QAbstractTableModel
+from PyQt5.QtCore import QAbstractTableModel, QSize
 from PyQt5.QtCore import QLocale
 from PyQt5.QtCore import QModelIndex
 from PyQt5.QtCore import Qt
 
 from Data.Feature import FeatureType
 from Data.Sketch import *
-
+from GUI.init import gui_scale
 
 col_header = ["Value"]
 
@@ -98,6 +98,7 @@ class PropertiesModel(QAbstractTableModel):
     self._document = document
     self._item = None
     self._rows = []
+    self._gui_scale = gui_scale()
 
   def set_item(self, item):
     if item is None:
@@ -237,9 +238,11 @@ class PropertiesModel(QAbstractTableModel):
         return self._rows[p_int][0]
       else:
         return col_header[p_int]
-
+    elif int_role == Qt.SizeHintRole:
+      if orientation == Qt.Horizontal:
+        return QSize(220 * self._gui_scale, 22 * self._gui_scale)
     else:
-      return
+      return None
 
   def flags(self, model_index: QModelIndex):
     default_flags = Qt.ItemIsSelectable | Qt.ItemIsEnabled

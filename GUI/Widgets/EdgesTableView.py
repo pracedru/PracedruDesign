@@ -20,7 +20,8 @@ class EdgesTableView(QTableView):
     self.parameters_sort_model.setSortCaseSensitivity(False)
     self.setModel(self.parameters_sort_model)
     self.setSortingEnabled(True)
-    self.setColumnWidth(0, 260 * guiscale)
+    #self.setColumnWidth(0, 260 * guiscale)
+
     self.selectionModel().selectionChanged.connect(self.on_edge_selection_changed)
     self.installEventFilter(self)
     self.hide_unselected_edges = True
@@ -30,6 +31,7 @@ class EdgesTableView(QTableView):
     self.selectionModel().clear()
     self.update_hidden_rows()
     self._edges_model.set_sketch(sketch)
+    self.resizeColumnsToContents()
 
   def on_edge_selection_changed(self, selection):
     if self._throw_selection_changed_event:

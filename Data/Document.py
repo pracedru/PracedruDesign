@@ -1,5 +1,6 @@
 from Data.Analyses import Analyses
 from Data.Axis import Axis
+from Data.Collections import ObservableList
 from Data.Components import Components
 from Data.Drawings import Drawings
 from Data.Geometries import Geometries
@@ -16,11 +17,11 @@ from Data.Sweeps import Sweeps
 __author__ = 'mamj'
 
 
-class Document(IdObject, ObservableObject):
+class Document(IdObject, Parameters):
   def __init__(self):
     IdObject.__init__(self)
-    ObservableObject.__init__(self)
-    self._parameters = Parameters("Global Parameters")
+    Parameters.__init__(self, "Global Parameters")
+    # self._parameters = Parameters("Global Parameters")
     self._styles = Styles()
     self._geometries = Geometries(self)
     self._axes = {}
@@ -31,8 +32,8 @@ class Document(IdObject, ObservableObject):
     self._sweeps = Sweeps(self)
     self._drawings = Drawings(self)
     self._analyses = Analyses(self)
-    self._undo_stack = []
-    self._redo_stack = []
+    self._undo_stack = ObservableList()
+    self._redo_stack = ObservableList()
     self.path = ""
     self.name = "New document.jadoc"
     self.do_update = True
@@ -42,7 +43,7 @@ class Document(IdObject, ObservableObject):
     self._persistent_status_progress = 100
 
   def init_change_handlers(self):
-    self._parameters.add_change_handler(self.on_parameters_changed)
+    #self.add_change_handler(self.on_parameters_changed)
     self._styles.add_change_handler(self.on_object_changed)
     self._geometries.add_change_handler(self.on_geometries_changed)
     self._materials.add_change_handler(self.on_materials_changed)
@@ -51,6 +52,8 @@ class Document(IdObject, ObservableObject):
     self._mesh.add_change_handler(self.on_object_changed)
     self._sweeps.add_change_handler(self.on_object_changed)
     self._drawings.add_change_handler(self.on_object_changed)
+    self._undo_stack.add_change_handler(self._on_undo_stack_changed)
+    self._redo_stack.add_change_handler(self._on_redo_stack_changed)
 
   @property
   def undo_stack(self):
@@ -79,7 +82,7 @@ class Document(IdObject, ObservableObject):
     return self._materials
 
   def get_parameters(self):
-    return self._parameters
+    return self
 
   def get_components(self):
     return self._components
@@ -95,9 +98,6 @@ class Document(IdObject, ObservableObject):
 
   def get_drawings(self):
     return self._drawings
-
-  def on_parameters_changed(self, event):
-    self.changed(ChangeEvent(self, ChangeEvent.ObjectChanged, event.sender))
 
   def on_geometries_changed(self, event: ChangeEvent):
     self.changed(ChangeEvent(self, ChangeEvent.ObjectChanged, event.sender))
@@ -130,12 +130,23 @@ class Document(IdObject, ObservableObject):
   def add_status_handler(self, status_handler):
     self.status_handler = status_handler
 
+  def _on_undo_stack_changed(self, event):
+    if event.type == ChangeEvent.ObjectAdded:
+      self._redo_stack.clear()
+    if event.type == ChangeEvent.ObjectRemoved:
+      self._redo_stack.append(event.object)
+
+  def _on_redo_stack_changed(self, event):
+    if event.type == ChangeEvent.ObjectRemoved:
+      self._undo_stack.sneak_append(event.object)
+      self._undo_stack.changed(ChangeEvent(self, ChangeEvent.ValueChanged, None))
+
   def serialize_json(self):
     return \
       {
         'uid': IdObject.serialize_json(self),
         'styles': self._styles,
-        'params': self._parameters,
+        'params': Parameters.serialize_json(self),
         'geoms': self._geometries,
         'axes': self._axes,
         'name': self.name,
@@ -157,7 +168,8 @@ class Document(IdObject, ObservableObject):
 
   def deserialize_data(self, data):
     IdObject.deserialize_data(self, data['uid'])
-    self._parameters = Parameters.deserialize(data.get('params', None), None)
+    Parameters.deserialize_data(self, data.get('params', None))
+
     self._styles = Styles.deserialize(data.get('styles', None))
     self._geometries = Geometries.deserialize(data.get('geoms', None), self)
     for axis_tuple in data.get('axes', {}).items():

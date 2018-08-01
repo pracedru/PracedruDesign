@@ -3,6 +3,7 @@ from Business import *
 from Business.SketchActions import remove_edge, remove_edges
 from Data.Sketch import Edge
 from Data.Parameters import *
+from GUI.init import gui_scale
 
 __author__ = 'mamj'
 
@@ -13,6 +14,7 @@ class EdgesModel(QAbstractTableModel):
   def __init__(self, doc):
     QAbstractItemModel.__init__(self)
     self._sketch = None
+    self._gui_scale = gui_scale()
     self._doc = doc
     self._rows = []
     self.old_row_count = 0
@@ -50,6 +52,8 @@ class EdgesModel(QAbstractTableModel):
       edge_item = self._sketch.get_edge(self._rows[row])
       if col == 0:
         data = edge_item.name
+
+
     return data
 
   def setData(self, model_index: QModelIndex, value: QVariant, int_role=None):
@@ -106,9 +110,11 @@ class EdgesModel(QAbstractTableModel):
         return p_int
       else:
         return col_header[p_int]
-
+    elif int_role == Qt.SizeHintRole:
+      if orientation == Qt.Horizontal:
+        return QSize(220 * self._gui_scale, 22 * self._gui_scale);
     else:
-      return
+      return None
 
   def get_edge_object(self):
     return self._sketch

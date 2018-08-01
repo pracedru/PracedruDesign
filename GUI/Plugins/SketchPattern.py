@@ -30,8 +30,8 @@ class SketchPattern():
                                                         checkable=True)
     ribbon = self._main_window.ribbon
     sketch_tab = ribbon.get_ribbon_tab("Sketch")
-    insert_pane = sketch_tab.get_ribbon_pane("Operate")
-    insert_pane.add_ribbon_widget(RibbonButton(insert_pane, self._pattern_action, True))
+    edit_pane = sketch_tab.get_ribbon_pane("Edit")
+    edit_pane.add_ribbon_widget(RibbonButton(edit_pane, self._pattern_action, True))
     self._pattern_action.setEnabled(False)
 
   def on_pattern(self):

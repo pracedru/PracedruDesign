@@ -74,6 +74,8 @@ class Parameter(IdObject, ObservableObject):
     self._change_senders = []
     self._hidden = False
     self._arguments = []
+    self._base_unit = False
+    self._units = {}
 
   @property
   def name(self):
@@ -103,6 +105,10 @@ class Parameter(IdObject, ObservableObject):
         args += arg
       args += ")"
     return self._name + args
+
+  @property
+  def parent(self):
+    return self._parent
 
   def serialize_json(self):
     return {
@@ -149,6 +155,25 @@ class Parameter(IdObject, ObservableObject):
       param = self._parent.get_parameter_by_uid(uid)
       expr = expr.replace('{' + uid + '}', param.name)
     return expr
+
+  @property
+  def base_unit(self):
+    return self._base_unit
+
+  @base_unit.setter
+  def base_unit(self, value):
+    if len(self._units) == 0:
+      self._base_unit = value
+      if value:
+        self._units[self.uid] = [1, self]
+      else:
+        self._units.clear()
+    else:
+      raise Exception("Base unit can not be based on other units.")
+
+  @property
+  def units(self):
+    return self._units.values()
 
   def formula_factored(self, factor):
     sets = []
@@ -237,6 +262,13 @@ class Parameters(NamedObservableObject):
     self._parent = parent
     self._custom_name_getter = None
 
+  @property
+  def document(self):
+    if self._parent is None:
+      return self
+    else:
+      return self._parent.document
+
   def _add_parameter_object(self, param):
     self._params[param.uid] = param
 
@@ -276,7 +308,10 @@ class Parameters(NamedObservableObject):
 
   def create_parameter(self, name=None, value=0.0):
     if name is None:
-      name = self.name + str(len(self._parameter_list))
+      if self._parent is None:
+        name = "Global" + str(len(self._parameter_list))
+      else:
+        name = self.name + str(len(self._parameter_list))
     param = Parameter(self, name, value)
     param.add_change_handler(self.on_parameter_changed)
     self.changed(ChangeEvent(self, ChangeEvent.BeforeObjectAdded, param))
@@ -297,7 +332,8 @@ class Parameters(NamedObservableObject):
 
   def delete_parameters(self, params):
     for param in params:
-      self.delete_parameter(param.uid)
+      if param.uid in self._parameter_list:
+        self.delete_parameter(param.uid)
 
   def on_parameter_changed(self, event):
     self.changed(event)
@@ -355,88 +391,3 @@ class Parameters(NamedObservableObject):
         except Exception as e:
           pass
 
-#
-# class Parameters(ParameterArray):
-#     def __init__(self):
-#         ParameterArray.__init__(self, "p")
-#         self._params = {}
-#         self._arrays = []
-#
-#     @property
-#     def total_length(self):
-#         return len(self._params)
-#
-#     @property
-#     def total_width(self):
-#         width = 1
-#         for array in self._arrays:
-#             if array.length > width:
-#                 width = array.length
-#         return width
-#
-#     def get_all_parameters(self):
-#         return self._params.items()
-#
-#     def get_parameter_by_uid(self, uid) -> Parameter:
-#         if uid in self._params:
-#             return self._params[uid]
-#         else:
-#             return None
-#
-#     def get_parameter_by_name(self, name):
-#         for param_tuple in self._params.items():
-#             if param_tuple[1].name == name:
-#                 return param_tuple[1]
-#
-#     def _add_parameter_object(self, param):
-#         self._params[param.uid] = param
-#
-#     def create_parameter_array(self, name):
-#         param_array = ParameterArray(name, self)
-#         self._arrays.append(param_array)
-#         param_array.add_change_handler(self.on_array_changed)
-#
-#     def on_array_changed(self, event):
-#         self.changed(event)
-#
-#     def _remove_parameter_object(self, uid):
-#         param = self._params[uid]
-#         self._params.pop(uid)
-#
-#     def get_parameter_item(self, row):
-#         if row < len(self._parameter_list):
-#             uid = self._parameter_list[row]
-#             return self.get_parameter_by_uid(uid)
-#         else:
-#             array_index = row - len(self._parameter_list)
-#             return self._arrays[array_index]
-#
-#     def serialize_json(self):
-#         return {
-#             'params': self._params,
-#             'param_arrays': self._arrays,
-#             'param_array': ParameterArray.serialize_json(self)
-#         }
-#
-#     @staticmethod
-#     def deserialize(data):
-#         params = Parameters()
-#         if data is not None:
-#             params.deserialize_data(data)
-#         return params
-#
-#     def deserialize_data(self, data):
-#         ParameterArray.deserialize_data(self, data['param_array'])
-#         for param_array in data.get('param_arrays', []):
-#             self._arrays.append(ParameterArray.deserialize(param_array))
-#         for param_data in data.get('params', {}).items():
-#             param = Parameter.deserialize(param_data[1], self)
-#             self._params[param.uid] = param
-#             param.add_change_handler(self.on_parameter_changed)
-#
-#         for param_tuple in self._params.items():
-#             if param_tuple[1].formula != '':
-#                 try:
-#                     param_tuple[1].value = param_tuple[1].formula
-#                 except Exception as e:
-#                     pass

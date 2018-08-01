@@ -15,8 +15,8 @@ class KeyPointsTableView(QTableView):
     guiscale = gui_scale()
     self._key_points_model = KeyPointsModel(self._doc)
     self.setModel(self._key_points_model)
-    self.setColumnWidth(0, 130 * guiscale)
-    self.setColumnWidth(1, 130 * guiscale)
+    #self.setColumnWidth(0, 130 * guiscale)
+    #self.setColumnWidth(1, 130 * guiscale)
     self.selectionModel().selectionChanged.connect(self.on_kp_selection_changed)
     self.installEventFilter(self)
     self.hide_unselected_key_points = True
@@ -26,6 +26,7 @@ class KeyPointsTableView(QTableView):
     self.selectionModel().clear()
     self.update_hidden_rows()
     self._key_points_model.set_sketch(sketch)
+    self.resizeColumnsToContents()
 
   def on_kp_selection_changed(self, selection):
     if self._throw_selection_changed_event:

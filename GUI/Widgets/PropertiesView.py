@@ -24,3 +24,4 @@ class PropertiesDock(QDockWidget):
 
   def set_item(self, item):
     self._model.set_item(item)
+    self._table_view.resizeColumnsToContents()

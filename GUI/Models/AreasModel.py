@@ -6,6 +6,7 @@ from Business.SketchActions import *
 from Data import Areas
 from Data.Areas import Area
 from Data.Parameters import *
+from GUI.init import gui_scale
 
 __author__ = 'mamj'
 
@@ -18,6 +19,7 @@ class AreasModel(QAbstractTableModel):
     self._sketch = None  # doc.get_areas()
     self._rows = []
     self._doc = doc
+    self._gui_scale = gui_scale()
     # for area_tuple in self._areas.get_areas():
     #    self._rows.append(area_tuple[1].uid)
     # self._areas.add_change_handler(self.on_areas_changed)
@@ -107,9 +109,11 @@ class AreasModel(QAbstractTableModel):
         return p_int
       else:
         return col_header[p_int]
-
+    elif int_role == Qt.SizeHintRole:
+      if orientation == Qt.Horizontal:
+        return QSize(220 * self._gui_scale, 22 * self._gui_scale)
     else:
-      return
+      return None
 
   def get_areas_object(self):
     return self._sketch

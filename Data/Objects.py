@@ -32,10 +32,12 @@ class ObservableObject(object):
       # print(str(handler))
       handler(event)
 
+  @property
   def is_modified(self):
     return self._is_modified
 
-  def set_modified(self, value):
+  @is_modified.setter
+  def is_modified(self, value):
     self._is_modified = value
 
   def add_change_handler(self, change_handler):
@@ -68,3 +70,4 @@ class NamedObservableObject(ObservableObject):
 
   def deserialize_data(self, data):
     self._name = data['name']
+

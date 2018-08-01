@@ -1,7 +1,9 @@
 from PyQt5.QtCore import *
 from PyQt5.QtWidgets import QMessageBox
+
+from Business.ParameterActions import set_parameter
 from Data.Parameters import *
-from GUI.init import formula_from_locale, formula_to_locale
+from GUI.init import formula_from_locale, formula_to_locale, gui_scale
 
 __author__ = 'mamj'
 
@@ -14,6 +16,8 @@ class ParametersModel(QAbstractTableModel):
     self._parameters = parameters
     parameters.add_change_handler(self.on_parameters_changed)
     self.old_row_count = 0
+    self._gui_scale = gui_scale()
+    self._columns_widths = [120, 150, 80, 40]
 
   def set_parameters(self, params):
     self.layoutAboutToBeChanged.emit()
@@ -94,17 +98,21 @@ class ParametersModel(QAbstractTableModel):
       else:
         param = param_item
       if isinstance(value, float):
-        param.value = value
+        set_parameter(param, value)
+        #param.value = value
         return True
       parsed = QLocale().toDouble(value)
       if parsed[1]:
-        param.value = parsed[0]
+        #param.value = parsed[0]
+        set_parameter(param, parsed[0])
       else:
         try:
           if value == "":
-            param.value = 0.0
+            set_parameter(param, 0.0)
+            #param.value = 0.0
           else:
-            param.value = formula_from_locale(value)
+            set_parameter(param, formula_from_locale(value))
+            #param.value = formula_from_locale(value)
         except Exception as ex:
           QMessageBox.information(None, "Error", str(ex))
       return True
@@ -115,7 +123,7 @@ class ParametersModel(QAbstractTableModel):
     return False
 
   def on_parameters_changed(self, event):
-    if type(event.object) is Parameter:
+    if type(event.sender) is Parameter or type(event.object) is Parameter :
       if event.type == event.BeforeObjectAdded:
         parent = QModelIndex()
         row = self.rowCount()
@@ -129,11 +137,10 @@ class ParametersModel(QAbstractTableModel):
         self.endRemoveRows()
       if event.type == event.ValueChanged:
         param = event.sender
-        if type(param) is Parameter:
-          row = self._parameters.get_index_of(param)
-          left = self.createIndex(row, 0)
-          right = self.createIndex(row, 3)
-          self.dataChanged.emit(left, right)
+        row = self._parameters.get_index_of(param)
+        left = self.createIndex(row, 0)
+        right = self.createIndex(row, 3)
+        self.dataChanged.emit(left, right)
       if event.type == event.HiddenChanged:
         param = event.sender
         if type(param) is Parameter:
@@ -154,9 +161,12 @@ class ParametersModel(QAbstractTableModel):
         return p_int
       else:
         return col_header[p_int]
+    elif int_role == Qt.SizeHintRole:
+      if orientation == Qt.Horizontal:
 
+        return QSize(self._columns_widths[p_int] * self._gui_scale, 22 * self._gui_scale);
     else:
-      return
+      return None
 
   def get_parameters_object(self):
     return self._parameters
