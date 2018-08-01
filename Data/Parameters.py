@@ -270,11 +270,15 @@ class Parameters(NamedObservableObject):
       return self._parent.document
 
   def _add_parameter_object(self, param):
+    param.add_change_handler(self.on_parameter_changed)
+    self.changed(ChangeEvent(self, ChangeEvent.BeforeObjectAdded, param))
     self._params[param.uid] = param
+    self._parameter_list.append(param.uid)
+    self.changed(ChangeEvent(self, ChangeEvent.ObjectAdded, param))
 
   def _remove_parameter_object(self, uid):
-    param = self._params[uid]
-    self._params.pop(uid)
+    if uid in self._params:
+      self._params.pop(uid)
 
   def get_parameter_by_uid(self, uid) -> Parameter:
     if uid in self._params:
@@ -313,11 +317,7 @@ class Parameters(NamedObservableObject):
       else:
         name = self.name + str(len(self._parameter_list))
     param = Parameter(self, name, value)
-    param.add_change_handler(self.on_parameter_changed)
-    self.changed(ChangeEvent(self, ChangeEvent.BeforeObjectAdded, param))
     self._add_parameter_object(param)
-    self._parameter_list.append(param.uid)
-    self.changed(ChangeEvent(self, ChangeEvent.ObjectAdded, param))
     return param
 
   def delete_parameter(self, uid):

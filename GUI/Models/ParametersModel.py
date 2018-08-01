@@ -1,7 +1,7 @@
 from PyQt5.QtCore import *
 from PyQt5.QtWidgets import QMessageBox
 
-from Business.ParameterActions import set_parameter
+from Business.ParameterActions import set_parameter, set_parameter_name, delete_parameters
 from Data.Parameters import *
 from GUI.init import formula_from_locale, formula_to_locale, gui_scale
 
@@ -90,7 +90,8 @@ class ParametersModel(QAbstractTableModel):
     row = model_index.row()
     param_item = self._parameters.get_parameter_item(row)
     if col == 0:
-      param_item.name = value
+      set_parameter_name(param_item, value)
+      # param_item.name = value
       return True
     elif col == 1 or col == 2:
       if param_item is Parameters:
@@ -175,7 +176,9 @@ class ParametersModel(QAbstractTableModel):
     params = []
     for row in rows:
       params.append(self._parameters.get_parameter_item(row))
-    self._parameters.delete_parameters(params)
+
+    delete_parameters(self._parameters, params)
+
 
   def row_hidden(self, row):
     return self._parameters.get_parameter_item(row).hidden

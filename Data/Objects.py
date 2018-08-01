@@ -49,6 +49,9 @@ class ObservableObject(object):
     except KeyError:
       pass
 
+  @property
+  def change_handlers(self):
+    return list(self._change_handlers)
 
 class NamedObservableObject(ObservableObject):
   def __init__(self, name="No name"):

@@ -255,7 +255,7 @@ class DocumentItemModel(QAbstractItemModel):
   def create_model_item(self, parent_item, object):
     new_item = None
     if parent_item == self._root_item:
-      print("root item is parent")
+      # print("root item is parent")
       return
     if type(parent_item.data) is Sketch:
       if type(object) is Parameter:
