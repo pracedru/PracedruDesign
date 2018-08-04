@@ -4,8 +4,6 @@ import os
 import Data
 import GUI
 from Data.Document import Document
-from Data.Paper import Sizes
-from Data.Parameters import Parameters
 from Data.Part import Part
 from Data.Sketch import Sketch, Attribute
 from Data.Vertex import Vertex

@@ -16,6 +16,7 @@ class Sketch(Geometry):
     self._edges = {}
     self._texts = {}
     self._areas = {}
+    self._sketch_instances = {}
     self._patterns = []
     self.threshold = 0.1
     self.edge_naming_index = 1
@@ -523,3 +524,52 @@ class Pattern(IdObject, NamedObservableObject):
     self._kps = []
     self._edges = []
     self._areas = []
+
+
+class SketchInstance(IdObject, NamedObservableObject):
+  def __init__(self, parent, name = "new instance"):
+    IdObject.__init__(self)
+    NamedObservableObject.__init__(self, name)
+    self._parent = parent
+    self._sketch = None
+    self._offset = None
+
+  @property
+  def sketch(self):
+    if self._sketch is not None:
+      if type(self._sketch) is not Sketch:
+        self._sketch = self._parent.get_sketch(self._sketch)
+    return self._sketch
+
+  @sketch.setter
+  def sketch(self, value):
+    self._sketch = value
+
+  @property
+  def offset(self):
+    return self._offset
+
+  @offset.setter
+  def offset(self, value):
+    self._offset = value
+
+  def serialize_json(self):
+    return {
+      'uid': IdObject.serialize_json(self),
+      'no': NamedObservableObject.serialize_json(self),
+      'sketch': self._sketch.uid,
+      'offset': self._offset
+    }
+
+  @staticmethod
+  def deserialize(parent, data):
+    sketch_instance = SketchInstance(parent)
+    if data is not None:
+      sketch_instance.deserialize_data(data)
+    return sketch_instance
+
+  def deserialize_data(self, data):
+    IdObject.deserialize_data(self, data['uid'])
+    NamedObservableObject.deserialize_data(self, data['no'])
+    self._sketch = data['sketch']
+    self._offset = KeyPoint.deserialize_data(data['offset'], self._parent)

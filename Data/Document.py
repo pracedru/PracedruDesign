@@ -99,6 +99,12 @@ class Document(IdObject, Parameters):
   def get_drawings(self):
     return self._drawings
 
+  def get_sketches(self):
+    return self._geometries.get_sketches()
+
+  def get_sketch_by_name(self, name):
+    return self._geometries.get_sketch_by_name(name)
+
   def on_geometries_changed(self, event: ChangeEvent):
     self.changed(ChangeEvent(self, ChangeEvent.ObjectChanged, event.sender))
 

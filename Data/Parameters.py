@@ -70,8 +70,11 @@ class Parameter(IdObject, ObservableObject):
     self._parent = parent
     self._name = name
     self._value = value
+    self._instance_values = {}
+    self._instance_formula = {}
     self._formula = str(value)
     self._change_senders = []
+    self._instance_change_senders = {}
     self._hidden = False
     self._arguments = []
     self._base_unit = False
@@ -110,28 +113,6 @@ class Parameter(IdObject, ObservableObject):
   def parent(self):
     return self._parent
 
-  def serialize_json(self):
-    return {
-      'uid': IdObject.serialize_json(self),
-      'name': self.name,
-      'value': self._value,
-      'formula': self._formula,
-      'hidden': self._hidden
-    }
-
-  @staticmethod
-  def deserialize(data, parameters):
-    param = Parameter(parameters)
-    param.deserialize_data(data)
-    return param
-
-  def deserialize_data(self, data):
-    IdObject.deserialize_data(self, data['uid'])
-    self._value = data.get('value', 0.0)
-    self._formula = data.get('formula', "")
-    self.name = data.get('name', 'name missing')
-    self._hidden = data.get('hidden', False)
-
   @property
   def hidden(self):
     return self._hidden
@@ -147,13 +128,95 @@ class Parameter(IdObject, ObservableObject):
   def value(self):
     return self._value
 
+  @value.setter
+  def value(self, value):
+    self.set_instance_value(None, value)
+    # old_value = self._value
+    # self.clear_change_handler()
+    # if isinstance(value, str):
+    #   formula = " " + insert_spaces(value) + " "
+    #   params = self._parent.get_all_parameters()
+    #   for param_tuple in params:
+    #     param = param_tuple[1]
+    #     if " " + param.name + " " in formula:
+    #       if param is self:
+    #         raise Exception("Formula may not reference it self.")
+    #       formula = formula.replace(" " + param.name + " ", '{' + param.uid + '}')
+    #       param.add_change_handler(self.on_parameter_changed)
+    #       self._change_senders.append(param)
+    #   self._formula = formula.replace(' ', '')
+    #   self._value = self.evaluate()
+    # else:
+    #   self._value = value
+    #   self._formula = str(value)
+    # self.changed(ChangeEvent(self, ChangeEvent.ValueChanged, {'new value': value, 'old value': old_value}))
+
+
+  def get_instance_value(self, instance_uid):
+    if instance_uid in self._instance_values:
+      return self._instance_values[instance_uid]
+    return self._value
+
+  def set_instance_value(self, instance_uid, value):
+    old_value = self.get_instance_value(instance_uid)
+    if value is None and instance_uid is not None:
+      if instance_uid in self._instance_values:
+        self._instance_values.pop(instance_uid)
+      if instance_uid in self._instance_formula:
+        self._instance_formula.pop(instance_uid)
+    else:
+      self.clear_change_handler(instance_uid)
+      if isinstance(value, str):
+        formula = " " + insert_spaces(value) + " "
+        params = self._parent.get_all_parameters()
+        for param_tuple in params:
+          param = param_tuple[1]
+          if " " + param.name + " " in formula:
+            if param is self:
+              raise Exception("Formula may not reference it self.")
+            formula = formula.replace(" " + param.name + " ", '{' + param.uid + '}')
+            param.add_change_handler(self.on_parameter_changed)
+            self._change_senders.append(param)
+        if instance_uid is None:
+          self._formula = formula.replace(' ', '')
+          self._value = self.evaluate(instance_uid)
+        else:
+          self._instance_formula[instance_uid] = formula.replace(' ', '')
+          self._instance_values[instance_uid] = self.evaluate(instance_uid)
+      else:
+        if instance_uid is None:
+          self._value = value
+          self._formula = str(value)
+        else:
+          self._instance_values[instance_uid] = value
+          self._instance_formula[instance_uid] = str(value)
+    self.changed(ChangeEvent(self, ChangeEvent.ValueChanged, {'new value': value, 'old value': old_value, 'instance': instance_uid}))
+
   @property
   def formula(self):
-    uids = re.findall("{(.*?)}", self._formula)
-    expr = self._formula
-    for uid in uids:
-      param = self._parent.get_parameter_by_uid(uid)
-      expr = expr.replace('{' + uid + '}', param.name)
+    return self.get_instance_formula(None)
+    # uids = re.findall("{(.*?)}", self._formula)
+    # expr = self._formula
+    # for uid in uids:
+    #   param = self._parent.get_parameter_by_uid(uid)
+    #   expr = expr.replace('{' + uid + '}', param.name)
+    # return expr
+
+  def get_instance_formula(self, instance_uid):
+    formula = ""
+    if instance_uid is None:
+      formula = self._formula
+    else:
+      if instance_uid in self._instance_formula:
+        formula = self._instance_formula[instance_uid]
+      else:
+        formula = self._formula
+    uids = re.findall("{(.*?)}", formula)
+    expr = formula
+    if formula != "":
+      for uid in uids:
+        param = self._parent.get_parameter_by_uid(uid)
+        expr = expr.replace('{' + uid + '}', param.name)
     return expr
 
   @property
@@ -207,51 +270,83 @@ class Parameter(IdObject, ObservableObject):
       depends.append(param)
     return depends
 
-  def evaluate(self):
-    uids = re.findall("{(.*?)}", self._formula)
-    expr = self._formula
+  def evaluate(self, instance_uid):
+    if instance_uid is None:
+      formula = self._formula
+    else:
+      if instance_uid in self._instance_formula:
+        formula = self._instance_formula[instance_uid]
+      else:
+        formula = self._formula
+    uids = re.findall("{(.*?)}", formula)
+    expr = formula
     for uid in uids:
       param = self._parent.get_parameter_by_uid(uid)
-      expr = expr.replace('{' + uid + '}', str(param.value))
+      expr = expr.replace('{' + uid + '}', str(param.get_instance_value(instance_uid)))
     try:
       return eval_expr(expr)
     except (TypeError):
       return expr
 
-  def clear_change_handler(self):
-    for param in self._change_senders:
-      param.remove_change_handler(self.on_parameter_changed)
-    self._change_senders = []
+  def clear_change_handler(self, instance_uid):
+    if instance_uid is None:
+      for param in self._change_senders:
+        param.remove_change_handler(self.on_parameter_changed)
+      self._change_senders = []
+    else:
+      if instance_uid in self._instance_change_senders:
+        for param in self._instance_change_senders[instance_uid]:
+          param.remove_change_handler(self.on_parameter_changed)
+        self._instance_change_senders[instance_uid] = []
 
   def on_parameter_changed(self, event):
     if event.type == ChangeEvent.Deleted:
       self._formula = self._formula.replace('{' + event.object.uid + '}', event.object.name)
-    old_value = self._value
-    self._value = self.evaluate()
-    new_value = self._value
-    self.changed(ChangeEvent(self, ChangeEvent.ValueChanged, {'new value': new_value, 'old value': old_value}))
-
-  @value.setter
-  def value(self, value):
-    old_value = self._value
-    self.clear_change_handler()
-    if isinstance(value, str):
-      formula = " " + insert_spaces(value) + " "
-      params = self._parent.get_all_parameters()
-      for param_tuple in params:
-        param = param_tuple[1]
-        if " " + param.name + " " in formula:
-          if param is self:
-            raise Exception("Formula may not reference it self.")
-          formula = formula.replace(" " + param.name + " ", '{' + param.uid + '}')
-          param.add_change_handler(self.on_parameter_changed)
-          self._change_senders.append(param)
-      self._formula = formula.replace(' ', '')
-      self._value = self.evaluate()
+    if 'instance' in event.object:
+      instance_uid = event.object['instance']
     else:
-      self._value = value
-      self._formula = str(value)
-    self.changed(ChangeEvent(self, ChangeEvent.ValueChanged, {'new value': value, 'old value': old_value}))
+      instance_uid = None
+
+    if instance_uid is None:
+      old_value = self._value
+      self._value = self.evaluate(instance_uid)
+      new_value = self._value
+    else:
+      old_value = self.get_instance_value(instance_uid)
+      new_value = self.evaluate(instance_uid)
+      if new_value != self._value:
+        self._instance_values[instance_uid] = new_value
+      else:
+        if instance_uid in self._instance_values:
+          self._instance_values.pop(instance_uid)
+
+    self.changed(ChangeEvent(self, ChangeEvent.ValueChanged, {'new value': new_value, 'old value': old_value, 'instance': instance_uid}))
+
+  def serialize_json(self):
+    return {
+      'uid': IdObject.serialize_json(self),
+      'name': self.name,
+      'value': self._value,
+      'inval': self._instance_values,
+      'formula': self._formula,
+      'inform': self._instance_formula,
+      'hidden': self._hidden
+    }
+
+  @staticmethod
+  def deserialize(data, parameters):
+    param = Parameter(parameters)
+    param.deserialize_data(data)
+    return param
+
+  def deserialize_data(self, data):
+    IdObject.deserialize_data(self, data['uid'])
+    self._value = data.get('value', 0.0)
+    self._formula = data.get('formula', "")
+    self.name = data.get('name', 'name missing')
+    self._hidden = data.get('hidden', False)
+    self._instance_values = data.get('inval', {})
+    self._instance_formula = data.get('inform', {})
 
 
 class Parameters(NamedObservableObject):
@@ -268,6 +363,10 @@ class Parameters(NamedObservableObject):
       return self
     else:
       return self._parent.document
+
+  @property
+  def parent(self):
+    return self._parent
 
   def _add_parameter_object(self, param):
     param.add_change_handler(self.on_parameter_changed)
