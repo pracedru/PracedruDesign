@@ -4,6 +4,7 @@ from PyQt5.QtCore import QLocale
 from PyQt5.QtCore import QModelIndex
 from PyQt5.QtCore import Qt
 
+from Business.Undo import change_property
 from Data.Feature import FeatureType
 from Data.Sketch import *
 from GUI.init import gui_scale
@@ -70,7 +71,7 @@ rows_by_type = {
     ['Type', 'feature_type', {'choices': ['Extrude', 'Revolve', 'Fillet', 'Plane', 'Sketch', 'Nurbs Surface']}],
     ['Length', 'distance', {'condition': ['feature_type', FeatureType.ExtrudeFeature]}],
     ['Angles', 'distance', {'condition': ['feature_type', FeatureType.RevolveFeature]}],
-    ['Plane', 'plane', {'condition': ['feature_type', FeatureType.PlaneFeature]}]],
+    ['Plane', 'plane', {'condition': ['feature_type', FeatureType.SketchFeature]}]],
   "Part": [
     ['Name', 'name'],
     ['Color', 'color'],
@@ -225,7 +226,9 @@ class PropertiesModel(QAbstractTableModel):
           args = self._rows[row][1]['args'].copy()
           args.append(value)
           getattr(self._item, attr_name)(*args)
-        setattr(self._item, self._rows[row][1], value)
+        else:
+          change_property(self._document, self._item, self._rows[row][1], value)
+          #setattr(self._item, self._rows[row][1], value)
         success = True
       except Exception as e:
         success = False

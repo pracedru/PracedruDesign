@@ -1,7 +1,7 @@
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QMessageBox
 
-from Business.SketchActions import create_key_point, create_text, create_all_areas
+from Business.SketchActions import create_all_areas
 from GUI.init import plugin_initializers
 
 from GUI.Ribbon.RibbonButton import RibbonButton

@@ -18,7 +18,7 @@ class Drawings(ObservableObject):
     self._doc = document
 
   def create_header(self):
-    header = Sketch(self._doc.get_parameters(), self._doc)
+    header = Sketch(self._doc)
     header.name = "New Header"
     self.changed(ChangeEvent(self, ChangeEvent.BeforeObjectAdded, header))
     self._doc.get_geometries().add_geometry(header)

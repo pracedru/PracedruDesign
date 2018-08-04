@@ -9,7 +9,6 @@ from PyQt5.QtWidgets import QAction
 from PyQt5.QtWidgets import QDialog
 from PyQt5.QtWidgets import QDockWidget
 from PyQt5.QtWidgets import QFileDialog
-from PyQt5.QtWidgets import QLabel
 from PyQt5.QtWidgets import QMainWindow
 from PyQt5.QtWidgets import QMessageBox
 from PyQt5.QtWidgets import QProgressBar
@@ -18,6 +17,7 @@ from PyQt5.QtWidgets import QToolBar
 import Business
 import GUI.Plugins
 from Business.DrawingActions import create_default_header
+from Business.SketchActions import create_add_sketch_to_parent
 from Business.Undo import on_undo, on_redo
 from Data.Areas import Area
 from Data.CalcSheetAnalysis import CalcSheetAnalysis
@@ -75,7 +75,7 @@ class MainWindow(QMainWindow):
     self.add_part_action = self.add_action("Add\nPart", "addpart", "Add part to the document", True, self.on_add_part)
     self._add_calc_table_analysis = self.add_action("Add Calc\nTable", "addcalctable", "Add calculation table analysis to document", True, self.on_add_calc_table_analysis)
     self._add_calc_sheet_analysis = self.add_action("Add Calc\nSheet", "addcalcsheet", "Add calculation sheet analysis to document", True, self.on_add_calc_sheet_analysis)
-    self._create_sketch_action = self.add_action("Create\nSketch", "addsketch", "Create Sketch", True, self.on_create_sketch)
+    # self._create_sketch_action = self.add_action("Create\nSketch", "addsketch", "Create Sketch", True, self.on_create_sketch)
     self._insert_part_action = self.add_action("Insert\npart", "addpartview", "Insert part in drawing", True, self.on_insert_part_in_drawing)
     self._insert_dim_annotation = self.add_action("Dim", "insertdimannotation", "Insert dimension annotation in drawing", True, self.on_insert_dim_ann_in_drawing)
     self._add_revolve_action = self.add_action("Revolve\nArea", "addrevolve", "Revolve an area on this part", True, self.on_revolve_area)
@@ -155,6 +155,10 @@ class MainWindow(QMainWindow):
   @property
   def drawing_editor_view(self):
     return self._viewWidget.drawing_view
+
+  @property
+  def part_editor_view(self):
+    return self._viewWidget.part_view
 
   def get_states(self) -> ActionStates:
     return self._states
@@ -265,10 +269,7 @@ class MainWindow(QMainWindow):
     pass
 
   def on_add_sketch_to_document(self):
-    Business.create_add_sketch_to_document(self._document)
-
-  def on_create_sketch(self):
-    self._viewWidget.on_create_sketch()
+    create_add_sketch_to_parent(self._document)
 
   def on_tree_selection_changed(self, selection):
     if len(selection) == 1:
@@ -406,10 +407,10 @@ class MainWindow(QMainWindow):
     sketch_tab.add_spacer()
 
   def init_part_tab(self):
-    part_tab = self._ribbon_widget.add_ribbon_tab(tr("Part"))
-    insert_pane = part_tab.add_ribbon_pane(tr("Insert"))
+    part_tab = self._ribbon_widget.add_ribbon_tab("Part")
+    insert_pane = part_tab.add_ribbon_pane("Insert")
     # insert_pane.add_ribbon_widget(RibbonButton(self, self._insert_sketch_in_action, True))
-    insert_pane.add_ribbon_widget(RibbonButton(self, self._create_sketch_action, True))
+    # insert_pane.add_ribbon_widget(RibbonButton(self, self._create_sketch_action, True))
     insert_pane.add_ribbon_widget(RibbonButton(self, self._add_extrude_action, True))
     insert_pane.add_ribbon_widget(RibbonButton(self, self._add_revolve_action, True))
     insert_pane.add_ribbon_widget(RibbonButton(self, self._add_nurbs_surface_action, True))

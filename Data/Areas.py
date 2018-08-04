@@ -48,7 +48,7 @@ class Area(IdObject, NamedObservableObject):
 
   @brush_name.setter
   def brush_name(self, value):
-    styles = self._sketch.get_document().get_styles()
+    styles = self._sketch.document.get_styles()
     brush = styles.get_brush_by_name(value)
     self._brush = brush
 
@@ -80,7 +80,7 @@ class Area(IdObject, NamedObservableObject):
     IdObject.deserialize_data(self, data['uid'])
     NamedObservableObject.deserialize_data(self, data.get('no', None))
     brush_uid = data.get('brush')
-    self._brush = self._sketch.get_document().get_styles().get_brush(brush_uid)
+    self._brush = self._sketch.document.get_styles().get_brush(brush_uid)
     self._brush_rotation = data.get("brush_rot", 50)
 
 

@@ -3,7 +3,7 @@ from math import log10
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QLabel, QInputDialog, QDialog
 
-from Business.SketchActions import create_key_point, find_all_similar, set_similar_x, set_similar_y
+from Business.SketchActions import find_all_similar, set_similar_x, set_similar_y
 from GUI.init import plugin_initializers
 
 from GUI.Ribbon.RibbonButton import RibbonButton

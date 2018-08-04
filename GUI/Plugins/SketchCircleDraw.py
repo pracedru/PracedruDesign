@@ -1,7 +1,7 @@
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QInputDialog, QDialog
 
-from Business.SketchActions import create_key_point, create_circle
+from Business.SketchActions import get_create_keypoint, create_circle
 from GUI.init import plugin_initializers
 
 from GUI.Ribbon.RibbonButton import RibbonButton
@@ -49,7 +49,7 @@ class SketchCircleDraw():
       doc = self._main_window.document
       sketch = view.sketch
       coincident_threshold = 5 / scale
-      kp = create_key_point(doc, sketch, x, y, 0.0, coincident_threshold)
+      kp = get_create_keypoint(sketch, x, y, coincident_threshold)
       params = []
       params.sort()
       for param_tuple in sketch.get_all_parameters():

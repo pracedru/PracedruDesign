@@ -11,14 +11,15 @@ from Data.Objects import IdObject, NamedObservableObject, ObservableObject
 from Data.Parameters import Parameters
 from Data.Plane import Plane
 from Data.Point3d import KeyPoint
+from Data.Sketch import Sketch
 from Data.Surface import Surface
 from Data.Vertex import Vertex
 
 
 class Part(Geometry):
-  def __init__(self, parameters_parent, document, name="New part"):
+  def __init__(self, parameters_parent, name="New part"):
     Geometry.__init__(self, parameters_parent, name, Geometry.Part)
-    self._doc = document
+    self._sketches = {}
     self._features = {}
     self._feature_progression = []
     self._limits = None  # [Vertex(-1, -1, -1), Vertex(1, 1, 1)]
@@ -28,9 +29,6 @@ class Part(Geometry):
     self._surfaces = {}
     self._color = [180, 180, 180, 255]
     self._specular = 0.5
-
-  def get_document(self):
-    return self._doc
 
   @property
   def specular(self):
@@ -99,7 +97,7 @@ class Part(Geometry):
 
   def create_nurbs_surface(self, sketch_feature, nurbs_edges):
     name = self.get_new_unique_feature_name("New Surface")
-    nurbs_surface_feature = Feature(self._doc, self, FeatureType.NurbsSurfaceFeature, name)
+    nurbs_surface_feature = Feature(self.document, self, FeatureType.NurbsSurfaceFeature, name)
     nurbs_surface_feature.add_feature(sketch_feature)
     for edge in nurbs_edges:
       nurbs_surface_feature.add_order_item(edge.uid)
@@ -111,7 +109,7 @@ class Part(Geometry):
 
   def create_plane_feature(self, name, position, x_direction, y_direction):
     name = self.get_new_unique_feature_name(name)
-    plane_feature = Feature(self._doc, self, FeatureType.PlaneFeature, name)
+    plane_feature = Feature(self.document, self, FeatureType.PlaneFeature, name)
     plane_feature.add_vertex('p', position)
     plane_feature.add_vertex('xd', x_direction)
     plane_feature.add_vertex('yd', y_direction)
@@ -120,9 +118,13 @@ class Part(Geometry):
     plane_feature.add_change_handler(self.on_plane_feature_changed)
     return plane_feature
 
+  def add_sketch(self, sketch):
+    self._sketches[sketch.uid] = sketch
+    sketch.add_change_handler(self.on_sketch_changed)
+
   def create_sketch_feature(self, sketch, plane_feature):
     name = self.get_new_unique_feature_name(sketch.name)
-    sketch_feature = Feature(self._doc, self, FeatureType.SketchFeature, name)
+    sketch_feature = Feature(self.document, self, FeatureType.SketchFeature, name)
     sketch_feature.add_feature(plane_feature)
     sketch_feature.add_object(sketch)
     self._features[sketch_feature.uid] = sketch_feature
@@ -133,7 +135,7 @@ class Part(Geometry):
 
   def create_extrude_feature(self, name, sketch_feature, area, length):
     name = self.get_new_unique_feature_name(name)
-    extrude_feature = Feature(self._doc, self, FeatureType.ExtrudeFeature, name)
+    extrude_feature = Feature(self.document, self, FeatureType.ExtrudeFeature, name)
     extrude_feature.add_feature(sketch_feature)
     extrude_feature.add_object(area)
     extrude_feature.add_vertex('ex_ls', Vertex(length[0], length[1]))
@@ -145,7 +147,7 @@ class Part(Geometry):
 
   def create_revolve_feature(self, name, sketch_feature, area, length, revolve_axis):
     name = self.get_new_unique_feature_name(name)
-    revolve_feature = Feature(self._doc, self, FeatureType.RevolveFeature, name)
+    revolve_feature = Feature(self.document, self, FeatureType.RevolveFeature, name)
     revolve_feature.add_feature(sketch_feature)
     revolve_feature.add_object(area)
     revolve_feature.add_object(revolve_axis)
@@ -229,7 +231,7 @@ class Part(Geometry):
     global_axis_perp_dir2 = pm.dot(local_axis_perp_dir2)
     cp = np.cross(global_axis_dir, global_axis_perp_dir1)
     global_norm1 = cp / np.linalg.norm(cp)
-    global_axis1 = Axis(self._doc)
+    global_axis1 = Axis(self.document)
     global_axis1.origo.xyz = global_axis_origo
     global_axis1.direction.xyz = global_axis_dir
 
@@ -454,6 +456,16 @@ class Part(Geometry):
     self._cal_limits()
     self._update_needed = False
 
+  def get_sketch(self, uid):
+    if self._sketches:
+      return self._sketches[uid]
+    return self.document.get_geometries().get_geometry(uid)
+
+  def get_sketches(self):
+    sketches = list(self._sketches.values())
+    sketches.extend(self.document.get_geometries().get_sketches())
+    return sketches
+
   def get_feature(self, uid):
     if uid in self._features:
       return self._features[uid]
@@ -595,6 +607,14 @@ class Part(Geometry):
       event.sender.remove_change_handler(self.on_plane_feature_changed)
     self._update_needed = True
 
+  def on_sketch_changed(self, event):
+    self.changed(ChangeEvent(self, ChangeEvent.ObjectChanged, event.sender))
+    if event.type == ChangeEvent.Deleted:
+      self.changed(ChangeEvent(self, ChangeEvent.BeforeObjectRemoved, event.sender))
+      self._sketches.pop(event.sender.uid)
+      self.changed(ChangeEvent(self, ChangeEvent.ObjectRemoved, event.sender))
+      event.sender.remove_change_handler(self.on_sketch_changed)
+
   def on_sketch_feature_changed(self, event):
     self.changed(ChangeEvent(self, ChangeEvent.ObjectChanged, event.sender))
     if event.type == ChangeEvent.Deleted:
@@ -633,6 +653,7 @@ class Part(Geometry):
     return {
       'uid': IdObject.serialize_json(self),
       'parameters': Parameters.serialize_json(self),
+      'sketches': self._sketches,
       'features': self._features,
       'feature_progression': self._feature_progression,
       'color': self._color,
@@ -642,8 +663,8 @@ class Part(Geometry):
     }
 
   @staticmethod
-  def deserialize(data, param_parent, document):
-    part = Part(param_parent, document)
+  def deserialize(data, param_parent):
+    part = Part(param_parent)
     if data is not None:
       part.deserialize_data(data)
     return part
@@ -651,8 +672,13 @@ class Part(Geometry):
   def deserialize_data(self, data):
     IdObject.deserialize_data(self, data['uid'])
     Parameters.deserialize_data(self, data['parameters'])
+    for sketch_data_tuple in data['sketches'].items():
+      sketch_data = sketch_data_tuple[1]
+      sketch = Sketch.deserialize(sketch_data, self)
+      self.add_sketch(sketch)
+
     for feature_data_tuple in data.get('features', {}).items():
-      feature = Feature.deserialize(feature_data_tuple[1], self, self._doc)
+      feature = Feature.deserialize(feature_data_tuple[1], self, self.document)
       self._features[feature.uid] = feature
       if feature.feature_type == FeatureType.PlaneFeature:
         feature.add_change_handler(self.on_plane_feature_changed)

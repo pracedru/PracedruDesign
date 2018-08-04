@@ -22,7 +22,7 @@ class SketchCreateCompositeArea():
 
   def init_ribbon(self):
     self._create_composite_area_action = self._main_window.add_action("Create\nComp. Area",
-                                                            "createcomparea",
+                                                            "addcompositearea",
                                                             "Create composite area from existing areas",
                                                                       True,
                                                                       self.on_create_composite_area,

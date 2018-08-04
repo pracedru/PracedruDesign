@@ -1,6 +1,6 @@
 from PyQt5.QtCore import Qt
 
-from Business.SketchActions import create_key_point
+from Business.SketchActions import get_create_keypoint, create_line
 from GUI.init import plugin_initializers
 
 from GUI.Ribbon.RibbonButton import RibbonButton
@@ -53,13 +53,14 @@ class SketchLineDraw():
       current_kp = None
       if view.kp_hover is None:
         coincident_threshold = 5 / scale
-        current_kp = create_key_point(doc, sketch, x, y, 0.0, coincident_threshold)
+        current_kp = get_create_keypoint(sketch, x, y, coincident_threshold)
         view.selected_key_points.append(current_kp)
       else:
         current_kp = view.kp_hover
         view.selected_key_points.append(view.kp_hover)
       if current_kp is not None and self._last_kp is not None:
-        sketch.create_line_edge(self._last_kp, current_kp)
+        #sketch.create_line_edge(self._last_kp, current_kp)
+        create_line(sketch, self._last_kp, current_kp)
         if not self._states.multi_select:
           view.selected_key_points.clear()
           self._last_kp = None

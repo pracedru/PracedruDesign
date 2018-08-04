@@ -10,9 +10,8 @@ __author__ = 'mamj'
 
 
 class Sketch(Geometry):
-  def __init__(self, params_parent, document):
+  def __init__(self, params_parent):
     Geometry.__init__(self, params_parent, "New Sketch", Geometry.Sketch)
-    self._doc = document
     self._key_points = {}
     self._edges = {}
     self._texts = {}
@@ -21,11 +20,11 @@ class Sketch(Geometry):
     self.threshold = 0.1
     self.edge_naming_index = 1
 
-  def get_document(self):
-    return self._doc
-
   def add_edge(self, edge):
+    self.changed(ChangeEvent(self, ChangeEvent.BeforeObjectAdded, edge))
     self._edges[edge.uid] = edge
+    self.changed(ChangeEvent(self, ChangeEvent.ObjectAdded, edge))
+    edge.add_change_handler(self.on_edge_changed)
 
   def clear(self):
     self._key_points.clear()
@@ -115,7 +114,7 @@ class Sketch(Geometry):
         kp.changed(ChangeEvent(self, ChangeEvent.Deleted, kp))
         self._key_points.pop(kp.uid)
 
-  def create_key_point(self, x, y, z, ts=None):
+  def get_keypoint_by_location(self, x, y, z, ts=None):
     key_point = None
     for p_tuple in self._key_points.items():
       p = p_tuple[1]
@@ -124,13 +123,18 @@ class Sketch(Geometry):
       if abs(p.x - x) < ts and abs(p.y - y) < ts and abs(p.z - z) < ts:
         key_point = p
         break
-    if key_point is None:
-      key_point = KeyPoint(self, x, y, z)
-      self.changed(ChangeEvent(self, ChangeEvent.BeforeObjectAdded, key_point))
-      self._key_points[key_point.uid] = key_point
-      self.changed(ChangeEvent(self, ChangeEvent.ObjectAdded, key_point))
-      key_point.add_change_handler(self.on_kp_changed)
     return key_point
+
+  def create_keypoint(self, x, y, z):
+    key_point = KeyPoint(self, x, y, z)
+    self.add_keypoint(key_point)
+    return key_point
+
+  def add_keypoint(self, key_point):
+    self.changed(ChangeEvent(self, ChangeEvent.BeforeObjectAdded, key_point))
+    self._key_points[key_point.uid] = key_point
+    self.changed(ChangeEvent(self, ChangeEvent.ObjectAdded, key_point))
+    key_point.add_change_handler(self.on_kp_changed)
 
   def create_circle_edge(self, kp, radius_param):
     circle_edge = None
@@ -203,10 +207,7 @@ class Sketch(Geometry):
     self.edge_naming_index += 1
     line_edge.add_key_point(key_point1)
     line_edge.add_key_point(key_point2)
-    self.changed(ChangeEvent(self, ChangeEvent.BeforeObjectAdded, line_edge))
-    self._edges[line_edge.uid] = line_edge
-    self.changed(ChangeEvent(self, ChangeEvent.ObjectAdded, line_edge))
-    line_edge.add_change_handler(self.on_edge_changed)
+    self.add_edge(line_edge)
     return line_edge
 
   def create_arc_edge(self, center_key_point, start_angle, end_angle, radius):
@@ -316,8 +317,8 @@ class Sketch(Geometry):
     }
 
   @staticmethod
-  def deserialize(data, param_parent, document):
-    sketch = Sketch(param_parent, document)
+  def deserialize(data, param_parent):
+    sketch = Sketch(param_parent)
     if data is not None:
       sketch.deserialize_data(data)
     return sketch

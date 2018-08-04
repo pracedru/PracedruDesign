@@ -1,20 +1,78 @@
 import collections
 from math import pi
 
+from Business.Undo import DoObject
 from Data.Document import Document
 from Data.Sketch import *
 
 
-def create_key_point(doc, sketch, x, y, param, coincident_threshold):
-  kp = sketch.create_key_point(x, y, 0.0, coincident_threshold)
-  edge_to_split = None
-  for edge in sketch.get_edges():
-    if edge.coincident(kp, coincident_threshold):
-      edge_to_split = edge
-  if edge_to_split is not None:
-    new_edge = edge_to_split.split(kp)
+class CreateSketchDoObject(DoObject):
+  def __init__(self, sketch, parent):
+    DoObject.__init__(self)
+    self._sketch = sketch
+    self._name = sketch.name
+    self._parent = parent
+
+  def undo(self):
+    self._sketch.delete()
+
+  def redo(self):
+    self._parent.add_sketch(self._sketch)
+
+
+
+class CreateKeypointDoObject(DoObject):
+  def __init__(self, sketch, kp, edge_to_split, new_edge):
+    DoObject.__init__(self)
+    self._sketch = sketch
+    self._kp = kp
+
+  def undo(self):
+    self._kp.delete()
+
+  def redo(self):
+    self._sketch.add_keypoint(self._kp)
+
+
+class CreateEdgeDoObjet(DoObject):
+  def __init__(self, sketch, edge):
+    DoObject.__init__(self)
+    self._sketch = sketch
+    self._edge = edge
+
+  def undo(self):
+    self._edge.delete()
+
+  def redo(self):
+    self._sketch.add_edge(self._edge)
+
+
+def create_add_sketch_to_parent(parent):
+  sketch = Sketch(parent)
+  parent.add_sketch(sketch)
+  parent.document.undo_stack.append(CreateSketchDoObject(sketch, parent))
+  return sketch
+
+
+def get_create_keypoint(sketch, x, y, coincident_threshold):
+  kp = sketch.get_keypoint_by_location(x, y, 0.0, coincident_threshold)
+  if kp is None:
+    kp = sketch.create_keypoint(x, y, 0.0)
+    edge_to_split = None
+    new_edge = None
+    for edge in sketch.get_edges():
+      if edge.coincident(kp, coincident_threshold):
+        edge_to_split = edge
+    if edge_to_split is not None:
+      new_edge = edge_to_split.split(kp)
+    sketch.document.undo_stack.append(CreateKeypointDoObject(sketch, kp, edge_to_split, new_edge))
   return kp
 
+
+def create_line(sketch, start_kp, end_kp):
+  line_edge = sketch.create_line_edge(start_kp, end_kp)
+  sketch.document.undo_stack.append(CreateEdgeDoObjet(sketch, line_edge))
+  return line_edge
 
 def create_circle(doc, sketch, kp, radius_param):
   circle_edge = sketch.create_circle_edge(kp, radius_param)
@@ -73,8 +131,7 @@ def find_all_similar(doc, sketch, digits):
   sim_y_dict = {}
   arcs = []
   doc.do_update = False
-  for kp_tuple in key_points:
-    kp = kp_tuple[1]
+  for kp in key_points:
     x_name = round(kp.x, digits)
     y_name = round(kp.y, digits)
     if x_name not in sim_x_dict:
@@ -124,8 +181,7 @@ def find_all_similar(doc, sketch, digits):
       param.hidden = True
     for kp in sim_y_list:
       kp.set_y_parameter(param.uid)
-  for edge_tuple in sketch.get_edges():
-    edge = edge_tuple[1]
+  for edge in sketch.get_edges():
     if edge.type == EdgeType.ArcEdge:
       r = edge.get_meta_data("r")
       ea = edge.get_meta_data("ea")

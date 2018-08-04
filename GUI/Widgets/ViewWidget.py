@@ -1,6 +1,6 @@
 from PyQt5.QtWidgets import QStackedWidget
 
-from Business import create_add_sketch_to_document
+from Business.SketchActions import create_add_sketch_to_parent
 from GUI.Widgets.CalcSheetView import CalcSheetView
 from GUI.Widgets.CalcTableView import CalcTableView
 from GUI.Widgets.DrawingEditorView import DrawingEditorViewWidget
@@ -72,10 +72,3 @@ class ViewWidget(QStackedWidget):
   def on_edge_selection_changed_in_table(self, selected_edges):
     self._sketchView.set_selected_edges(selected_edges)
 
-  def on_create_sketch(self):
-    if self.currentIndex() == 0:
-      create_add_sketch_to_document(self._document)
-    elif self.currentIndex() == 1:
-      self._partView.on_create_add_sketch_to_part()
-    elif self.currentIndex() == 2:
-      self._drawingView.on_create_add_sketch_to_drawing()

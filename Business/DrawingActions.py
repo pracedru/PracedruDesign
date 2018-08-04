@@ -5,7 +5,19 @@ from PyPDF2 import PdfFileWriter
 from reportlab.lib.pagesizes import letter, A0
 from reportlab.pdfgen import canvas
 
+from Business.Undo import DoObject
 from Data.Sketch import Sketch, Text
+
+
+class CreateDrawingDoObject(DoObject):
+  def __init__(self):
+    DoObject.__init__(self)
+
+  def undo(self):
+    pass
+
+  def redo(self):
+    pass
 
 
 def print_drawing(document, drawing):
@@ -25,10 +37,10 @@ def create_empty_header(document):
   width = 0.15
   height = 0.12
   ts = 0.001
-  pnt1 = header.create_key_point(0, 0, 0, ts)
-  pnt2 = header.create_key_point(width, 0, 0, ts)
-  pnt3 = header.create_key_point(width, height, 0, ts)
-  pnt4 = header.create_key_point(0, height, 0, ts)
+  pnt1 = header.create_keypoint(0, 0, 0)
+  pnt2 = header.create_keypoint(width, 0, 0)
+  pnt3 = header.create_keypoint(width, height, 0)
+  pnt4 = header.create_keypoint(0, height, 0)
 
   header.create_line_edge(pnt1, pnt2).style_name = "border"
   header.create_line_edge(pnt2, pnt3).style_name = "border"
@@ -50,33 +62,33 @@ def create_default_header(document):
   rev_height = 0.01
 
   captionTextHeight = 0.002
-  pnt1 = header.create_key_point(0, 0, 0, ts)
-  pnt2 = header.create_key_point(width, 0, 0, ts)
-  pnt3 = header.create_key_point(width, height + titleHeight, 0, ts)
-  pnt4 = header.create_key_point(0, height + titleHeight, 0, ts)
-  pnt5 = header.create_key_point(0, height / 2, 0, ts)
-  pnt6 = header.create_key_point(width, height / 2, 0, ts)
-  pnt7 = header.create_key_point(width / 2, height, 0, ts)
-  pnt8 = header.create_key_point(width / 2, 0.0, 0, ts)
-  pnt9 = header.create_key_point(width / 2, height / 4, 0, ts)
-  pnt10 = header.create_key_point(width, height / 4, 0, ts)
-  pnt11 = header.create_key_point(width, 3 * height / 8, 0, ts)
-  pnt12 = header.create_key_point(width / 2, 3 * height / 8, 0, ts)
-  pnt13 = header.create_key_point(3 * width / 4, 1 * height / 4, 0, ts)
-  pnt14 = header.create_key_point(3 * width / 4, height / 2, 0, ts)
-  pnt15 = header.create_key_point(widthRevision, height, 0, ts)
-  pnt16 = header.create_key_point(widthRevision, height / 2, 0, ts)
-  pnt17 = header.create_key_point(width, height, 0, ts)
-  pnt18 = header.create_key_point(0, height, 0, ts)
-  pnt19 = header.create_key_point(5 * width / 8, 1 * height / 2, 0, ts)
-  pnt20 = header.create_key_point(5 * width / 8, height, 0, ts)
-  pnt21 = header.create_key_point(6 * width / 8, 1 * height / 2, 0, ts)
-  pnt22 = header.create_key_point(6 * width / 8, height, 0, ts)
-  pnt23 = header.create_key_point(7 * width / 8, 1 * height / 2, 0, ts)
-  pnt24 = header.create_key_point(7 * width / 8, height, 0, ts)
-  pnt25 = header.create_key_point(width / 2 + textDist / 2, textDist * 2, 0, ts)
-  pnt26 = header.create_key_point(4 * width / 5 + textDist / 2, textDist * 2, 0, ts)
-  #pnt26 = header.create_key_point(4 * width / 5 + textDist / 2, textDist * 2, 0, ts)
+  pnt1 = header.create_keypoint(0, 0, 0)
+  pnt2 = header.create_keypoint(width, 0, 0)
+  pnt3 = header.create_keypoint(width, height + titleHeight, 0)
+  pnt4 = header.create_keypoint(0, height + titleHeight, 0)
+  pnt5 = header.create_keypoint(0, height / 2, 0)
+  pnt6 = header.create_keypoint(width, height / 2, 0)
+  pnt7 = header.create_keypoint(width / 2, height, 0)
+  pnt8 = header.create_keypoint(width / 2, 0.0, 0)
+  pnt9 = header.create_keypoint(width / 2, height / 4, 0)
+  pnt10 = header.create_keypoint(width, height / 4, 0)
+  pnt11 = header.create_keypoint(width, 3 * height / 8, 0)
+  pnt12 = header.create_keypoint(width / 2, 3 * height / 8, 0)
+  pnt13 = header.create_keypoint(3 * width / 4, 1 * height / 4, 0)
+  pnt14 = header.create_keypoint(3 * width / 4, height / 2, 0)
+  pnt15 = header.create_keypoint(widthRevision, height, 0)
+  pnt16 = header.create_keypoint(widthRevision, height / 2, 0)
+  pnt17 = header.create_keypoint(width, height, 0)
+  pnt18 = header.create_keypoint(0, height, 0)
+  pnt19 = header.create_keypoint(5 * width / 8, 1 * height / 2, 0)
+  pnt20 = header.create_keypoint(5 * width / 8, height, 0)
+  pnt21 = header.create_keypoint(6 * width / 8, 1 * height / 2, 0)
+  pnt22 = header.create_keypoint(6 * width / 8, height, 0)
+  pnt23 = header.create_keypoint(7 * width / 8, 1 * height / 2, 0)
+  pnt24 = header.create_keypoint(7 * width / 8, height, 0)
+  pnt25 = header.create_keypoint(width / 2 + textDist / 2, textDist * 2, 0)
+  pnt26 = header.create_keypoint(4 * width / 5 + textDist / 2, textDist * 2, 0)
+  #pnt26 = header.create_keypoint(4 * width / 5 + textDist / 2, textDist * 2, 0)
   header.create_line_edge(pnt1, pnt2).style_name = "border"
   header.create_line_edge(pnt2, pnt3).style_name = "border"
   header.create_line_edge(pnt3, pnt4).style_name = "border"
@@ -93,14 +105,14 @@ def create_default_header(document):
   header.create_line_edge(pnt23, pnt24)
   header.create_line_edge(pnt25, pnt26).style_name = "thin"
   for i in range(6):
-    pnta = header.create_key_point(width, height / 2 + i * rev_height, 0, ts)
-    pntb = header.create_key_point(0, height / 2 + i * rev_height, 0, ts)
-    pntrev = header.create_key_point(widthRevision / 2, height / 2 + rev_height / 2 + i * rev_height, 0, ts)
-    pntrtit = header.create_key_point(widthRevision + textDist / 2, height / 2 + rev_height / 2 + i * rev_height, 0, ts)
-    pntdt = header.create_key_point(9 * width / 16, height / 2 + rev_height / 2 + i * rev_height, 0, ts)
-    pntmk = header.create_key_point(11 * width / 16, height / 2 + rev_height / 2 + i * rev_height, 0, ts)
-    pntchk = header.create_key_point(13 * width / 16, height / 2 + rev_height / 2 + i * rev_height, 0, ts)
-    pntapp = header.create_key_point(15 * width / 16, height / 2 + rev_height / 2 + i * rev_height, 0, ts)
+    pnta = header.create_keypoint(width, height / 2 + i * rev_height, 0)
+    pntb = header.create_keypoint(0, height / 2 + i * rev_height, 0)
+    pntrev = header.create_keypoint(widthRevision / 2, height / 2 + rev_height / 2 + i * rev_height, 0)
+    pntrtit = header.create_keypoint(widthRevision + textDist / 2, height / 2 + rev_height / 2 + i * rev_height, 0)
+    pntdt = header.create_keypoint(9 * width / 16, height / 2 + rev_height / 2 + i * rev_height, 0)
+    pntmk = header.create_keypoint(11 * width / 16, height / 2 + rev_height / 2 + i * rev_height, 0)
+    pntchk = header.create_keypoint(13 * width / 16, height / 2 + rev_height / 2 + i * rev_height, 0)
+    pntapp = header.create_keypoint(15 * width / 16, height / 2 + rev_height / 2 + i * rev_height, 0)
     if (i == 0):
       header.create_text(pntrev, "Rev", valueTextHeight).horizontal_alignment = Text.Center
       header.create_text(pntrtit, "Revision Title", valueTextHeight).horizontal_alignment = Text.Right
@@ -120,12 +132,12 @@ def create_default_header(document):
       header.create_attribute(pntapp, "RevApprover" + str(i), "", valueTextHeight).horizontal_alignment = Text.Center
     header.create_line_edge(pnta, pntb)
 
-  header.create_attribute(header.create_key_point(textDist / 2, textDist * 1, 0, ts), "DocTitle3", "Document Title 3", valueTextHeight).horizontal_alignment = Text.Right
-  header.create_attribute(header.create_key_point(textDist / 2, textDist * 2, 0, ts), "DocTitle2", "Document Title 2", valueTextHeight).horizontal_alignment = Text.Right
-  header.create_attribute(header.create_key_point(textDist / 2, textDist * 3, 0, ts), "DocTitle1", "Document Title 1", valueTextHeight).horizontal_alignment = Text.Right
+  header.create_attribute(header.create_keypoint(textDist / 2, textDist * 1, 0), "DocTitle3", "Document Title 3", valueTextHeight).horizontal_alignment = Text.Right
+  header.create_attribute(header.create_keypoint(textDist / 2, textDist * 2, 0), "DocTitle2", "Document Title 2", valueTextHeight).horizontal_alignment = Text.Right
+  header.create_attribute(header.create_keypoint(textDist / 2, textDist * 3, 0), "DocTitle1", "Document Title 1", valueTextHeight).horizontal_alignment = Text.Right
 
-  header.create_text(header.create_key_point(width / 2 + textDist / 2, textDist * 1, 0, ts), "Document number", valueTextHeight).horizontal_alignment = Text.Right
-  header.create_attribute(header.create_key_point(width / 2 + textDist / 2, textDist * 3, 0, ts), "DocNumber", "123456",valueTextHeight*1.5).horizontal_alignment = Text.Right
+  header.create_text(header.create_keypoint(width / 2 + textDist / 2, textDist * 1, 0), "Document number", valueTextHeight).horizontal_alignment = Text.Right
+  header.create_attribute(header.create_keypoint(width / 2 + textDist / 2, textDist * 3, 0), "DocNumber", "123456",valueTextHeight*1.5).horizontal_alignment = Text.Right
 
   return header
 

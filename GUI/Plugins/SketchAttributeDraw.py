@@ -1,6 +1,6 @@
 from PyQt5.QtCore import Qt
 
-from Business.SketchActions import create_key_point, create_attribute
+from Business.SketchActions import get_create_keypoint, create_attribute
 from GUI.init import plugin_initializers
 
 from GUI.Ribbon.RibbonButton import RibbonButton
@@ -49,7 +49,7 @@ class SketchAttrubuteDraw():
       doc = self._main_window.document
       sketch = view.sketch
       coincident_threshold = 5 / scale
-      kp = create_key_point(doc, sketch, x, y, 0.0, coincident_threshold)
+      kp = get_create_keypoint(sketch, x, y, coincident_threshold)
       create_attribute(doc, sketch, kp, "Attribute name", "Default value", 0.007)
       self.on_escape()
 

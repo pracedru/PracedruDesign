@@ -1,13 +1,7 @@
-from math import log10
 
-from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QLabel
-
-from Business.SketchActions import create_key_point, find_all_similar
 from GUI.init import plugin_initializers
 
 from GUI.Ribbon.RibbonButton import RibbonButton
-from GUI.Ribbon.RibbonTextbox import RibbonTextbox
 
 
 class GenericView():

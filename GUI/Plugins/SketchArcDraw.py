@@ -3,7 +3,7 @@ from math import pi
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QDialog
 
-from Business.SketchActions import create_key_point, add_arc
+from Business.SketchActions import get_create_keypoint, add_arc
 from GUI.init import plugin_initializers
 
 from GUI.Ribbon.RibbonButton import RibbonButton
@@ -55,7 +55,7 @@ class SketchArcDraw():
       result = add_arc_widget.exec_()
       doc = self._main_window.document
       if result == QDialog.Accepted:
-        kp = create_key_point(doc, sketch, x, y, 0.0, coincident_threshold)
+        kp = get_create_keypoint(sketch, x, y, coincident_threshold)
         radius_param = sketch.get_parameter_by_name(add_arc_widget.radius_param())
         start_angle_param = sketch.get_parameter_by_name(add_arc_widget.start_angle_param())
         end_angle_param = sketch.get_parameter_by_name(add_arc_widget.end_angle_param())

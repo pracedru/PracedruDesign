@@ -17,12 +17,14 @@ class RibbonTab(QWidget):
     self._panes = {}
 
   def add_ribbon_pane(self, name):
-    ribbon_pane = RibbonPane(self, tr(name, "ribbon"))
+    name = tr(name, "ribbon")
+    ribbon_pane = RibbonPane(self, name)
     self._panes[name] = ribbon_pane
     self.layout().addWidget(ribbon_pane)
     return ribbon_pane
 
   def get_ribbon_pane(self, name):
+    name = tr(name, "ribbon")
     if name in self._panes:
       return self._panes[name]
     return self.add_ribbon_pane(name)

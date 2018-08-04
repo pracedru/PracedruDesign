@@ -29,7 +29,7 @@ class Edge(IdObject, NamedObservableObject):
     self._key_points = []
     self._meta_data = {}
     self._meta_data_parameters = {}
-    self._style = geometry.get_document().get_styles().get_edge_style_by_name('default')
+    self._style = geometry.document.get_styles().get_edge_style_by_name('default')
     self._plane = plane
 
     self._draw_data = None
@@ -51,13 +51,16 @@ class Edge(IdObject, NamedObservableObject):
 
   @style_name.setter
   def style_name(self, value):
-    styles = self._geometry.get_document().get_styles()
+    styles = self._geometry.document.get_styles()
     edge_style = styles.get_edge_style_by_name(value)
     self._style = edge_style
 
   @property
   def plane(self):
     return self._plane
+
+  def delete(self):
+    self.changed(ChangeEvent(self, ChangeEvent.Deleted, self))
 
   def set_meta_data(self, name, value):
     for param_tuple in self._meta_data_parameters.items():
@@ -72,7 +75,7 @@ class Edge(IdObject, NamedObservableObject):
     return self._meta_data[name]
 
   def get_meta_data_parameter(self, name):
-    doc = self._geometry.get_document()
+    doc = self._geometry.document()
     for param_tuple in self._meta_data_parameters.items():
       if param_tuple[1] == name:
         return doc.get_parameters().get_parameter_by_uid(param_tuple[0])
@@ -534,7 +537,7 @@ class Edge(IdObject, NamedObservableObject):
     self._type = EdgeType(data['type'])
     self._key_points = data['key_points']
     self._plane = Plane.deserialize(data.get('plane', None))
-    self._style = self._geometry.get_document().get_styles().get_edge_style(data.get('style', None))
+    self._style = self._geometry.document.get_styles().get_edge_style(data.get('style', None))
     for kp_uid in self._key_points:
       kp = self._geometry.get_key_point(kp_uid)
       kp.add_change_handler(self.on_key_point_changed)

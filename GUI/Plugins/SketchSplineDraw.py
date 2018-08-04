@@ -1,6 +1,6 @@
 from PyQt5.QtCore import Qt
 
-from Business.SketchActions import create_key_point, create_nurbs_edge
+from Business.SketchActions import create_nurbs_edge, get_create_keypoint
 from GUI.init import plugin_initializers
 
 from GUI.Ribbon.RibbonButton import RibbonButton
@@ -50,7 +50,7 @@ class SketchSplineDraw():
       sketch = view.sketch
       if view.kp_hover is None:
         coincident_threshold = 5 / scale
-        kp = create_key_point(doc, sketch, x, y, 0.0, coincident_threshold)
+        kp = get_create_keypoint(sketch, x, y, coincident_threshold)
         view.selected_key_points.append(kp)
       else:
         kp = view.kp_hover

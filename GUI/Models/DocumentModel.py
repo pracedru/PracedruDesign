@@ -3,6 +3,7 @@ from PyQt5.QtCore import QModelIndex
 from PyQt5.QtCore import QObject
 from PyQt5.QtCore import Qt
 
+from Business.Undo import change_name
 from Data.Analysis import Analysis
 from Data.Areas import Area
 from Data.CalcSheetAnalysis import CalcSheetAnalysis
@@ -196,7 +197,8 @@ class DocumentItemModel(QAbstractItemModel):
   def setData(self, index: QModelIndex, value, role=None):
     model_item = index.internalPointer()
     if role == Qt.EditRole:
-      model_item.data.name = str(value)
+      change_name(self._doc, model_item.data, str(value))
+      #model_item.data.name = str(value)
       return True
     return False
 
@@ -222,10 +224,20 @@ class DocumentItemModel(QAbstractItemModel):
       default_flags = default_flags | Qt.ItemIsEditable
     if isinstance(model_item.data, Analysis):
       default_flags = default_flags | Qt.ItemIsEditable
+    if isinstance(model_item.data, Area):
+      default_flags = default_flags | Qt.ItemIsEditable
+    if isinstance(model_item.data, Edge):
+      default_flags = default_flags | Qt.ItemIsEditable
     return default_flags
 
   def on_object_deleted(self, item):
     item.setParent(None)
+
+  def on_object_changed(self, item):
+    # index =
+    # self.dataChanged(index, index)
+    self.layoutAboutToBeChanged.emit()
+    self.layoutChanged.emit()
 
   def on_document_changed(self, event):
     self.layoutAboutToBeChanged.emit()
@@ -352,3 +364,5 @@ class DocumentModelItem(QObject):
       self._model.on_object_removed(self, event)
     elif event.type == ChangeEvent.Deleted:
       self._model.on_object_deleted(self)
+    elif event.type == ChangeEvent.ValueChanged:
+      self._model.on_object_changed(self)

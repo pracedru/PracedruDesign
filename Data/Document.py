@@ -141,6 +141,9 @@ class Document(IdObject, Parameters):
       self._undo_stack.sneak_append(event.object)
       self._undo_stack.changed(ChangeEvent(self, ChangeEvent.ValueChanged, None))
 
+  def add_sketch(self, sketch):
+    self._geometries.add_geometry(sketch)
+
   def serialize_json(self):
     return \
       {

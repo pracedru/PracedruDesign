@@ -32,20 +32,12 @@ def save_document(doc: Document):
   doc.set_status('Document saved')
 
 
-def create_add_sketch_to_document(document):
-  sketch = Sketch(document.get_parameters(), document)
-  document.get_geometries().add_geometry(sketch)
-  document.get_geometries().add_child(sketch)
-  return sketch
-
-
 def add_part(document):
-  part = Part(document.get_parameters(), document)
+  part = Part(document.get_parameters())
   part.create_plane_feature('XY', Vertex(0, 0, 0), Vertex(1, 0, 0), Vertex(0, 1, 0))
   part.create_plane_feature('XZ', Vertex(0, 0, 0), Vertex(1, 0, 0), Vertex(0, 0, 1))
   part.create_plane_feature('ZY', Vertex(0, 0, 0), Vertex(0, 0, 1), Vertex(0, 1, 0))
   document.get_geometries().add_geometry(part)
-  document.get_geometries().add_child(part)
   return part
 
 

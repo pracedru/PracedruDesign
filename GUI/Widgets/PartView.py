@@ -1,7 +1,7 @@
 from math import *
 
 import numpy as np
-from PyQt5.QtCore import QPoint, QThread
+from PyQt5.QtCore import QPoint
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QColor, QOpenGLShaderProgram, QOpenGLShader, QMatrix4x4, QVector3D, QVector2D
 
@@ -96,6 +96,10 @@ class PartViewWidget(QOpenGLWidget):
     self._show_planes = value
     self.update()
 
+  @property
+  def part(self):
+    return self._part
+
   def set_part(self, part: Part):
     if self._part == part:
       return
@@ -180,15 +184,8 @@ class PartViewWidget(QOpenGLWidget):
       self.part_color = QColor(self._part.color[0], self._part.color[1], self._part.color[2], self._part.color[3])
       self.part_specular = self._part.specular
 
-  def on_create_add_sketch_to_part(self):
-    planes = []
-    for plane_feature in self._part.get_plane_features():
-      planes.append(plane_feature.name)
-    value = QInputDialog.getItem(self, "Select plane for sketch", "plane name:", planes, 0, False)
-    if value[1] == QDialog.Accepted:
-      for plane_feature in self._part.get_plane_features():
-        if plane_feature.name == value[0]:
-          create_add_sketch_to_part(self._document, self._part, plane_feature)
+  def on_escape(self):
+    pass
 
   def on_insert_sketch(self):
     sketch_dialog = SketchDialog(self, self._document, self._part)

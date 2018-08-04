@@ -2,7 +2,6 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QInputDialog
 
 from Business.DrawingActions import add_sketch_to_drawing
-from Business.SketchActions import create_key_point
 from Data.Vertex import Vertex
 from GUI.init import plugin_initializers
 
