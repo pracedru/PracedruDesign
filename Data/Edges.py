@@ -93,13 +93,13 @@ class Edge(IdObject, NamedObservableObject):
     meta_name = self._meta_data_parameters[uid]
     self._meta_data[meta_name] = param.value
     if self._type == EdgeType.ArcEdge:
-      ckp = self._geometry.get_key_point(self._key_points[0])
+      ckp = self._geometry.get_keypoint(self._key_points[0])
       self.update_linked_kps(ckp)
 
   def get_key_points(self):
     kps = []
     for uid in self._key_points:
-      kps.append(self._geometry.get_key_point(uid))
+      kps.append(self._geometry.get_keypoint(uid))
     return kps
 
   def get_key_point_uids(self):
@@ -120,9 +120,9 @@ class Edge(IdObject, NamedObservableObject):
         kps.append(key_points[0])
       return kps
     elif self._type == EdgeType.ArcEdge:
-      ckp = self._geometry.get_key_point(self._key_points[0])
+      ckp = self._geometry.get_keypoint(self._key_points[0])
       if 'start_kp' in self._meta_data:
-        start_kp = self._geometry.get_key_point(self._meta_data['start_kp'])
+        start_kp = self._geometry.get_keypoint(self._meta_data['start_kp'])
       else:
         pm = self._plane.get_global_projection_matrix()
         x = cos(self._meta_data['sa']) * self._meta_data['r']
@@ -135,7 +135,7 @@ class Edge(IdObject, NamedObservableObject):
         start_kp.editable = False
         self._meta_data['start_kp'] = start_kp.uid
       if 'end_kp' in self._meta_data:
-        end_kp = self._geometry.get_key_point(self._meta_data['end_kp'])
+        end_kp = self._geometry.get_keypoint(self._meta_data['end_kp'])
       else:
         pm = self._plane.get_global_projection_matrix()
         x = cos(self._meta_data['ea']) * self._meta_data['r']
@@ -178,7 +178,7 @@ class Edge(IdObject, NamedObservableObject):
       event.object.remove_change_handler(self.on_key_point_changed)
     self.changed(event)
     if self._type == EdgeType.ArcEdge:
-      ckp = self._geometry.get_key_point(self._key_points[0])
+      ckp = self._geometry.get_keypoint(self._key_points[0])
       if event.sender == ckp:
         self.update_linked_kps(ckp)
     if self._type == EdgeType.NurbsEdge:
@@ -190,12 +190,12 @@ class Edge(IdObject, NamedObservableObject):
       x = cos(self._meta_data['ea']) * self._meta_data['r']
       y = sin(self._meta_data['ea']) * self._meta_data['r']
       z = 0
-      end_kp = self._geometry.get_key_point(self._meta_data['end_kp'])
+      end_kp = self._geometry.get_keypoint(self._meta_data['end_kp'])
       pc1 = ckp.xyz + pm.dot(np.array([x, y, z]))
       end_kp.x = pc1[0]
       end_kp.y = pc1[1]
       end_kp.z = pc1[2]
-      start_kp = self._geometry.get_key_point(self._meta_data['start_kp'])
+      start_kp = self._geometry.get_keypoint(self._meta_data['start_kp'])
       x = cos(self._meta_data['sa']) * self._meta_data['r']
       y = sin(self._meta_data['sa']) * self._meta_data['r']
       z = 0
@@ -539,7 +539,7 @@ class Edge(IdObject, NamedObservableObject):
     self._plane = Plane.deserialize(data.get('plane', None))
     self._style = self._geometry.document.get_styles().get_edge_style(data.get('style', None))
     for kp_uid in self._key_points:
-      kp = self._geometry.get_key_point(kp_uid)
+      kp = self._geometry.get_keypoint(kp_uid)
       kp.add_change_handler(self.on_key_point_changed)
       kp.add_edge(self)
     self._meta_data = data.get('meta_data')

@@ -105,6 +105,9 @@ class Document(IdObject, Parameters):
   def get_sketch_by_name(self, name):
     return self._geometries.get_sketch_by_name(name)
 
+  def get_sketch(self, uid):
+    return self._geometries.get_geometry(uid)
+
   def on_geometries_changed(self, event: ChangeEvent):
     self.changed(ChangeEvent(self, ChangeEvent.ObjectChanged, event.sender))
 

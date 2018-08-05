@@ -105,7 +105,10 @@ class ParametersModel(QAbstractTableModel):
       parsed = QLocale().toDouble(value)
       if parsed[1]:
         #param.value = parsed[0]
-        set_parameter(param, parsed[0])
+        try:
+          set_parameter(param, parsed[0])
+        except Exception as e:
+          self._parameters.document.set_status(str(e))
       else:
         try:
           if value == "":
@@ -115,7 +118,7 @@ class ParametersModel(QAbstractTableModel):
             set_parameter(param, formula_from_locale(value))
             #param.value = formula_from_locale(value)
         except Exception as ex:
-          QMessageBox.information(None, "Error", str(ex))
+          self._parameters.document.set_status(str(ex))
       return True
     elif col == 3:
       if int_role == Qt.CheckStateRole:

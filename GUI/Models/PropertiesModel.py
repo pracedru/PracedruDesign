@@ -21,6 +21,9 @@ rows_by_type = {
     ['Radius', {'name': 'get_meta_data', 'args': ['r'], 'setName': 'set_meta_data'},  {'condition': ['type', EdgeType.ArcEdge]}],
     ['Start angle', {'name': 'get_meta_data', 'args': ['sa'], 'setName': 'set_meta_data'}, {'condition': ['type', EdgeType.ArcEdge]}],
     ['End angle', {'name': 'get_meta_data', 'args': ['ea'], 'setName': 'set_meta_data'}, {'condition': ['type', EdgeType.ArcEdge]}]],
+  "SketchInstance": [
+    ['Name', 'name'],
+    ['Scale', 'scale']],
   "EdgeLoopArea": [
     ['Name', 'name'],
     ['Brush', 'brush_name'],
@@ -86,7 +89,14 @@ rows_by_type = {
   "PartView": [
     ['Name', 'name'],
     ['Scale', 'scale'],
-    ['Position', 'offset_values']
+    ['Position', 'offset_values']],
+  "Parameter": [
+    ['Name', 'name'],
+    ['Value', 'value_view'],
+    ['Formula', 'formula'],
+    ['Base unit', 'base_unit'],
+    ['Hidden', 'hidden'],
+    ['Locked', 'locked']
   ]
 }
 

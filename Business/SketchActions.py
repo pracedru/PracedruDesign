@@ -102,8 +102,9 @@ def add_arc(document, sketch: Sketch, kp, radius_param, start_angle_param, end_a
   arc_edge.set_meta_data_parameter('sa', start_angle_param)
   arc_edge.set_meta_data_parameter('ea', end_angle_param)
 
-def add_sketch_instance_to_sketch(sketch_to_insert, x, y):
-  print("add_sketch_instance_to_sketch")
+def add_sketch_instance_to_sketch(sketch, sketch_to_insert, kp):
+  sketch_instance = sketch.create_sketch_instance(sketch_to_insert, kp)
+  return sketch_instance
 
 
 def set_similar_x(document: Document, sketch: Sketch, key_points: [], name):

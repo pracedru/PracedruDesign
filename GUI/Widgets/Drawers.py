@@ -64,7 +64,9 @@ def draw_sketch(qp: QPainter, sketch, scale, brush_scale, offset, center, pens, 
   for area in areas:
     if area.brush is not None:
       brush = QBrush(QColor(0, 0, 0), Qt.HorPattern)
-      transform = QTransform().translate(offset.x * brush_scale, -offset.y * brush_scale).scale(brush_scale, brush_scale).rotate(area.brush_rotation)
+      transx = offset.x * scale + center.x
+      transy = -offset.y * scale + center.y
+      transform = QTransform().translate(transx, transy).scale(brush_scale, brush_scale).rotate(area.brush_rotation)
       brush.setTransform(transform)
       draw_area(area, qp, scale, offset, center.y, center.x, False, brush)
   for edge in edges:
@@ -77,6 +79,12 @@ def draw_sketch(qp: QPainter, sketch, scale, brush_scale, offset, center, pens, 
       draw_attribute(text, qp, scale, offset, center, True, value)
     else:
       draw_text(text, qp, scale, offset, center)
+
+  for sketch_instance in sketch.sketch_instances:
+    si = sketch_instance.sketch
+    siscale = sketch_instance.scale*scale
+    sioffset = (offset+sketch_instance.offset)/sketch_instance.scale
+    draw_sketch(qp, si, siscale, brush_scale, sioffset, center, pens, fields)
 
 
 def draw_attribute(text, qp: QPainter, scale, offset, center, show_value=False, value=None):

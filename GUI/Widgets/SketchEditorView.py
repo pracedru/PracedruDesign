@@ -318,6 +318,7 @@ class SketchEditorViewWidget(QWidget):
     self.draw_areas(event, qp)
     self.draw_edges(event, qp)
     self.draw_texts(event, qp)
+    self.draw_instances(event, qp)
     qp.end()
 
   def draw_texts(self, event, qp: QPainter):
@@ -423,9 +424,24 @@ class SketchEditorViewWidget(QWidget):
       draw_area(area, qp, scale, self._offset, half_height, half_width, self._states.show_area_names or area in self._selected_areas, brush)
       if area.brush is not None:
         brush = QBrush(QColor(0, 0, 0), Qt.HorPattern)
-        transform = QTransform().translate(self._offset.x*scale, -self._offset.y*scale).scale(2, 2).rotate(area.brush_rotation)
+        transx =  self._offset.x*scale + half_width
+        transy = -self._offset.y*scale + half_height
+        transform = QTransform().translate(transx, transy).scale(2, 2).rotate(area.brush_rotation)
         brush.setTransform(transform)
         draw_area(area, qp, scale, self._offset, half_height, half_width, self._states.show_area_names or area in self._selected_areas, brush)
+
+
+  def draw_instances(self, event, qp):
+    pens = create_pens(self._doc, 6000)
+    if self._sketch is None:
+      return
+    half_width = self.width() / 2
+    half_height = self.height() / 2
+    center = Vertex(half_width, half_height)
+    for sketch_instance in self._sketch.sketch_instances:
+      si = sketch_instance.sketch
+      os = (self._offset + sketch_instance.offset)/sketch_instance.scale
+      draw_sketch(qp, si, sketch_instance.scale * self._scale, 2, os, center, pens, {})
 
   def update_status(self):
     self._doc.set_status("")

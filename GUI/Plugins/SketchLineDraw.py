@@ -30,7 +30,7 @@ class SketchLineDraw():
                                                          self.on_add_line,
                                                          checkable=True)
     self._add_sketch_instance_action = self._main_window.add_action("Add\nInstance",
-                                                         "addsketchinstance",
+                                                         "addsketch",
                                                          "Add sketch instance to this sketch",
                                                          True,
                                                          self.on_add_sketch_instance,
@@ -93,18 +93,30 @@ class SketchLineDraw():
         doc.set_status("Click on sketch to select or add point. Hold CTRL to conintue drawing.", 50, True)
       self._last_kp = current_kp
     if self._states.add_sketch_instance:
+      view = self._sketch_editor_view
       self._states.add_sketch_instance = False
-      sketch = self._sketch_editor_view.sketch
+      sketch = view.sketch
       parent = sketch.parent
+
+      if view.kp_hover is None:
+        coincident_threshold = 5 / scale
+        current_kp = get_create_keypoint(sketch, x, y, coincident_threshold)
+      else:
+        current_kp = view.kp_hover
+
       sketch_list = []
       for item in parent.get_sketches():
-        sketch_list.append(item.name)
+        if item is not sketch:
+          sketch_list.append(item.name)
+
       value = QInputDialog.getItem(self._main_window, "Select sketch", "sketch:", sketch_list, 0, True)
+      sketch_to_insert = None
       for item in parent.get_sketches():
         if item.name == value[0]:
           sketch_to_insert = parent.get_sketch_by_name(value[0])
       if sketch_to_insert is not None:
-        add_sketch_instance_to_sketch(sketch_to_insert, x, y)
+        add_sketch_instance_to_sketch(sketch, sketch_to_insert, current_kp)
+      view.on_escape()
 
   def on_escape(self):
     self._states.draw_line_edge = False

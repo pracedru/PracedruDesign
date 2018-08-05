@@ -12,7 +12,7 @@ operators = {ast.Add: op.add, ast.Sub: op.sub, ast.Mult: op.mul,
              ast.USub: op.neg}
 
 operator_keys = ['+', '-', '*', '/', '^', '(', ')', ',']
-
+true_strings = ['true', 'yes', '1', 't', 'y']
 
 def pi_func():
   return math.pi
@@ -33,6 +33,8 @@ funcs = {
   'log10': math.log10
 }
 
+def boolean(value):
+  return str(value).lower() in true_strings
 
 def eval_expr(expr):
   return eval_(ast.parse(expr, mode='eval').body)
@@ -79,6 +81,7 @@ class Parameter(IdObject, ObservableObject):
     self._arguments = []
     self._base_unit = False
     self._units = {}
+    self._locked = False
 
   @property
   def name(self):
@@ -114,15 +117,31 @@ class Parameter(IdObject, ObservableObject):
     return self._parent
 
   @property
+  def locked(self):
+    return self._locked
+
+  @locked.setter
+  def locked(self, value):
+    if type(value) is not bool:
+      value = boolean(value)
+    self._locked = value
+
+  @property
   def hidden(self):
     return self._hidden
 
   @hidden.setter
-  def hidden(self, hide):
+  def hidden(self, value):
     old_val = self._hidden
-    self._hidden = hide
-    if hide != old_val:
-      self.changed(ChangeEvent(self, ChangeEvent.HiddenChanged, {'new value': hide, 'old value': old_val}))
+    if type(value) is not bool:
+      value = boolean(value)
+    self._hidden = value
+    if value != old_val:
+      self.changed(ChangeEvent(self, ChangeEvent.HiddenChanged, {'new value': value, 'old value': old_val}))
+
+  @property
+  def value_view(self):
+    return self._value
 
   @property
   def value(self):
@@ -158,6 +177,10 @@ class Parameter(IdObject, ObservableObject):
     return self._value
 
   def set_instance_value(self, instance_uid, value):
+    if self._base_unit:
+      raise ValueError("Base unit can only have value = 1")
+    elif self._locked:
+      raise ValueError("This parameter " + self.name + " has been locked")
     old_value = self.get_instance_value(instance_uid)
     if value is None and instance_uid is not None:
       if instance_uid in self._instance_values:
@@ -225,14 +248,19 @@ class Parameter(IdObject, ObservableObject):
 
   @base_unit.setter
   def base_unit(self, value):
-    if len(self._units) == 0:
-      self._base_unit = value
-      if value:
+    if type(value) is not bool:
+      value = boolean(value)
+    if value:
+      if len(self._units) == 0:
+        self._base_unit = value
+        self._value = 1
+        self._formula = "1"
         self._units[self.uid] = [1, self]
       else:
-        self._units.clear()
+        raise Exception("Base unit can not be based on other units.")
     else:
-      raise Exception("Base unit can not be based on other units.")
+      self._units.clear()
+      self._base_unit = value
 
   @property
   def units(self):

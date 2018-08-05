@@ -51,6 +51,13 @@ class Sketch(Geometry):
   def edges_count(self):
     return len(self._edges)
 
+  @property
+  def sketch_instances(self):
+    return self._sketch_instances.values()
+
+  def get_sketch(self, uid):
+    return self.parent.get_sketch(uid)
+
   def get_edge(self, uid):
     if uid in self._edges:
       return self._edges[uid]
@@ -63,7 +70,7 @@ class Sketch(Geometry):
         return edge[1]
     return None
 
-  def get_key_point(self, uid):
+  def get_keypoint(self, uid):
     try:
       return self._key_points[uid]
     except KeyError:
@@ -136,6 +143,14 @@ class Sketch(Geometry):
     self._key_points[key_point.uid] = key_point
     self.changed(ChangeEvent(self, ChangeEvent.ObjectAdded, key_point))
     key_point.add_change_handler(self.on_kp_changed)
+
+  def create_sketch_instance(self, sketch_to_insert, kp):
+    sketch_instance = SketchInstance(self, sketch_to_insert.name)
+    sketch_instance.sketch = sketch_to_insert
+    sketch_instance.offset = kp
+    self._sketch_instances[sketch_instance.uid] = sketch_instance
+    return sketch_instance
+
 
   def create_circle_edge(self, kp, radius_param):
     circle_edge = None
@@ -294,12 +309,19 @@ class Sketch(Geometry):
 
   def on_area_changed(self, event: ChangeEvent):
     if event.type == ChangeEvent.Deleted:
-      self.changed(ChangeEvent(self, ChangeEvent.BeforeObjectRemoved, event.sender))
       if event.object.uid in self._areas:
+        self.changed(ChangeEvent(self, ChangeEvent.BeforeObjectRemoved, event.sender))
         self._areas.pop(event.object.uid)
-      self.changed(ChangeEvent(self, ChangeEvent.ObjectRemoved, event.sender))
+        self.changed(ChangeEvent(self, ChangeEvent.ObjectRemoved, event.sender))
       event.object.remove_change_handler(self.on_area_changed)
-      self.changed(ChangeEvent(self, ChangeEvent.ObjectRemoved, event.sender))
+
+  def on_sketch_instance_changed(self, event: ChangeEvent):
+    if event.type == ChangeEvent.Deleted:
+      if event.object.uid in self._sketch_instances:
+        self.changed(ChangeEvent(self, ChangeEvent.BeforeObjectRemoved, event.sender))
+        self._sketch_instances.pop(event.object.uid)
+        self.changed(ChangeEvent(self, ChangeEvent.ObjectRemoved, event.sender))
+      event.object.remove_change_handler(self.on_sketch_instance_changed)
 
   def delete(self):
     self.changed(ChangeEvent(self, ChangeEvent.Deleted, self))
@@ -312,6 +334,7 @@ class Sketch(Geometry):
       'edges': self._edges,
       'areas': self._areas,
       'texts': self._texts,
+      'instances': self._sketch_instances,
       'threshold': self.threshold,
       'edge_naming_index': self.edge_naming_index,
       'type': self._geometry_type
@@ -354,6 +377,12 @@ class Sketch(Geometry):
       area = Area.deserialize(area_data, self)
       self._areas[area.uid] = area
       area.add_change_handler(self.on_area_changed)
+
+    for sketch_instance_tuple in data.get('instances', {}).items():
+      sketch_instance_data = sketch_instance_tuple[1]
+      sketch_instance = SketchInstance.deserialize(self, sketch_instance_data)
+      self._sketch_instances[sketch_instance.uid] = sketch_instance
+      sketch_instance.add_change_handler(self.on_sketch_instance_changed)
 
     if self.edge_naming_index == 0:
       for edge_tuple in self._edges.items():
@@ -463,7 +492,7 @@ class Text(IdObject, ObservableObject):
 
   def deserialize_data(self, data):
     IdObject.deserialize_data(self, data['uid'])
-    self._key_point = self._sketch.get_key_point(data['kp'])
+    self._key_point = self._sketch.get_keypoint(data['kp'])
     self._value = data['value']
     self._height = data['height']
     self._angle = data['angle']
@@ -533,12 +562,12 @@ class SketchInstance(IdObject, NamedObservableObject):
     self._parent = parent
     self._sketch = None
     self._offset = None
+    self._scale = 1.0
 
   @property
   def sketch(self):
-    if self._sketch is not None:
-      if type(self._sketch) is not Sketch:
-        self._sketch = self._parent.get_sketch(self._sketch)
+    if type(self._sketch) is not Sketch:
+      self._sketch = self._parent.get_sketch(self._sketch)
     return self._sketch
 
   @sketch.setter
@@ -547,18 +576,29 @@ class SketchInstance(IdObject, NamedObservableObject):
 
   @property
   def offset(self):
+    if type(self._offset) is not KeyPoint:
+      self._offset = self._parent.get_keypoint(self._offset)
     return self._offset
 
   @offset.setter
   def offset(self, value):
     self._offset = value
 
+  @property
+  def scale(self):
+    return self._scale
+
+  @scale.setter
+  def scale(self, value):
+    self._scale = value
+
   def serialize_json(self):
     return {
       'uid': IdObject.serialize_json(self),
       'no': NamedObservableObject.serialize_json(self),
       'sketch': self._sketch.uid,
-      'offset': self._offset
+      'offset': self._offset.uid,
+      'scale': self._scale
     }
 
   @staticmethod
@@ -572,4 +612,5 @@ class SketchInstance(IdObject, NamedObservableObject):
     IdObject.deserialize_data(self, data['uid'])
     NamedObservableObject.deserialize_data(self, data['no'])
     self._sketch = data['sketch']
-    self._offset = KeyPoint.deserialize_data(data['offset'], self._parent)
+    self._offset = data['offset']
+    self._scale = data['scale']

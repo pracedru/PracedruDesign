@@ -73,6 +73,8 @@ class DocumentItemModel(QAbstractItemModel):
       text_item = DocumentModelItem(text, self, geom_item.children()[3])
     for area in sketch.get_areas():
       area_item = DocumentModelItem(area, self, geom_item.children()[4])
+    for sketch_instance in sketch.sketch_instances:
+      sketch_instance_item = DocumentModelItem(sketch_instance, self, geom_item.children()[5])
     return geom_item
 
   def populate_drawing(self, drawing, parent_item):
@@ -311,6 +313,8 @@ class DocumentItemModel(QAbstractItemModel):
         DocumentModelItem(None, self, new_item, "Edges")
         DocumentModelItem(None, self, new_item, "Annotation")
         DocumentModelItem(None, self, new_item, "Areas")
+        DocumentModelItem(None, self, new_item, "Sketch instances")
+
       if type(object) is Drawing:
         DocumentModelItem(None, self, new_item, "Fields")
         self.populate_sketch(object.header_sketch, new_item)

@@ -40,7 +40,7 @@ class KeyPointsModel(QAbstractTableModel):
     row = model_index.row()
     data = None
     if int_role == Qt.DisplayRole:
-      kp_item = self._sketch.get_key_point(self._rows[row])
+      kp_item = self._sketch.get_keypoint(self._rows[row])
       if col == 0:
         param = kp_item.get_x_parameter()
         if param is not None:
@@ -54,7 +54,7 @@ class KeyPointsModel(QAbstractTableModel):
         else:
           data = QLocale().toString(kp_item.y)
     elif int_role == Qt.EditRole:
-      kp_item = self._sketch.get_key_point(self._rows[row])
+      kp_item = self._sketch.get_keypoint(self._rows[row])
       if col == 0:
         param = kp_item.get_x_parameter()
         if param is not None:
@@ -73,7 +73,7 @@ class KeyPointsModel(QAbstractTableModel):
   def setData(self, model_index: QModelIndex, value: QVariant, int_role=None):
     col = model_index.column()
     row = model_index.row()
-    kp_item = self._sketch.get_key_point(self._rows[row])
+    kp_item = self._sketch.get_keypoint(self._rows[row])
     parsed = QLocale().toDouble(value)
     parameter = None
     if parsed[1]:
@@ -101,13 +101,13 @@ class KeyPointsModel(QAbstractTableModel):
     return False
 
   def removeRow(self, row, QModelIndex_parent=None, *args, **kwargs):
-    kp = self._sketch.get_key_point(self._rows[row])
+    kp = self._sketch.get_keypoint(self._rows[row])
     remove_key_points(self._doc, self._sketch, [kp])
 
   def remove_rows(self, rows):
     kps = []
     for row in rows:
-      kps.append(self._sketch.get_key_point(self._rows[row]))
+      kps.append(self._sketch.get_keypoint(self._rows[row]))
     remove_key_points(self._doc, self._sketch, kps)
 
   def on_sketch_changed(self, event: ChangeEvent):
@@ -144,7 +144,7 @@ class KeyPointsModel(QAbstractTableModel):
   def flags(self, model_index: QModelIndex):
     default_flags = Qt.ItemIsSelectable
     row = model_index.row()
-    kp_item = self._sketch.get_key_point(self._rows[row])
+    kp_item = self._sketch.get_keypoint(self._rows[row])
     if kp_item.editable:
       default_flags |= Qt.ItemIsEditable | Qt.ItemIsEnabled
     return default_flags
@@ -165,7 +165,7 @@ class KeyPointsModel(QAbstractTableModel):
     return self._sketch
 
   def get_key_point(self, row):
-    return self._sketch.get_key_point(self._rows[row])
+    return self._sketch.get_keypoint(self._rows[row])
 
   def get_index_from_key_point(self, kp):
     row = self._rows.index(kp.uid)

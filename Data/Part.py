@@ -463,8 +463,14 @@ class Part(Geometry):
 
   def get_sketches(self):
     sketches = list(self._sketches.values())
-    sketches.extend(self.document.get_geometries().get_sketches())
+    sketches.extend(self.parent.get_sketches())
     return sketches
+
+  def get_sketch_by_name(self, name):
+    for item in self._sketches:
+      if item.name == name:
+        return item
+    return self.parent.get_sketch_by_name(name)
 
   def get_feature(self, uid):
     if uid in self._features:
