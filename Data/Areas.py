@@ -9,341 +9,341 @@ from Data.Vertex import Vertex
 
 __author__ = 'mamj'
 
+
 class AreaType(Enum):
-  EdgeLoop = 0
-  Composite = 1
+	EdgeLoop = 0
+	Composite = 1
 
 
 class Area(IdObject, NamedObservableObject):
-  def __init__(self, sketch):
-    IdObject.__init__(self)
-    NamedObservableObject.__init__(self, "New Area")
-    self._sketch = sketch
-    self._brush = None
-    self._brush_rotation = 50
-    self._type = None
+	def __init__(self, sketch):
+		IdObject.__init__(self)
+		NamedObservableObject.__init__(self, "New Area")
+		self._sketch = sketch
+		self._brush = None
+		self._brush_rotation = 50
+		self._type = None
 
-  @property
-  def type(self):
-    return self._type
+	@property
+	def type(self):
+		return self._type
 
-  @property
-  def brush(self):
-    return self._brush
+	@property
+	def brush(self):
+		return self._brush
 
-  @property
-  def brush_name(self):
-    if self._brush is None:
-      return "None"
-    else:
-      return self._brush.name
+	@property
+	def brush_name(self):
+		if self._brush is None:
+			return "None"
+		else:
+			return self._brush.name
 
-  @property
-  def brush_rotation(self):
-    return self._brush_rotation
+	@property
+	def brush_rotation(self):
+		return self._brush_rotation
 
-  @brush_rotation.setter
-  def brush_rotation(self, value):
-    self._brush_rotation = value
+	@brush_rotation.setter
+	def brush_rotation(self, value):
+		self._brush_rotation = value
 
-  @brush_name.setter
-  def brush_name(self, value):
-    styles = self._sketch.document.get_styles()
-    brush = styles.get_brush_by_name(value)
-    self._brush = brush
+	@brush_name.setter
+	def brush_name(self, value):
+		styles = self._sketch.document.get_styles()
+		brush = styles.get_brush_by_name(value)
+		self._brush = brush
 
-  @staticmethod
-  def deserialize(data, sketch):
-    if data['area']['type'] == AreaType.EdgeLoop.value:
-      area = EdgeLoopArea(sketch)
-      area.deserialize_data(data, sketch)
-      return area
-    elif data['area']['type'] == AreaType.Composite.value:
-      area = CompositeArea(sketch)
-      area.deserialize_data(data, sketch)
-      return area
+	@staticmethod
+	def deserialize(data, sketch):
+		if data['area']['type'] == AreaType.EdgeLoop.value:
+			area = EdgeLoopArea(sketch)
+			area.deserialize_data(data, sketch)
+			return area
+		elif data['area']['type'] == AreaType.Composite.value:
+			area = CompositeArea(sketch)
+			area.deserialize_data(data, sketch)
+			return area
 
-  def serialize_json(self):
-    brush_uid = None
-    if self._brush is not None:
-      brush_uid = self._brush.uid
-    return \
-      {
-        'uid': IdObject.serialize_json(self),
-        'no': NamedObservableObject.serialize_json(self),
-        'type': self._type.value,
-        'brush': brush_uid,
-        'brush_rot': self._brush_rotation
-      }
+	def serialize_json(self):
+		brush_uid = None
+		if self._brush is not None:
+			brush_uid = self._brush.uid
+		return \
+			{
+				'uid': IdObject.serialize_json(self),
+				'no': NamedObservableObject.serialize_json(self),
+				'type': self._type.value,
+				'brush': brush_uid,
+				'brush_rot': self._brush_rotation
+			}
 
-  def deserialize_data(self, data):
-    IdObject.deserialize_data(self, data['uid'])
-    NamedObservableObject.deserialize_data(self, data.get('no', None))
-    brush_uid = data.get('brush')
-    self._brush = self._sketch.document.get_styles().get_brush(brush_uid)
-    self._brush_rotation = data.get("brush_rot", 50)
+	def deserialize_data(self, data):
+		IdObject.deserialize_data(self, data['uid'])
+		NamedObservableObject.deserialize_data(self, data.get('no', None))
+		brush_uid = data.get('brush')
+		self._brush = self._sketch.document.get_styles().get_brush(brush_uid)
+		self._brush_rotation = data.get("brush_rot", 50)
 
 
 class EdgeLoopArea(Area):
-  def __init__(self, sketch):
-    Area.__init__(self, sketch)
-    self._edges = []
-    self._key_points = None
-    self._type = AreaType.EdgeLoop
+	def __init__(self, sketch):
+		Area.__init__(self, sketch)
+		self._edges = []
+		self._key_points = None
+		self._type = AreaType.EdgeLoop
 
-  def inside(self, point):
-    anglesum = 0.0
-    last_point = None
-    if self._edges[0].type == EdgeType.CircleEdge:
-      kp = self._edges[0].get_key_points()[0]
-      r = self._edges[0].get_meta_data('r')
-      if r > kp.distance(point):
-        return True
-      return False
-    else:
-      for pnt in self.get_inside_key_points():
-        if last_point is not None:
-          angle = point.angle_between(last_point, pnt)
-          if angle > pi:
-            angle = -(2 * pi - angle)
-          anglesum += angle
-        last_point = pnt
-      if abs(anglesum) > pi:
-        return True
-      return False
+	def inside(self, point):
+		anglesum = 0.0
+		last_point = None
+		if self._edges[0].type == EdgeType.CircleEdge:
+			kp = self._edges[0].get_key_points()[0]
+			r = self._edges[0].get_meta_data('r')
+			if r > kp.distance(point):
+				return True
+			return False
+		else:
+			for pnt in self.get_inside_key_points():
+				if last_point is not None:
+					angle = point.angle_between(last_point, pnt)
+					if angle > pi:
+						angle = -(2 * pi - angle)
+					anglesum += angle
+				last_point = pnt
+			if abs(anglesum) > pi:
+				return True
+			return False
 
-  def get_intersecting_edges(self, kp, gamma):
-    intersecting_edges = []
-    for edge in self._edges:
-      if edge.type is EdgeType.LineEdge:
-        kps = edge.get_end_key_points()
-        x1 = kps[0].x
-        y1 = kps[0].y
-        x2 = kps[1].x
-        y2 = kps[1].y
-        x3 = kp.x
-        y3 = kp.y
-        x4 = kp.x + cos(gamma)
-        y4 = kp.y + sin(gamma)
-        denom = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4)
-        if denom != 0:
-          px = ((x1 * y2 - y1 * x2) * (x3 - x4) - (x1 - x2) * (x3 * y4 - y3 * x4)) / denom
-          py = ((x1 * y2 - y1 * x2) * (y3 - y4) - (y1 - y2) * (x3 * y4 - y3 * x4)) / denom
-          int_kp = Vertex(px, py)
-          if edge.distance(int_kp) < 0.001:
-            intersecting_edges.append([edge, int_kp])
-      elif edge.type is EdgeType.ArcEdge:
-        center_kp = edge.get_key_points()[0]
-        radius = edge.get_meta_data('r')
-        sa = edge.get_meta_data('sa')
-        ea = edge.get_meta_data('ea')
-        alpha = kp.angle2d(center_kp)
-        dist = kp.distance(center_kp)
-        beta = alpha - gamma
-        rad_ray_dist = sin(beta) * dist
-        if rad_ray_dist < radius:
-          omega = center_kp.angle2d(kp)
-          int_kp = Vertex(center_kp.x + cos(omega) * radius, center_kp.y + sin(omega) * radius)
-          if edge.distance(int_kp) < 0.001:
-            intersecting_edges.append([edge, int_kp])
+	def get_intersecting_edges(self, kp, gamma):
+		intersecting_edges = []
+		for edge in self._edges:
+			if edge.type is EdgeType.LineEdge:
+				kps = edge.get_end_key_points()
+				x1 = kps[0].x
+				y1 = kps[0].y
+				x2 = kps[1].x
+				y2 = kps[1].y
+				x3 = kp.x
+				y3 = kp.y
+				x4 = kp.x + cos(gamma)
+				y4 = kp.y + sin(gamma)
+				denom = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4)
+				if denom != 0:
+					px = ((x1 * y2 - y1 * x2) * (x3 - x4) - (x1 - x2) * (x3 * y4 - y3 * x4)) / denom
+					py = ((x1 * y2 - y1 * x2) * (y3 - y4) - (y1 - y2) * (x3 * y4 - y3 * x4)) / denom
+					int_kp = Vertex(px, py)
+					if edge.distance(int_kp) < 0.001:
+						intersecting_edges.append([edge, int_kp])
+			elif edge.type is EdgeType.ArcEdge:
+				center_kp = edge.get_key_points()[0]
+				radius = edge.get_meta_data('r')
+				sa = edge.get_meta_data('sa')
+				ea = edge.get_meta_data('ea')
+				alpha = kp.angle2d(center_kp)
+				dist = kp.distance(center_kp)
+				beta = alpha - gamma
+				rad_ray_dist = sin(beta) * dist
+				if rad_ray_dist < radius:
+					omega = center_kp.angle2d(kp)
+					int_kp = Vertex(center_kp.x + cos(omega) * radius, center_kp.y + sin(omega) * radius)
+					if edge.distance(int_kp) < 0.001:
+						intersecting_edges.append([edge, int_kp])
 
-    return intersecting_edges
+		return intersecting_edges
 
-  def insert_edge(self, edge):
-    kps = edge.get_end_key_points()
-    index = -1
-    if kps[0] in self.get_key_points():
-      index = self._key_points.index(kps[0])
-    if index != -1:
-      self._edges.insert(index, edge)
-    else:
-      self._edges.append(edge)
-    edge.add_change_handler(self.on_edge_changed)
-    self._key_points = None
+	def insert_edge(self, edge):
+		kps = edge.get_end_key_points()
+		index = -1
+		if kps[0] in self.get_key_points():
+			index = self._key_points.index(kps[0])
+		if index != -1:
+			self._edges.insert(index, edge)
+		else:
+			self._edges.append(edge)
+		edge.add_change_handler(self.on_edge_changed)
+		self._key_points = None
 
-  def add_edge(self, edge):
-    self._edges.append(edge)
-    edge.add_change_handler(self.on_edge_changed)
-    self._key_points = None
+	def add_edge(self, edge):
+		self._edges.append(edge)
+		edge.add_change_handler(self.on_edge_changed)
+		self._key_points = None
 
-  def delete(self):
-    self.changed(ChangeEvent(self, ChangeEvent.Deleted, self))
+	def delete(self):
+		self.changed(ChangeEvent(self, ChangeEvent.Deleted, self))
 
-  def on_edge_changed(self, event: ChangeEvent):
-    if event.type == ChangeEvent.Deleted:
-      if type(event.object) is Edge:
-        if event.object.type != EdgeType.FilletLineEdge:
-          self.changed(ChangeEvent(self, ChangeEvent.Deleted, self))
-        else:
-          fillet_edge = event.object
-          self._edges.remove(fillet_edge)
-          fillet_edge.remove_change_handler(self.on_edge_changed)
-          self._key_points = None
-      if type(event.object) is KeyPoint:
-        self.changed(ChangeEvent(self, ChangeEvent.Deleted, self))
+	def on_edge_changed(self, event: ChangeEvent):
+		if event.type == ChangeEvent.Deleted:
+			if type(event.object) is Edge:
+				if event.object.type != EdgeType.FilletLineEdge:
+					self.changed(ChangeEvent(self, ChangeEvent.Deleted, self))
+				else:
+					fillet_edge = event.object
+					self._edges.remove(fillet_edge)
+					fillet_edge.remove_change_handler(self.on_edge_changed)
+					self._key_points = None
+			if type(event.object) is KeyPoint:
+				self.changed(ChangeEvent(self, ChangeEvent.Deleted, self))
 
-  def get_key_points(self):
-    """
-    This function returns the key points that control the edges of this area.
-    :return:
-    """
-    if self._key_points is None:
-      self._key_points = []
-      this_kp = self._edges[0].get_end_key_points()[0]
-      next_kp = self._edges[0].get_end_key_points()[1]
-      if this_kp == self._edges[1].get_end_key_points()[0] or this_kp == self._edges[1].get_end_key_points()[1]:
-        this_kp = self._edges[0].get_end_key_points()[1]
-        next_kp = self._edges[0].get_end_key_points()[0]
-      self._key_points.append(this_kp)
-      self._key_points.append(next_kp)
-      for i in range(1, len(self._edges)):
-        edge = self._edges[i]
-        if edge.type != EdgeType.FilletLineEdge:
-          if next_kp == edge.get_end_key_points()[0]:
-            next_kp = edge.get_end_key_points()[1]
-          else:
-            next_kp = edge.get_end_key_points()[0]
-          self._key_points.append(next_kp)
-    return self._key_points
+	def get_key_points(self):
+		"""
+		This function returns the key points that control the edges of this area.
+		:return:
+		"""
+		if self._key_points is None:
+			self._key_points = []
+			this_kp = self._edges[0].get_end_key_points()[0]
+			next_kp = self._edges[0].get_end_key_points()[1]
+			if this_kp == self._edges[1].get_end_key_points()[0] or this_kp == self._edges[1].get_end_key_points()[1]:
+				this_kp = self._edges[0].get_end_key_points()[1]
+				next_kp = self._edges[0].get_end_key_points()[0]
+			self._key_points.append(this_kp)
+			self._key_points.append(next_kp)
+			for i in range(1, len(self._edges)):
+				edge = self._edges[i]
+				if edge.type != EdgeType.FilletLineEdge:
+					if next_kp == edge.get_end_key_points()[0]:
+						next_kp = edge.get_end_key_points()[1]
+					else:
+						next_kp = edge.get_end_key_points()[0]
+					self._key_points.append(next_kp)
+		return self._key_points
 
-  def get_inside_key_points(self):
-    """
-    This functions finds the key points used to determine if another point is inside this area
-    :return: list of points describing the outside limits
-    """
-    key_points = []
-    if self._edges[0].type == EdgeType.CircleEdge:
-      key_points.append(self._edges[0].get_end_key_points()[0])
-    else:
-      this_kp = self._edges[0].get_end_key_points()[0]
-      next_kp = self._edges[0].get_end_key_points()[1]
-      if this_kp == self._edges[1].get_end_key_points()[0] or this_kp == self._edges[1].get_end_key_points()[1]:
-        this_kp = self._edges[0].get_end_key_points()[1]
-        next_kp = self._edges[0].get_end_key_points()[0]
-      key_points.append(this_kp)
-      if self._edges[0].type == EdgeType.ArcEdge:
-        ckp = self._edges[0].get_key_points()[0]
-        sa = self._edges[0].get_meta_data('sa')
-        ea = self._edges[0].get_meta_data('ea')
-        r = self._edges[0].get_meta_data('r')
-        diff = ea - sa
-        if diff < 0:
-          diff += 2 * pi
-        ma = sa + diff / 2
-        key_points.append(Vertex(ckp.x + cos(ma) * r, ckp.y + sin(ma) * r))
-      key_points.append(next_kp)
-      for i in range(1, len(self._edges)):
-        edge = self._edges[i]
-        if edge.type != EdgeType.FilletLineEdge:
-          if edge.type == EdgeType.ArcEdge:
-            ckp = edge.get_key_points()[0]
-            sa = edge.get_meta_data('sa')
-            ea = edge.get_meta_data('ea')
-            r = edge.get_meta_data('r')
-            diff = ea - sa
-            if diff < 0:
-              diff += 2 * pi
-            ma = sa + diff / 2
-            key_points.append(Vertex(ckp.x + cos(ma) * r, ckp.y + sin(ma) * r))
-          if next_kp == edge.get_end_key_points()[0]:
-            next_kp = edge.get_end_key_points()[1]
-          else:
-            next_kp = edge.get_end_key_points()[0]
-          key_points.append(next_kp)
-    return key_points
+	def get_inside_key_points(self):
+		"""
+		This functions finds the key points used to determine if another point is inside this area
+		:return: list of points describing the outside limits
+		"""
+		key_points = []
+		if self._edges[0].type == EdgeType.CircleEdge:
+			key_points.append(self._edges[0].get_end_key_points()[0])
+		else:
+			this_kp = self._edges[0].get_end_key_points()[0]
+			next_kp = self._edges[0].get_end_key_points()[1]
+			if this_kp == self._edges[1].get_end_key_points()[0] or this_kp == self._edges[1].get_end_key_points()[1]:
+				this_kp = self._edges[0].get_end_key_points()[1]
+				next_kp = self._edges[0].get_end_key_points()[0]
+			key_points.append(this_kp)
+			if self._edges[0].type == EdgeType.ArcEdge:
+				ckp = self._edges[0].get_key_points()[0]
+				sa = self._edges[0].get_meta_data('sa')
+				ea = self._edges[0].get_meta_data('ea')
+				r = self._edges[0].get_meta_data('r')
+				diff = ea - sa
+				if diff < 0:
+					diff += 2 * pi
+				ma = sa + diff / 2
+				key_points.append(Vertex(ckp.x + cos(ma) * r, ckp.y + sin(ma) * r))
+			key_points.append(next_kp)
+			for i in range(1, len(self._edges)):
+				edge = self._edges[i]
+				if edge.type != EdgeType.FilletLineEdge:
+					if edge.type == EdgeType.ArcEdge:
+						ckp = edge.get_key_points()[0]
+						sa = edge.get_meta_data('sa')
+						ea = edge.get_meta_data('ea')
+						r = edge.get_meta_data('r')
+						diff = ea - sa
+						if diff < 0:
+							diff += 2 * pi
+						ma = sa + diff / 2
+						key_points.append(Vertex(ckp.x + cos(ma) * r, ckp.y + sin(ma) * r))
+					if next_kp == edge.get_end_key_points()[0]:
+						next_kp = edge.get_end_key_points()[1]
+					else:
+						next_kp = edge.get_end_key_points()[0]
+					key_points.append(next_kp)
+		return key_points
 
-  def get_edges(self):
-    return self._edges
+	def get_edges(self):
+		return self._edges
 
-  def get_edge_uids(self):
-    edge_uids = []
-    for edge in self._edges:
-      edge_uids.append(edge.uid)
-    return edge_uids
+	def get_edge_uids(self):
+		edge_uids = []
+		for edge in self._edges:
+			edge_uids.append(edge.uid)
+		return edge_uids
 
-  def serialize_json(self):
-    return \
-      {
-        'area': Area.serialize_json(self),
-        'edges': self.get_edge_uids()
-      }
+	def serialize_json(self):
+		return \
+			{
+				'area': Area.serialize_json(self),
+				'edges': self.get_edge_uids()
+			}
 
-  def deserialize_data(self, data, sketch):
-    Area.deserialize_data(self, data['area'])
-    for edge_uid in data['edges']:
-      edge = sketch.get_edge(edge_uid)
-      self._edges.append(edge)
-      edge.add_change_handler(self.on_edge_changed)
+	def deserialize_data(self, data, sketch):
+		Area.deserialize_data(self, data['area'])
+		for edge_uid in data['edges']:
+			edge = sketch.get_edge(edge_uid)
+			self._edges.append(edge)
+			edge.add_change_handler(self.on_edge_changed)
 
 
 class CompositeArea(Area):
-  def __init__(self, sketch):
-    Area.__init__(self, sketch)
-    self._base_area = None
-    self._subtracted_areas = []
-    self._added_areas = []
-    self._type = AreaType.Composite
+	def __init__(self, sketch):
+		Area.__init__(self, sketch)
+		self._base_area = None
+		self._subtracted_areas = []
+		self._added_areas = []
+		self._type = AreaType.Composite
 
-  @property
-  def base_area(self):
-    return self._base_area
+	@property
+	def base_area(self):
+		return self._base_area
 
-  @base_area.setter
-  def base_area(self, value):
-    self._base_area = value
+	@base_area.setter
+	def base_area(self, value):
+		self._base_area = value
 
-  @property
-  def subtracted_areas(self):
-    return self._subtracted_areas
+	@property
+	def subtracted_areas(self):
+		return self._subtracted_areas
 
-  def delete(self):
-    self.changed(ChangeEvent(self, ChangeEvent.Deleted, self))
+	def delete(self):
+		self.changed(ChangeEvent(self, ChangeEvent.Deleted, self))
 
-  def add_subtract_area(self, area):
-    if area not in self._subtracted_areas:
-      self._subtracted_areas.append(area)
-      area.add_change_handler(self.on_area_changed)
+	def add_subtract_area(self, area):
+		if area not in self._subtracted_areas:
+			self._subtracted_areas.append(area)
+			area.add_change_handler(self.on_area_changed)
 
-  def add_added_area(self, area):
-    if area not in self._added_areas:
-      self._added_areas.append(area)
-      area.add_change_handler(self.on_area_changed)
+	def add_added_area(self, area):
+		if area not in self._added_areas:
+			self._added_areas.append(area)
+			area.add_change_handler(self.on_area_changed)
 
-  def inside(self, vertex):
-    if self._base_area.inside(vertex):
-      for area in self._subtracted_areas:
-        if area.inside(vertex):
-          return False
-      return True
+	def inside(self, vertex):
+		if self._base_area.inside(vertex):
+			for area in self._subtracted_areas:
+				if area.inside(vertex):
+					return False
+			return True
 
-  def get_edges(self):
-    edges = list(self.base_area.get_edges())
-    for area in self._subtracted_areas:
-      edges.extend(area.get_edges())
-    return edges
+	def get_edges(self):
+		edges = list(self.base_area.get_edges())
+		for area in self._subtracted_areas:
+			edges.extend(area.get_edges())
+		return edges
 
-  def on_area_changed(self, event: ChangeEvent):
-    if event.type == ChangeEvent.Deleted:
-      self.changed(ChangeEvent(self, ChangeEvent.Deleted, self))
+	def on_area_changed(self, event: ChangeEvent):
+		if event.type == ChangeEvent.Deleted:
+			self.changed(ChangeEvent(self, ChangeEvent.Deleted, self))
 
+	def serialize_json(self):
+		return \
+			{
+				'area': Area.serialize_json(self),
+				'base_area': self._base_area.uid,
+				'subtracted_areas': get_uids(self._subtracted_areas),
+				'added_areas': get_uids(self._added_areas)
+			}
 
-  def serialize_json(self):
-    return \
-      {
-        'area': Area.serialize_json(self),
-        'base_area': self._base_area.uid,
-        'subtracted_areas': get_uids(self._subtracted_areas),
-        'added_areas': get_uids(self._added_areas)
-      }
-
-  def deserialize_data(self, data, sketch):
-    Area.deserialize_data(self, data['area'])
-    self._base_area = sketch.get_area(data['base_area'])
-    for area_uid in data['subtracted_areas']:
-      area = sketch.get_area(area_uid)
-      self._subtracted_areas.append(area)
-      area.add_change_handler(self.on_area_changed)
-    for area_uid in data['added_areas']:
-      area = sketch.get_area(area_uid)
-      self._added_areas.append(area)
-      area.add_change_handler(self.on_area_changed)
+	def deserialize_data(self, data, sketch):
+		Area.deserialize_data(self, data['area'])
+		self._base_area = sketch.get_area(data['base_area'])
+		for area_uid in data['subtracted_areas']:
+			area = sketch.get_area(area_uid)
+			self._subtracted_areas.append(area)
+			area.add_change_handler(self.on_area_changed)
+		for area_uid in data['added_areas']:
+			area = sketch.get_area(area_uid)
+			self._added_areas.append(area)
+			area.add_change_handler(self.on_area_changed)

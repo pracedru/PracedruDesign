@@ -19,4 +19,3 @@ import GUI.Plugins.DrawingSketchView
 import GUI.Plugins.PartSketch
 
 import GUI.Plugins.GenericView
-
