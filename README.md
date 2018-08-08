@@ -7,7 +7,7 @@ Getting started with development. The IDE used for this project is PyCharm. PyDe
 
 To install Dependencies needed:
 ```
-sudo apt install python3-pyqt5 python3-pyqt5.qtopengl python3-scipy python3-numpy python3-pypdf2 python3-opengl python3-pyopencl
+sudo apt install python3-pyqt5 python3-pyqt5.qtopengl python3-numpy python3-pypdf2 python3-opengl python3-pyopencl
 ```
 to get it:
 
