@@ -32,6 +32,7 @@ class SketchLineDraw():
 		self._last_kp = None
 		self.init_ribbon()
 
+
 	def init_ribbon(self):
 		self._add_line_action = self._main_window.add_action("Add\nline",
 																												 "addline",
