@@ -373,16 +373,16 @@ class SketchEditorViewWidget(QWidget):
 		edges = self._sketch.get_edges()
 
 		for edge in edges:
-			draw_edge(edge, qp, scale, self._offset, center, pens)
+			draw_edge(edge, qp, scale, self._offset, center, pens, None)
 
 		for edge in self._selected_edges:
-			draw_edge(edge, qp, scale, self._offset, center, pens_select_high)
+			draw_edge(edge, qp, scale, self._offset, center, pens_select_high, None)
 
 		for edge in self._selected_edges:
-			draw_edge(edge, qp, scale, self._offset, center, pens_select)
+			draw_edge(edge, qp, scale, self._offset, center, pens_select, None)
 
 		if self._edge_hover is not None:
-			draw_edge(self._edge_hover, qp, scale, self._offset, center, pens_hover)
+			draw_edge(self._edge_hover, qp, scale, self._offset, center, pens_hover, None)
 
 		qp.setPen(pens['default'])
 
@@ -421,15 +421,14 @@ class SketchEditorViewWidget(QWidget):
 			if area == self._area_hover:
 				brush = area_hover_brush
 
-			draw_area(area, qp, scale, self._offset, half_height, half_width, self._states.show_area_names or area in self._selected_areas, brush)
+			draw_area(area, qp, scale, self._offset, half_height, half_width, self._states.show_area_names or area in self._selected_areas, brush, None)
 			if area.brush is not None:
 				brush = QBrush(QColor(0, 0, 0), Qt.HorPattern)
 				transx = self._offset.x * scale + half_width
 				transy = -self._offset.y * scale + half_height
 				transform = QTransform().translate(transx, transy).scale(2, 2).rotate(area.brush_rotation)
 				brush.setTransform(transform)
-				draw_area(area, qp, scale, self._offset, half_height, half_width, self._states.show_area_names or area in self._selected_areas,
-									brush)
+				draw_area(area, qp, scale, self._offset, half_height, half_width, self._states.show_area_names or area in self._selected_areas, brush, None)
 
 	def draw_instances(self, event, qp):
 		pens = create_pens(self._doc, 6000)
@@ -441,7 +440,7 @@ class SketchEditorViewWidget(QWidget):
 		for sketch_instance in self._sketch.sketch_instances:
 			si = sketch_instance.sketch
 			os = (self._offset + sketch_instance.offset) / sketch_instance.scale
-			draw_sketch(qp, si, sketch_instance.scale * self._scale, 2, os, center, pens, {})
+			draw_sketch(qp, si, sketch_instance.scale * self._scale, 2, os, center, pens, {}, sketch_instance.uid)
 
 	def update_status(self):
 		self._doc.set_status("")

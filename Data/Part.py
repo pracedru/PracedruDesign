@@ -24,7 +24,7 @@ class Part(Geometry):
 		self._feature_progression = []
 		self._limits = None  # [Vertex(-1, -1, -1), Vertex(1, 1, 1)]
 		self._update_needed = True
-		self._key_points = {}
+		self._keypoints = {}
 		self._edges = {}
 		self._surfaces = {}
 		self._color = [180, 180, 180, 255]
@@ -54,12 +54,12 @@ class Part(Geometry):
 	def update_needed(self):
 		return self._update_needed
 
-	def get_key_points(self):
-		return self._key_points.items()
+	def get_keypoints(self):
+		return self._keypoints.values()
 
-	def get_key_point(self, uid):
+	def get_keypoint(self, uid):
 		try:
-			return self._key_points[uid]
+			return self._keypoints[uid]
 		except KeyError:
 			return KeyPoint(self)
 
@@ -160,14 +160,14 @@ class Part(Geometry):
 
 	def create_key_point(self, x, y, z, ts=0.000001):
 		key_point = None
-		for p_tuple in self._key_points.items():
+		for p_tuple in self._keypoints.items():
 			p = p_tuple[1]
 			if abs(p.x - x) <= ts and abs(p.y - y) <= ts and abs(p.z - z) <= ts:
 				key_point = p
 				break
 		if key_point is None:
 			key_point = KeyPoint(self, x, y, z)
-			self._key_points[key_point.uid] = key_point
+			self._keypoints[key_point.uid] = key_point
 		return key_point
 
 	def create_arc_edge(self, center, r, sa, span, plane):
@@ -438,7 +438,7 @@ class Part(Geometry):
 	def update_geometry(self):
 		self._surfaces.clear()
 		self._edges.clear()
-		self._key_points.clear()
+		self._keypoints.clear()
 		self._surfaces.clear()
 		for feature_key in self._feature_progression:
 			feature = self._features[feature_key]

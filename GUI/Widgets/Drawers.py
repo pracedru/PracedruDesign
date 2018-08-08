@@ -60,7 +60,7 @@ def create_pens(document, scale, color_override=None, fat=0):
 	return pens
 
 
-def draw_sketch(qp: QPainter, sketch, scale, brush_scale, offset, center, pens, fields):
+def draw_sketch(qp: QPainter, sketch, scale, brush_scale, offset, center, pens, fields, instance=None):
 	edges = sketch.get_edges()
 	areas = sketch.get_areas()
 
@@ -71,26 +71,26 @@ def draw_sketch(qp: QPainter, sketch, scale, brush_scale, offset, center, pens, 
 			transy = -offset.y * scale + center.y
 			transform = QTransform().translate(transx, transy).scale(brush_scale, brush_scale).rotate(area.brush_rotation)
 			brush.setTransform(transform)
-			draw_area(area, qp, scale, offset, center.y, center.x, False, brush)
+			draw_area(area, qp, scale, offset, center.y, center.x, False, brush, instance)
 	for edge in edges:
-		draw_edge(edge, qp, scale, offset, center, pens)
+		draw_edge(edge, qp, scale, offset, center, pens, instance)
 	for text in sketch.get_texts():
 		if type(text) is Attribute:
 			value = None
 			if text.name in fields:
 				value = fields[text.name].value
-			draw_attribute(text, qp, scale, offset, center, True, value)
+			draw_attribute(text, qp, scale, offset, center, instance, True, value)
 		else:
-			draw_text(text, qp, scale, offset, center)
+			draw_text(text, qp, scale, offset, center, instance)
 
 	for sketch_instance in sketch.sketch_instances:
 		si = sketch_instance.sketch
 		siscale = sketch_instance.scale * scale
 		sioffset = (offset + sketch_instance.offset) / sketch_instance.scale
-		draw_sketch(qp, si, siscale, brush_scale, sioffset, center, pens, fields)
+		draw_sketch(qp, si, siscale, brush_scale, sioffset, center, pens, fields, sketch_instance.uid)
 
 
-def draw_attribute(text, qp: QPainter, scale, offset, center, show_value=False, value=None):
+def draw_attribute(text, qp: QPainter, scale, offset, center, instance=None, show_value=False, value=None):
 	key_point = text.key_point
 	factor = 10 / text.height
 	font = QFont("Helvetica", text.height * factor)
@@ -105,8 +105,8 @@ def draw_attribute(text, qp: QPainter, scale, offset, center, show_value=False, 
 		txt = "<" + text.name + ">"
 	width = fm.width(txt) / factor
 	qp.save()
-	x1 = (key_point.x + offset.x) * scale + center.x
-	y1 = -(key_point.y + offset.y) * scale + center.y
+	x1 = (key_point.get_instance_x(instance) + offset.x) * scale + center.x
+	y1 = -(key_point.get_instance_y(instance) + offset.y) * scale + center.y
 	if text.horizontal_alignment == Text.Left:
 		x1 -= width * scale
 	elif text.horizontal_alignment == Text.Center:
@@ -122,7 +122,7 @@ def draw_attribute(text, qp: QPainter, scale, offset, center, show_value=False, 
 	qp.restore()
 
 
-def draw_text(text, qp: QPainter, scale, offset, center):
+def draw_text(text, qp: QPainter, scale, offset, center, instance=None):
 	key_point = text.key_point
 	factor = 10 / text.height  # Factor takes care of wierd bug in Qt with fonts that are smaller than 1 in height
 	font = QFont("Helvetica", text.height * factor)
@@ -130,8 +130,8 @@ def draw_text(text, qp: QPainter, scale, offset, center):
 	qp.setFont(font)
 	width = fm.width(text.value) / factor
 	qp.save()
-	x1 = (key_point.x + offset.x) * scale + center.x
-	y1 = -(key_point.y + offset.y) * scale + center.y
+	x1 = (key_point.get_instance_x(instance) + offset.x) * scale + center.x
+	y1 = -(key_point.get_instance_y(instance) + offset.y) * scale + center.y
 	if text.horizontal_alignment == Text.Left:
 		x1 -= width * scale
 	elif text.horizontal_alignment == Text.Center:
@@ -156,7 +156,7 @@ def get_fillet_offset_distance(fillet_kp, r, edge1, edge2):
 	return dist
 
 
-def draw_edge(edge: Edge, qp: QPainter, scale, offset, center, pens):
+def draw_edge(edge: Edge, qp: QPainter, scale, offset, center, pens, instance=None):
 	if edge.style is None:
 		qp.setPen(pens['default'])
 	else:
@@ -190,8 +190,8 @@ def draw_edge(edge: Edge, qp: QPainter, scale, offset, center, pens):
 				fillet_offset_x = dist * cos(a1)
 				fillet_offset_y = dist * sin(a1)
 
-			x1 = (key_points[0].x + fillet_offset_x + offset.x) * scale + center.x
-			y1 = -(key_points[0].y + fillet_offset_y + offset.y) * scale + center.y
+			x1 = (key_points[0].get_instance_x(instance) + fillet_offset_x + offset.x) * scale + center.x
+			y1 = -(key_points[0].get_instance_y(instance) + fillet_offset_y + offset.y) * scale + center.y
 
 			fillet_offset_x = 0
 			fillet_offset_y = 0
@@ -203,12 +203,12 @@ def draw_edge(edge: Edge, qp: QPainter, scale, offset, center, pens):
 				fillet_offset_x = dist * cos(a1)
 				fillet_offset_y = dist * sin(a1)
 
-			x2 = (key_points[1].x + fillet_offset_x + offset.x) * scale + center.x
-			y2 = -(key_points[1].y + fillet_offset_y + offset.y) * scale + center.y
+			x2 = (key_points[1].get_instance_x(instance) + fillet_offset_x + offset.x) * scale + center.x
+			y2 = -(key_points[1].get_instance_y(instance) + fillet_offset_y + offset.y) * scale + center.y
 			qp.drawLine(QPointF(x1, y1), QPointF(x2, y2))
 		elif edge.type == EdgeType.ArcEdge:
-			cx = (key_points[0].x + offset.x) * scale + center.x
-			cy = -(key_points[0].y + offset.y) * scale + center.y
+			cx = (key_points[0].get_instance_x(instance) + offset.x) * scale + center.x
+			cy = -(key_points[0].get_instance_y(instance) + offset.y) * scale + center.y
 			radius = edge.get_meta_data("r") * scale
 			rect = QRectF(cx - radius, cy - 1 * radius, radius * 2, radius * 2)
 			start_angle = edge.get_meta_data("sa") * 180 * 16 / pi
@@ -218,8 +218,8 @@ def draw_edge(edge: Edge, qp: QPainter, scale, offset, center, pens):
 				span += 2 * 180 * 16
 			qp.drawArc(rect, start_angle, span)
 		elif edge.type == EdgeType.CircleEdge:
-			cx = (key_points[0].x + offset.x) * scale + center.x
-			cy = -(key_points[0].y + offset.y) * scale + center.y
+			cx = (key_points[0].get_instance_x(instance) + offset.x) * scale + center.x
+			cy = -(key_points[0].get_instance_y(instance) + offset.y) * scale + center.y
 			radius = edge.get_meta_data("r") * scale
 			rect = QRectF(cx - radius, cy - 1 * radius, radius * 2, radius * 2)
 
@@ -250,8 +250,8 @@ def draw_edge(edge: Edge, qp: QPainter, scale, offset, center, pens):
 					angle = edge1.angle(kp) + angle_between / 2
 				if dist < 0:
 					angle += pi
-				cx = (key_points[0].x + dist * cos(angle) + offset.x) * scale + center.x
-				cy = -(key_points[0].y + dist * sin(angle) + offset.y) * scale + center.y
+				cx = (key_points[0].get_instance_x(instance) + dist * cos(angle) + offset.x) * scale + center.x
+				cy = -(key_points[0].get_instance_y(instance) + dist * sin(angle) + offset.y) * scale + center.y
 				rect = QRectF(cx - radius, cy - radius, radius * 2, radius * 2)
 
 				if angle_between < 0:
@@ -285,7 +285,7 @@ def draw_edge(edge: Edge, qp: QPainter, scale, offset, center, pens):
 				y1 = y2
 
 
-def draw_kp(qp, key_point, scale, offset, center):
+def draw_kp(qp, key_point, scale, offset, center, instance = None):
 	x1 = (key_point.x + offset.x) * scale + center.x
 	y1 = -(key_point.y + offset.y) * scale + center.y
 	qp.drawEllipse(QPointF(x1, y1), 4, 4)
@@ -309,7 +309,7 @@ class Limits():
 			self.y_min = other_limits.y_min
 
 
-def draw_area(area, qp, scale, offset, half_height, half_width, show_names, brush):
+def draw_area(area, qp, scale, offset, half_height, half_width, show_names, brush, instance = None):
 	first_kp = True
 	limits = Limits()
 
@@ -324,7 +324,7 @@ def draw_area(area, qp, scale, offset, half_height, half_width, show_names, brus
 			path = path.subtracted(sub_area_path)
 		qp.fillPath(path, brush)
 	else:
-		path = get_area_path(area, scale, offset, half_height, half_width, limits)
+		path = get_area_path(area, scale, offset, half_height, half_width, limits, instance)
 		qp.fillPath(path, brush)
 
 	if show_names:
@@ -337,15 +337,15 @@ def draw_area(area, qp, scale, offset, half_height, half_width, show_names, brus
 			qp.drawText(QRectF(limits.x_min, limits.y_min, limits.x_max - limits.x_min, limits.y_max - limits.y_min), Qt.AlignCenter, area.name)
 
 
-def get_area_path(area, scale, offset, half_height, half_width, limits):
+def get_area_path(area, scale, offset, half_height, half_width, limits, instance = None):
 	path = QPainterPath()
 	first_kp = True
 	counter = 0
 	if area.get_edges()[0].type == EdgeType.CircleEdge:
 		kp = area.get_inside_key_points()[0]
 		r = area.get_edges()[0].get_meta_data('r')
-		x = (kp.x + offset.x) * scale + half_width
-		y = -(kp.y + offset.y) * scale + half_height
+		x = (kp.get_instance_x(instance) + offset.x) * scale + half_width
+		y = -(kp.get_instance_y(instance) + offset.y) * scale + half_height
 
 		limits.x_max = x + r * scale
 		limits.x_min = x - r * scale
@@ -384,11 +384,11 @@ def get_area_path(area, scale, offset, half_height, half_width, limits):
 				angle_next = kp.angle2d(kp_next)
 				fillet_offset_x = fillet_dist * cos(angle_next)
 				fillet_offset_y = fillet_dist * sin(angle_next)
-				x = (kp.x + fillet_offset_x + offset.x) * scale + half_width
-				y = -(kp.y + fillet_offset_y + offset.y) * scale + half_height
+				x = (kp.get_instance_x(instance) + fillet_offset_x + offset.x) * scale + half_width
+				y = -(kp.get_instance_y(instance) + fillet_offset_y + offset.y) * scale + half_height
 			else:
-				x = (kp.x + offset.x) * scale + half_width
-				y = -(kp.y + offset.y) * scale + half_height
+				x = (kp.get_instance_x(instance) + offset.x) * scale + half_width
+				y = -(kp.get_instance_y(instance) + offset.y) * scale + half_height
 			if first_kp:
 				path.moveTo(QPointF(x, y))
 				first_kp = False
@@ -418,7 +418,7 @@ def get_area_path(area, scale, offset, half_height, half_width, limits):
 					path.arcTo(cx - radius * scale, cy - radius * scale, scale * radius * 2, scale * radius * 2, start_angle,
 										 sweep_length)
 				elif is_fillet_kp:
-					center_kp = Vertex(kp.x, kp.y, kp.z)
+					center_kp = Vertex(kp.get_instance_x(instance), kp.get_instance_y(instance), kp.get_instance_z(instance))
 					fillet_offset_x = fillet_dist * cos(angle)
 					fillet_offset_y = fillet_dist * sin(angle)
 					center_kp.x += fillet_offset_x

@@ -26,7 +26,7 @@ from Data.Document import Document
 from Data.Drawings import Drawing
 from Data.Edges import Edge
 from Data.Feature import FeatureType
-from Data.Parameters import Parameters
+from Data.Parameters import Parameters, ParametersBase
 from Data.Part import Part, Feature
 from Data.Point3d import KeyPoint
 from Data.Sketch import Sketch
@@ -293,7 +293,7 @@ class MainWindow(QMainWindow):
 			if type(selection[0]) is Drawing:
 				self._viewWidget.set_drawing_view(selection[0])
 				self._ribbon_widget.setCurrentIndex(3)
-			if isinstance(selection[0], Parameters):
+			if issubclass(type(selection[0]), ParametersBase):
 				self.parameters_widget.set_parameters(selection[0])
 			if type(selection[0]) is KeyPoint:
 				self._viewWidget.on_kp_selection_changed_in_table(selection)

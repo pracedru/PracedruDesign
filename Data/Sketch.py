@@ -3,7 +3,7 @@ from Data.Edges import *
 from Data.Events import ChangeEvent, ValueChangeEvent
 from Data.Geometry import Geometry
 from Data.Objects import IdObject, ObservableObject
-from Data.Parameters import Parameters
+from Data.Parameters import Parameters, ParametersInstance
 from Data.Point3d import KeyPoint
 
 __author__ = 'mamj'
@@ -556,10 +556,9 @@ class Pattern(IdObject, NamedObservableObject):
 		self._areas = []
 
 
-class SketchInstance(IdObject, NamedObservableObject):
-	def __init__(self, parent, name="new instance"):
-		IdObject.__init__(self)
-		NamedObservableObject.__init__(self, name)
+class SketchInstance(ParametersInstance):
+	def __init__(self, parent, name="New sketch instance"):
+		ParametersInstance.__init__(self, name)
 		self._parent = parent
 		self._sketch = None
 		self._offset = None
@@ -569,11 +568,13 @@ class SketchInstance(IdObject, NamedObservableObject):
 	def sketch(self):
 		if type(self._sketch) is not Sketch:
 			self._sketch = self._parent.get_sketch(self._sketch)
+			self._parameters = self._sketch
 		return self._sketch
 
 	@sketch.setter
 	def sketch(self, value):
 		self._sketch = value
+		self._parameters = value
 
 	@property
 	def offset(self):

@@ -1,4 +1,5 @@
 from PyQt5.QtCore import *
+from PyQt5.QtGui import QColor
 from PyQt5.QtWidgets import QMessageBox
 
 from Business.ParameterActions import set_parameter, set_parameter_name, delete_parameters
@@ -18,11 +19,24 @@ class ParametersModel(QAbstractTableModel):
 		self.old_row_count = 0
 		self._gui_scale = gui_scale()
 		self._columns_widths = [120, 150, 80, 40]
+		self._instance = None
+
+	@property
+	def instance(self):
+	    return self._instance
+
+	@instance.setter
+	def instance(self, value):
+		self._instance = value
 
 	def set_parameters(self, params):
 		self.layoutAboutToBeChanged.emit()
 		self._parameters.remove_change_handler(self.on_parameters_changed)
 		self._parameters = params
+		if issubclass(type(params), ParametersInstance):
+			self._instance = params.uid
+		else:
+			self._instance = None
 		self._parameters.add_change_handler(self.on_parameters_changed)
 		self.layoutChanged.emit()
 
@@ -45,13 +59,13 @@ class ParametersModel(QAbstractTableModel):
 					param = param_item.get_parameter(col - 2)
 				else:
 					param = param_item
-				data = formula_to_locale(param.formula)
+				data = formula_to_locale(param.get_instance_formula(self._instance))
 			elif col == 2:
 				if param_item is Parameters:
 					param = param_item.get_parameter(col - 2)
 				else:
 					param = param_item
-				data = param.value
+				data = param.get_instance_value(self._instance)
 			elif col == 3:
 				data = None  # param_item.hidden
 		elif int_role == Qt.CheckStateRole:
@@ -70,19 +84,25 @@ class ParametersModel(QAbstractTableModel):
 					param = param_item.get_parameter(col - 1)
 				else:
 					param = param_item
-				if param.formula != "":
-					data = data = formula_to_locale(param.formula)
+				if param.get_instance_formula(self._instance) != "":
+					data = data = formula_to_locale(param.get_instance_formula(self._instance))
 				else:
-					data = QLocale().toString(param.value)
+					data = QLocale().toString(param.get_instance_value(self._instance))
 			elif col == 2:
 				if param_item is Parameters:
 					param = param_item.get_parameter(col - 2)
 				else:
 					param = param_item
 				if param.formula != "":
-					data = formula_to_locale(param.formula)
+					data = formula_to_locale(param.get_instance_formula(self._instance))
 				else:
-					data = QLocale().toString(param.value)
+					data = QLocale().toString(param.get_instance_value(self._instance))
+		elif int_role == Qt.BackgroundColorRole:
+			param_item = self._parameters.get_parameter_item(row)
+			if self._parameters.param_in_current_type(param_item):
+				return QColor(80,120,200,50)
+			else:
+				return None
 		return data
 
 	def setData(self, model_index: QModelIndex, value: QVariant, int_role=None):
@@ -99,23 +119,23 @@ class ParametersModel(QAbstractTableModel):
 			else:
 				param = param_item
 			if isinstance(value, float):
-				set_parameter(param, value)
+				set_parameter(param, value, self._instance)
 				# param.value = value
 				return True
 			parsed = QLocale().toDouble(value)
 			if parsed[1]:
 				# param.value = parsed[0]
 				try:
-					set_parameter(param, parsed[0])
+					set_parameter(param, parsed[0], self._instance)
 				except Exception as e:
 					self._parameters.document.set_status(str(e))
 			else:
 				try:
 					if value == "":
-						set_parameter(param, 0.0)
+						set_parameter(param, 0.0, self._instance)
 					# param.value = 0.0
 					else:
-						set_parameter(param, formula_from_locale(value))
+						set_parameter(param, formula_from_locale(value), self._instance)
 				# param.value = formula_from_locale(value)
 				except Exception as ex:
 					self._parameters.document.set_status(str(ex))
@@ -127,6 +147,10 @@ class ParametersModel(QAbstractTableModel):
 		return False
 
 	def on_parameters_changed(self, event):
+		if issubclass(type(event.sender), ParametersBase):
+			if event.type == ChangeEvent.ObjectChanged and event.object == event.sender:
+				self.modelAboutToBeReset.emit()
+				self.modelReset.emit()
 		if type(event.sender) is Parameter or type(event.object) is Parameter:
 			if event.type == event.BeforeObjectAdded:
 				parent = QModelIndex()
@@ -146,6 +170,7 @@ class ParametersModel(QAbstractTableModel):
 				right = self.createIndex(row, 3)
 				self.dataChanged.emit(left, right)
 			if event.type == event.HiddenChanged:
+				print("hidden changed")
 				param = event.sender
 				if type(param) is Parameter:
 					row = self._parameters.get_index_of(param)

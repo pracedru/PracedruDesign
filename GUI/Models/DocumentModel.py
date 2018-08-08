@@ -16,7 +16,7 @@ from Data.Geometry import Geometry
 from Data.Parameters import Parameters, Parameter
 from Data.Part import Part, Feature
 from Data.Point3d import KeyPoint
-from Data.Sketch import Sketch, Edge, Text, Attribute
+from Data.Sketch import Sketch, Edge, Text, Attribute, SketchInstance
 from Data.Style import EdgeStyle
 from GUI.init import tr
 from GUI.Icons import get_icon
@@ -154,46 +154,7 @@ class DocumentItemModel(QAbstractItemModel):
 		if role == Qt.DisplayRole or role == Qt.EditRole:
 			return model_item.name
 		elif role == Qt.DecorationRole:
-			if type(model_item.data) is Parameter:
-				return get_icon("param")
-			elif type(model_item.data) is Sketch:
-				return get_icon("sketch")
-			elif type(model_item.data) is KeyPoint:
-				return get_icon("kp")
-			elif type(model_item.data) is Edge:
-				return get_icon("edge")
-			elif type(model_item.data) is Drawing:
-				return get_icon("drawing")
-			elif type(model_item.data) is Text:
-				return get_icon("text")
-			elif type(model_item.data) is EdgeStyle:
-				return get_icon("edgestyle")
-			elif type(model_item.data) is Attribute:
-				return get_icon("attribute")
-			elif type(model_item.data) is Field:
-				return get_icon("field")
-			elif type(model_item.data) is SketchView:
-				return get_icon("sketchview")
-			elif type(model_item.data) is PartView:
-				return get_icon("partview")
-			elif type(model_item.data) is Area:
-				return get_icon("area")
-			elif type(model_item.data) is Part:
-				return get_icon("part")
-			elif type(model_item.data) is CalcTableAnalysis:
-				return get_icon("calctable")
-			elif type(model_item.data) is CalcSheetAnalysis:
-				return get_icon("calcsheet")
-			elif type(model_item.data) is Feature:
-				if model_item.data.feature_type == FeatureType.SketchFeature:
-					return get_icon("sketch")
-				if model_item.data.feature_type == FeatureType.RevolveFeature:
-					return get_icon("revolve")
-				if model_item.data.feature_type == FeatureType.ExtrudeFeature:
-					return get_icon("extrude")
-			elif issubclass(type(model_item.data), Parameters):
-				return get_icon("params")
-			return get_icon("default")
+			return model_item.icon
 		return None
 
 	def setData(self, index: QModelIndex, value, role=None):
@@ -308,7 +269,7 @@ class DocumentItemModel(QAbstractItemModel):
 		else:
 			new_item = DocumentModelItem(object, self, parent_item)
 			if type(object) is Sketch:
-				DocumentModelItem(None, self, new_item, "Parameters")
+				DocumentModelItem(None, self, new_item, "Parameters", icon=get_icon("params"))
 				DocumentModelItem(None, self, new_item, "Key Points")
 				DocumentModelItem(None, self, new_item, "Edges")
 				DocumentModelItem(None, self, new_item, "Annotation")
@@ -324,11 +285,16 @@ class DocumentItemModel(QAbstractItemModel):
 		return new_item
 
 
+
 class DocumentModelItem(QObject):
-	def __init__(self, data, model, parent=None, name=None):
+	def __init__(self, data, model, parent=None, name=None, icon=None):
 		QObject.__init__(self, parent)
 		self._data = data
 		self._name = name
+		if icon is None:
+			self._icon = self.get_icon_based_on_type(data)
+		else:
+			self._icon = icon
 		if name is not None:
 			self._name = tr(name, 'model')
 		self._model = model
@@ -356,6 +322,10 @@ class DocumentModelItem(QObject):
 	def data(self):
 		return self._data
 
+	@property
+	def icon(self):
+		return self._icon
+
 	def data_changed(self, event: ChangeEvent):
 		if event.type == ChangeEvent.BeforeObjectAdded:
 			self._model.on_before_object_added(self, event.object)
@@ -370,3 +340,47 @@ class DocumentModelItem(QObject):
 			self._model.on_object_deleted(self)
 		elif event.type == ChangeEvent.ValueChanged:
 			self._model.on_object_changed(self)
+
+	def get_icon_based_on_type(self, obj):
+		if type(obj) is Parameter:
+			return get_icon("param")
+		elif type(obj) is Sketch:
+			return get_icon("sketch")
+		elif type(obj) is SketchInstance:
+			return get_icon("sketch")
+		elif type(obj) is KeyPoint:
+			return get_icon("kp")
+		elif type(obj) is Edge:
+			return get_icon("edge")
+		elif type(obj) is Drawing:
+			return get_icon("drawing")
+		elif type(obj) is Text:
+			return get_icon("text")
+		elif type(obj) is EdgeStyle:
+			return get_icon("edgestyle")
+		elif type(obj) is Attribute:
+			return get_icon("attribute")
+		elif type(obj) is Field:
+			return get_icon("field")
+		elif type(obj) is SketchView:
+			return get_icon("sketchview")
+		elif type(obj) is PartView:
+			return get_icon("partview")
+		elif type(obj) is Area:
+			return get_icon("area")
+		elif type(obj) is Part:
+			return get_icon("part")
+		elif type(obj) is CalcTableAnalysis:
+			return get_icon("calctable")
+		elif type(obj) is CalcSheetAnalysis:
+			return get_icon("calcsheet")
+		elif type(obj) is Feature:
+			if obj.feature_type == FeatureType.SketchFeature:
+				return get_icon("sketch")
+			if obj.feature_type == FeatureType.RevolveFeature:
+				return get_icon("revolve")
+			if obj.feature_type == FeatureType.ExtrudeFeature:
+				return get_icon("extrude")
+		elif issubclass(type(obj), Parameters):
+			return get_icon("params")
+		return get_icon("default")

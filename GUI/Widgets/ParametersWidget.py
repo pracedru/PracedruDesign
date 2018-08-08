@@ -3,7 +3,7 @@ from PyQt5.QtCore import QItemSelectionModel
 from PyQt5.QtCore import QMargins
 from PyQt5.QtCore import QSortFilterProxyModel
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QWidget, QTableView, QVBoxLayout, QHBoxLayout, QPushButton, QInputDialog, QMessageBox
+from PyQt5.QtWidgets import QWidget, QTableView, QVBoxLayout, QHBoxLayout, QPushButton, QInputDialog, QMessageBox, QLabel, QComboBox
 
 import Business
 from Business.ParameterActions import add_parameter
@@ -16,6 +16,9 @@ class ParametersWidget(QWidget):
 		QWidget.__init__(self, main_window)
 		# self._document = document
 		self._main_window = main_window
+		guiscale = gui_scale()
+		self._ignore_type_standard_change = False
+		self._gui_scale = guiscale
 		self._parameters = document.get_parameters()
 		self.parameters_table = QTableView(self)
 		self.parameters_model = ParametersModel(self._parameters)
@@ -26,10 +29,25 @@ class ParametersWidget(QWidget):
 		self.parameters_sort_model.setSortCaseSensitivity(False)
 		layout = QVBoxLayout()
 		self.setLayout(layout)
+		predefined_standards_widget = QWidget(self)
+		predefined_standards_widget.setLayout(QHBoxLayout())
+		predefined_standards_widget.layout().addWidget(QLabel("Standard"))
+		self._standards_combobox = QComboBox(predefined_standards_widget)
+		self._standards_combobox.setMinimumWidth(110*guiscale)
+		predefined_standards_widget.layout().addWidget(self._standards_combobox)
+		predefined_standards_widget.layout().addWidget(QLabel("Type"))
+		self._type_combobox = QComboBox(predefined_standards_widget)
+		predefined_standards_widget.layout().addWidget(self._type_combobox)
+		self._type_combobox.setMinimumWidth(110*guiscale)
+		self._standards_combobox.currentTextChanged.connect(self.on_standard_changed)
+		self._type_combobox.currentTextChanged.connect(self.on_type_changed)
+		add_type_button = QPushButton("Add type")
+		add_type_button.clicked.connect(self.on_add_type)
+		predefined_standards_widget.layout().layout().addWidget(add_type_button)
+
+		layout.addWidget(predefined_standards_widget)
 		layout.addWidget(self.parameters_table)
 		layout.setContentsMargins(QMargins(0, 0, 0, 0))
-		guiscale = gui_scale()
-		self._gui_scale = gui_scale()
 		self.parameters_table.setColumnWidth(0, 120 * guiscale)
 		self.parameters_table.setColumnWidth(1, 150 * guiscale)
 		self.parameters_table.setColumnWidth(2, 80 * guiscale)
@@ -47,14 +65,42 @@ class ParametersWidget(QWidget):
 		buttons_widget.layout().addWidget(governor_button)
 		layout.addWidget(buttons_widget)
 		self.installEventFilter(self)
-		self.hide_hidden_params = True
-		self.update_hide_parameters()
+		# self.update_hide_parameters()
 		self.parameters_table.selectionModel().selectionChanged.connect(self.on_param_selection_changed)
 
 	def set_parameters(self, params):
+		self._ignore_type_standard_change = True
 		self._parameters = params
 		self.parameters_model.set_parameters(params)
 		self.parameters_table.resizeColumnsToContents()
+		self._standards_combobox.clear()
+		options = list(params.standards)
+		self._standards_combobox.addItems(options)
+		self._standards_combobox.setCurrentIndex(options.index(params.standard))
+		self._type_combobox.clear()
+		options = list(params.types)
+		self._type_combobox.addItems(options)
+		if params.type != "":
+			self._type_combobox.setCurrentIndex(options.index(params.type))
+		self.update_hide_parameters()
+		self._ignore_type_standard_change = False
+
+	def on_add_type(self):
+		self._ignore_type_standard_change = True
+		self._parameters.make_type(self._parameters.standard, "New Type")
+		self._type_combobox.clear()
+		options = list(self._parameters.types)
+		self._type_combobox.addItems(options)
+		self._type_combobox.setCurrentIndex(options.index(self._parameters.type))
+		self._ignore_type_standard_change = False
+
+	def on_type_changed(self, value):
+		if not self._ignore_type_standard_change:
+			self._parameters.type = value
+
+	def on_standard_changed(self, value):
+		if not self._ignore_type_standard_change:
+			self._parameters = value
 
 	def on_add_parameter(self):
 		# self.parent().parent().on_add_parameter()
@@ -105,7 +151,7 @@ class ParametersWidget(QWidget):
 			index = self.parameters_model.index(i, 0)
 			index = self.parameters_sort_model.mapFromSource(index)
 			row = index.row()
-			if self.hide_hidden_params:
+			if not self._main_window.states.show_params:
 				hide = self.parameters_model.row_hidden(i)
 				if hide:
 					self.parameters_table.hideRow(row)

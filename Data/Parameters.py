@@ -92,13 +92,14 @@ class Parameter(IdObject, ObservableObject):
 
 	@name.setter
 	def name(self, value):
+		old_name = self._name
 		if '(' in value:
 			args = re.findall("\((.*?)\)", value)
 			self._arguments = str.split(args[0], ',')
 			self._name = value.replace("(" + args[0] + ")", "")
 		else:
 			self._name = value
-		self.changed(ChangeEvent(self, ChangeEvent.ValueChanged, self))
+		self.changed(ChangeEvent(self, ChangeEvent.ValueChanged, {'old_name': old_name, 'new_name': self._name}))
 
 	@property
 	def full_name(self):
@@ -247,6 +248,27 @@ class Parameter(IdObject, ObservableObject):
 		return expr
 
 	@property
+	def internal_formula(self):
+		return self._formula
+
+	@internal_formula.setter
+	def internal_formula(self, value):
+		self._formula = value
+
+	@property
+	def internal_value(self):
+		return self._value
+
+	@internal_value.setter
+	def internal_value(self, value):
+		self._value = value
+
+	def get_instance_internal_formula(self, instance_uid):
+		if instance_uid in self._instance_formula:
+			return self._instance_formula[instance_uid]
+		return self._formula
+
+	@property
 	def base_unit(self):
 		return self._base_unit
 
@@ -302,7 +324,7 @@ class Parameter(IdObject, ObservableObject):
 			depends.append(param)
 		return depends
 
-	def evaluate(self, instance_uid):
+	def evaluate(self, instance_uid=None):
 		if instance_uid is None:
 			formula = self._formula
 		else:
@@ -381,13 +403,22 @@ class Parameter(IdObject, ObservableObject):
 		self._instance_formula = data.get('inform', {})
 
 
-class Parameters(NamedObservableObject):
-	def __init__(self, name, parent=None):
+class ParametersBase(NamedObservableObject):
+	def __init__(self, name):
 		NamedObservableObject.__init__(self, name)
+
+
+class Parameters(ParametersBase):
+	def __init__(self, name, parent=None):
+		ParametersBase.__init__(self, name)
 		self._parameter_list = []
 		self._params = {}
 		self._parent = parent
 		self._custom_name_getter = None
+		self._standards = {}
+		self._current_standard_name = "Normal"
+		self._current_type_name = "Default"
+		self._current_type = self.make_type(self._current_standard_name, self._current_type_name)
 
 	@property
 	def document(self):
@@ -399,6 +430,76 @@ class Parameters(NamedObservableObject):
 	@property
 	def parent(self):
 		return self._parent
+
+	def param_in_current_type(self, param):
+		if self._current_type is None:
+			return False
+		return param.uid in self._current_type
+
+	def make_standard(self, name):
+		standard = {}
+		self._standards[name] = standard
+		return standard
+
+	@property
+	def standards(self):
+		return self._standards.keys()
+
+	@property
+	def standard(self):
+		return self._current_standard_name
+
+	@standard.setter
+	def standard(self, value):
+		if value in self._standards:
+			self._current_standard_name = value
+			self._current_type_name = ""
+			self._current_type = None
+
+	@property
+	def types(self):
+		return self._standards[self._current_standard_name].keys()
+
+	def get_types_from_standard(self, standard):
+		if standard in self._standards:
+			return self._standards[standard].keys();
+		return []
+
+	def make_type(self, standard_name, type_name):
+		if standard_name not in self._standards:
+			standard = {}
+			self._standards[standard_name] = standard
+		else:
+			standard = self._standards[standard_name]
+		type = {}
+		standard[type_name] = type
+		return type
+
+	@property
+	def type(self):
+		return self._current_type_name
+
+	@type.setter
+	def type(self, type_name):
+		self._current_type = self._standards[self._current_standard_name][type_name]
+		self._current_type_name = type_name
+		if self._current_type is None:
+			return
+		for param_definition_tuple in self._current_type.items():
+			uid = param_definition_tuple[0]
+			val = param_definition_tuple[1]
+			if uid in self._params:
+				param = self._params[uid]
+				old_value = param.value
+				param.internal_formula = val['if']
+				param.internal_value = val['iv']
+				change_object = {
+					'new value': param.value,
+					'old value': old_value,
+					'instance': None
+				}
+				param.changed(ChangeEvent(param, ChangeEvent.ValueChanged, change_object))
+		self.changed(ChangeEvent(self, ChangeEvent.ObjectChanged, self))
 
 	def _add_parameter_object(self, param):
 		param.add_change_handler(self.on_parameter_changed)
@@ -467,7 +568,18 @@ class Parameters(NamedObservableObject):
 				self.delete_parameter(param.uid)
 
 	def on_parameter_changed(self, event):
-		self.changed(event)
+		param = event.sender
+		self.changed(ChangeEvent(self, event.type, event.sender))
+		if self._current_type is not None and param.uid in self._params:
+			if 'instance' in event.object:
+				if event.object['instance'] is None:
+					if param.uid in self._current_type:
+						predef = self._current_type[param.uid]
+					else:
+						predef = {}
+						self._current_type[param.uid] = predef
+					predef['if'] = param.internal_formula
+					predef['iv'] = param.internal_value
 
 	def get_index_of(self, parameter):
 		if parameter.uid in self._parameter_list:
@@ -498,7 +610,10 @@ class Parameters(NamedObservableObject):
 		return {
 			'name': self._name,
 			'params': self._params,
-			'parameter_list': self._parameter_list
+			'parameter_list': self._parameter_list,
+			'pps': self._standards,
+			'csn': self._current_standard_name,
+			'ctn': self._current_type_name
 		}
 
 	@staticmethod
@@ -510,6 +625,9 @@ class Parameters(NamedObservableObject):
 	def deserialize_data(self, data):
 		self._parameter_list = data.get('parameter_list', [])
 		self._name = data.get('name', 'name missing')
+		self._standards = data.get('pps', self._standards)
+		self._current_standard_name = data.get("csn", self._current_standard_name)
+		self._current_type_name = data.get("ctn", self._current_type_name)
 		for param_data in data.get('params', {}).items():
 			param = Parameter.deserialize(param_data[1], self)
 			self._params[param.uid] = param
@@ -521,3 +639,82 @@ class Parameters(NamedObservableObject):
 					param_tuple[1].value = param_tuple[1].formula
 				except Exception as e:
 					pass
+
+
+class ParametersInstance(IdObject, ParametersBase):
+	def __init__(self, name):
+		ParametersBase.__init__(self, name)
+		IdObject.__init__(self)
+		self._parameters = None
+		self._current_standard = ""
+		self._current_type = ""
+
+	@property
+	def length(self):
+		if self._parameters is None:
+			return 0
+		return self._parameters.length
+
+	@property
+	def length_all(self):
+		if self._parameters is None:
+			return 0
+		return self._parameters.length_all
+
+	def get_parameter_item(self, index):
+		if self._parameters is None:
+			return None
+		return self._parameters.get_parameter_item(index)
+
+	@property
+	def standards(self):
+		if self._parameters is None:
+			return []
+		return self._parameters.standards
+
+
+	def get_types_from_standard(self, standard):
+		if self._parameters is None:
+			return []
+		return self._parameters.get_types_from_standard(standard)
+
+
+	@property
+	def standard(self):
+		return self._current_standard
+
+	@property
+	def type(self):
+	    return self._current_type
+
+	def param_in_current_type(self, index):
+		return False
+
+	def delete_parameters(self, params):
+		raise Exception("Parameters can not be deleted on instance")
+
+	def delete_parameter(self, uid):
+		raise Exception("Parameters can not be deleted on instance")
+
+	def get_parameter_by_uid(self, uid) -> Parameter:
+		if self._parameters is None:
+			return None
+		return self._parameters.get_parameter_by_uid(uid)
+
+	def get_parameter_by_name(self, name) -> Parameter:
+		if self._parameters is None:
+			return None
+		return self._parameters.get_parameter_by_name()
+
+	def get_all_local_parameters(self):
+		if self._parameters is None:
+			return []
+		return self._parameters.get_all_local_parameters()
+
+	def get_all_parameters(self):
+		if self._parameters is None:
+			return []
+		return self._parameters.get_all_parameters()
+
+	def create_parameter(self, name=None, value=0.0):
+		raise Exception("Parameters can not be created on instance")

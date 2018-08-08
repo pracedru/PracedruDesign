@@ -21,21 +21,33 @@ class AddParameterDoObject(DoObject):
 
 
 class ChangeParameterDoObject(DoObject):
-	def __init__(self, parameter, new_value, old_value, old_formula):
+	def __init__(self, parameter, new_value, old_value, old_formula, instance):
 		DoObject.__init__(self)
 		self._parameter = parameter
 		self._new_value = new_value
 		self._old_value = old_value
 		self._old_formula = old_formula
+		self._instance = instance
 
 	def undo(self):
-		self._parameter._value = self._old_value
-		self._parameter._formula = self._old_formula
-		self._parameter.changed(ChangeEvent(self._parameter, ChangeEvent.ValueChanged, self._parameter))
+		old_value = None
+		value = self._old_value
+		if self._instance is None:
+			self._parameter._instance_values[self._instance] = self._old_value
+			self._parameter._instance_formula[self._instance] = self._old_formula
+		else:
+			self._parameter._value = self._old_value
+			self._parameter._formula = self._old_formula
+		change_object = {
+			'new value': self._old_value,
+			'old value': self._new_value,
+			'instance': self._instance
+		}
+		self._parameter.changed(ChangeEvent(self._parameter, ChangeEvent.ValueChanged, change_object))
 
 	def redo(self):
 		self._parameter = self._parameter.parent.get_parameter_by_name(self._parameter.name)
-		self._parameter.value = self._new_value
+		self._parameter.set_instance_value(self._instance, self._new_value)
 
 
 class ChangeParameterNameDoObject(DoObject):
@@ -93,11 +105,12 @@ def add_parameter(parameters_object: Parameters):
 	return parameter
 
 
-def set_parameter(parameter, value):
+def set_parameter(parameter, value, instance):
 	old_value = parameter._value
 	old_formula = parameter._formula
-	parameter.value = value
-	parameter.parent.document.undo_stack.append(ChangeParameterDoObject(parameter, value, old_value, old_formula))
+	#parameter.value = value
+	parameter.set_instance_value(instance, value)
+	parameter.parent.document.undo_stack.append(ChangeParameterDoObject(parameter, value, old_value, old_formula, instance))
 
 
 def set_parameter_name(parameter, name):

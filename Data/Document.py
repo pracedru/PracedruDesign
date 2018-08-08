@@ -41,6 +41,7 @@ class Document(IdObject, Parameters):
 		self.init_change_handlers()
 		self._persistent_status_message = ""
 		self._persistent_status_progress = 100
+		self.is_modified = False
 
 	def init_change_handlers(self):
 		# self.add_change_handler(self.on_parameters_changed)

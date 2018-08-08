@@ -76,6 +76,7 @@ class GenericView():
 
 	def on_show_params(self):
 		self._states.show_params = not self._states.show_params
+		self._main_window.parameters_widget.update_hide_parameters()
 
 	def on_mouse_move(self, scale, x, y):
 		pass
