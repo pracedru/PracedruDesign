@@ -569,6 +569,8 @@ class SketchInstance(ParametersInstance):
 		if type(self._sketch) is not Sketch:
 			self._sketch = self._parent.get_sketch(self._sketch)
 			self._parameters = self._sketch
+			self._current_standard_name = self._parameters.standard
+			self._current_type_name = self._parameters.type
 		return self._sketch
 
 	@sketch.setter
@@ -598,9 +600,11 @@ class SketchInstance(ParametersInstance):
 		return {
 			'uid': IdObject.serialize_json(self),
 			'no': NamedObservableObject.serialize_json(self),
-			'sketch': self._sketch.uid,
-			'offset': self._offset.uid,
-			'scale': self._scale
+			'sketch': self.sketch.uid,
+			'offset': self.offset.uid,
+			'scale': self._scale,
+			'csn': self._current_standard_name,
+			'ctn': self._current_type_name
 		}
 
 	@staticmethod
@@ -616,3 +620,5 @@ class SketchInstance(ParametersInstance):
 		self._sketch = data['sketch']
 		self._offset = data['offset']
 		self._scale = data['scale']
+		self._current_standard_name = data.get("csn", self._current_standard_name)
+		self._current_type_name = data.get("ctn", self._current_type_name)

@@ -1,8 +1,8 @@
 import GUI.Plugins.SketchSelect
-import GUI.Plugins.SketchLineDraw
-import GUI.Plugins.SketchSplineDraw
-import GUI.Plugins.SketchArcDraw
-import GUI.Plugins.SketchCircleDraw
+import GUI.Plugins.SketchEdgeDraw
+# import GUI.Plugins.SketchSplineDraw
+# import GUI.Plugins.SketchArcDraw
+# import GUI.Plugins.SketchCircleDraw
 import GUI.Plugins.SketchFilletDraw
 import GUI.Plugins.SketchTextDraw
 import GUI.Plugins.SketchAttributeDraw

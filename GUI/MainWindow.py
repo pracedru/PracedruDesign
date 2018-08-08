@@ -179,6 +179,9 @@ class MainWindow(QMainWindow):
 	def on_new_document(self):
 		Business.new_document()
 
+	def on_update_view(self):
+		self._viewWidget.on_update_view()
+
 	def on_open_file(self):
 		docs_location = QStandardPaths.standardLocations(QStandardPaths.DocumentsLocation)
 

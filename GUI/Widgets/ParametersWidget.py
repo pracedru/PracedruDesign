@@ -22,6 +22,7 @@ class ParametersWidget(QWidget):
 		self._parameters = document.get_parameters()
 		self.parameters_table = QTableView(self)
 		self.parameters_model = ParametersModel(self._parameters)
+		self.parameters_model.add_user_input_handler(self.on_user_input)
 		self.parameters_sort_model = QSortFilterProxyModel()
 		self.parameters_sort_model.setSourceModel(self.parameters_model)
 		self.parameters_table.setModel(self.parameters_sort_model)
@@ -76,11 +77,12 @@ class ParametersWidget(QWidget):
 		self._standards_combobox.clear()
 		options = list(params.standards)
 		self._standards_combobox.addItems(options)
-		self._standards_combobox.setCurrentIndex(options.index(params.standard))
+		if params.standard in options:
+			self._standards_combobox.setCurrentIndex(options.index(params.standard))
 		self._type_combobox.clear()
-		options = list(params.types)
+		options = list(params.get_types_from_standard(params.standard))
 		self._type_combobox.addItems(options)
-		if params.type != "":
+		if params.type != "" and params.type in options:
 			self._type_combobox.setCurrentIndex(options.index(params.type))
 		self.update_hide_parameters()
 		self._ignore_type_standard_change = False
@@ -97,6 +99,7 @@ class ParametersWidget(QWidget):
 	def on_type_changed(self, value):
 		if not self._ignore_type_standard_change:
 			self._parameters.type = value
+			self.on_user_input(None)
 
 	def on_standard_changed(self, value):
 		if not self._ignore_type_standard_change:
@@ -105,6 +108,7 @@ class ParametersWidget(QWidget):
 	def on_add_parameter(self):
 		# self.parent().parent().on_add_parameter()
 		add_parameter(self._parameters)
+		self.update_hide_parameters()
 		ndx = self.parameters_model.index(self.parameters_model.rowCount() - 1, 0)
 		index = self.parameters_sort_model.mapFromSource(ndx)
 		self.parameters_table.scrollTo(index)
@@ -168,3 +172,6 @@ class ParametersWidget(QWidget):
 			ndx = self.parameters_sort_model.mapToSource(index)
 			selected_parameters.add(self.parameters_model.get_parameter_from_row(ndx.row()))
 		self._main_window.on_param_selection_changed_in_parameters_widget(list(selected_parameters))
+
+	def on_user_input(self, event):
+		self._main_window.on_update_view()

@@ -72,14 +72,21 @@ class Edge(IdObject, NamedObservableObject):
 				return
 		self._meta_data[name] = value
 
-	def get_meta_data(self, name):
-		return self._meta_data[name]
+	def get_meta_data(self, name, instance):
+		if instance is None:
+			return self._meta_data[name]
+		else:
+			param = self.get_meta_data_parameter(name)
+			if param is None:
+				return self._meta_data[name]
+			else:
+				return param.get_instance_value(instance)
 
 	def get_meta_data_parameter(self, name):
-		doc = self._geometry.document()
+		doc = self._geometry.document
 		for param_tuple in self._meta_data_parameters.items():
 			if param_tuple[1] == name:
-				return doc.get_parameters().get_parameter_by_uid(param_tuple[0])
+				return self._geometry.get_parameter_by_uid(param_tuple[0])
 		return None
 
 	def set_meta_data_parameter(self, name, parameter):
@@ -130,7 +137,7 @@ class Edge(IdObject, NamedObservableObject):
 				y = sin(self._meta_data['sa']) * self._meta_data['r']
 				z = 0
 				pc1 = ckp.xyz + pm.dot(np.array([x, y, z]))
-				start_kp = self._geometry.create_key_point(pc1[0], pc1[1], pc1[2], 0)
+				start_kp = self._geometry.create_keypoint(pc1[0], pc1[1], pc1[2])
 				start_kp.add_edge(self)
 				start_kp.add_change_handler(self.on_key_point_changed)
 				start_kp.editable = False
@@ -143,7 +150,7 @@ class Edge(IdObject, NamedObservableObject):
 				y = sin(self._meta_data['ea']) * self._meta_data['r']
 				z = 0
 				pc1 = ckp.xyz + pm.dot(np.array([x, y, z]))
-				end_kp = self._geometry.create_key_point(pc1[0], pc1[1], pc1[2], 0)
+				end_kp = self._geometry.create_keypoint(pc1[0], pc1[1], pc1[2])
 				end_kp.add_edge(self)
 				end_kp.add_change_handler(self.on_key_point_changed)
 				end_kp.editable = False
@@ -205,7 +212,7 @@ class Edge(IdObject, NamedObservableObject):
 			start_kp.y = pc1[1]
 			start_kp.z = pc1[2]
 
-	def distance(self, point):
+	def distance(self, point, instance):
 		kps = self.get_key_points()
 		if self.type == EdgeType.LineEdge:
 			kp1 = kps[0]
@@ -241,9 +248,9 @@ class Edge(IdObject, NamedObservableObject):
 			return dist
 		elif self.type == EdgeType.ArcEdge:
 			center = kps[0]
-			radius = self._meta_data['r']
-			sa = self._meta_data['sa']
-			ea = self._meta_data['ea']
+			radius = self.get_meta_data('r', instance) # self._meta_data['r']
+			sa = self.get_meta_data('sa', instance) # self._meta_data['sa']
+			ea = self.get_meta_data('ea', instance) # self._meta_data['ea']
 			diff = ea - sa
 			if diff < 0:
 				diff += 2 * pi
@@ -268,7 +275,7 @@ class Edge(IdObject, NamedObservableObject):
 			radius = self._meta_data['r']
 			edges = kp.get_edges()
 			edges.remove(self)
-			draw_data = self.get_draw_data()
+			draw_data = self.get_draw_data(instance)
 			if 'rect' in draw_data:
 				rect = draw_data['rect']
 				center = Vertex(rect[0] + rect[2] / 2, rect[1] + rect[3] / 2)
@@ -277,7 +284,7 @@ class Edge(IdObject, NamedObservableObject):
 				dist = kp.distance(point)
 			return dist
 
-	def get_draw_data(self):
+	def get_draw_data(self, instance):
 		edge_data = {}
 
 		key_points = self.get_key_points()
@@ -302,7 +309,7 @@ class Edge(IdObject, NamedObservableObject):
 			fillet_offset_y = 0
 
 			if fillet1 is not None and other_edge1 is not None:
-				r = fillet1.get_meta_data("r")
+				r = fillet1.get_meta_data("r", instance)
 				a1 = self.angle(key_points[0])
 				kp1 = self.get_other_kp(key_points[0])
 				kp2 = other_edge1.get_other_kp(key_points[0])
@@ -318,7 +325,7 @@ class Edge(IdObject, NamedObservableObject):
 			fillet_offset_y = 0
 
 			if fillet2 is not None and other_edge2 is not None:
-				r = fillet2.get_meta_data("r")
+				r = fillet2.get_meta_data("r", instance)
 				a1 = self.angle(key_points[1])
 				kp1 = self.get_other_kp(key_points[1])
 				kp2 = other_edge2.get_other_kp(key_points[1])
@@ -335,10 +342,10 @@ class Edge(IdObject, NamedObservableObject):
 			cx = key_points[0].x
 			cy = key_points[0].y
 			cz = key_points[0].z
-			radius = self.get_meta_data("r")
+			radius = self.get_meta_data("r", instance)
 			rect = [cx - radius, cy - 1 * radius, radius * 2, radius * 2]
-			start_angle = self.get_meta_data("sa") * 180 * 16 / pi
-			end_angle = self.get_meta_data("ea") * 180 * 16 / pi
+			start_angle = self.get_meta_data("sa", instance) * 180 * 16 / pi
+			end_angle = self.get_meta_data("ea", instance) * 180 * 16 / pi
 			span = end_angle - start_angle
 			if span < 0:
 				span += 2 * 180 * 16
@@ -358,7 +365,7 @@ class Edge(IdObject, NamedObservableObject):
 				kp1 = edge1.get_other_kp(kp)
 				kp2 = edge2.get_other_kp(kp)
 				angle_between = kp.angle_between_untouched(kp1, kp2)
-				radius = self.get_meta_data("r")
+				radius = self.get_meta_data("r", instance)
 				dist = radius / sin(angle_between / 2)
 				angle_larger = False
 				while angle_between < -2 * pi:
@@ -403,7 +410,7 @@ class Edge(IdObject, NamedObservableObject):
 			kp = key_points[0]
 			cx = key_points[0].x
 			cy = key_points[0].y
-			radius = self.get_meta_data("r")
+			radius = self.get_meta_data("r", instance)
 			rect = [cx - radius, cy - radius, radius * 2, radius * 2]
 			edge_data["type"] = 3
 			edge_data["rect"] = rect

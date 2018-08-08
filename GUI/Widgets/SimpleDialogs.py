@@ -340,6 +340,16 @@ class AddArcDialog(QDialog):
 		return self._ea_combo_box.currentText()
 
 
+class StandardTypeManager(QDialog):
+	def __init__(self, parent, parameters):
+		QDialog.__init__(self, parent)
+		self._parameters = parameters
+		self.setLayout(QVBoxLayout())
+		dialog_buttons = QDialogButtonBox(QDialogButtonBox.Close)
+		dialog_buttons.close.connect(self.accept)
+		self.layout().addWidget(dialog_buttons)
+
+
 class CompositeAreaDialog(QDialog):
 	def __init__(self, parent, sketch):
 		QDialog.__init__(self, parent)

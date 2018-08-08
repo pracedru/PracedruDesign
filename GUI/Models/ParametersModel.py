@@ -20,6 +20,7 @@ class ParametersModel(QAbstractTableModel):
 		self._gui_scale = gui_scale()
 		self._columns_widths = [120, 150, 80, 40]
 		self._instance = None
+		self._user_input_handlers = []
 
 	@property
 	def instance(self):
@@ -28,6 +29,13 @@ class ParametersModel(QAbstractTableModel):
 	@instance.setter
 	def instance(self, value):
 		self._instance = value
+
+	def add_user_input_handler(self, user_input_handler):
+		self._user_input_handlers.append(user_input_handler)
+
+	def on_user_input(self):
+		for input_handler in self._user_input_handlers:
+			input_handler(None)
 
 	def set_parameters(self, params):
 		self.layoutAboutToBeChanged.emit()
@@ -112,6 +120,7 @@ class ParametersModel(QAbstractTableModel):
 		if col == 0:
 			set_parameter_name(param_item, value)
 			# param_item.name = value
+			self.on_user_input()
 			return True
 		elif col == 1 or col == 2:
 			if param_item is Parameters:
@@ -121,6 +130,7 @@ class ParametersModel(QAbstractTableModel):
 			if isinstance(value, float):
 				set_parameter(param, value, self._instance)
 				# param.value = value
+				self.on_user_input()
 				return True
 			parsed = QLocale().toDouble(value)
 			if parsed[1]:
@@ -139,6 +149,7 @@ class ParametersModel(QAbstractTableModel):
 				# param.value = formula_from_locale(value)
 				except Exception as ex:
 					self._parameters.document.set_status(str(ex))
+			self.on_user_input()
 			return True
 		elif col == 3:
 			if int_role == Qt.CheckStateRole:

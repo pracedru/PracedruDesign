@@ -53,7 +53,7 @@ class SketchSelect():
 			smallest_dist = 10e10
 			closest_edge = None
 			for edge in sketch.get_edges():
-				dist = edge.distance(Vertex(x, y, 0))
+				dist = edge.distance(Vertex(x, y, 0), None)
 				if dist < smallest_dist:
 					smallest_dist = dist
 					closest_edge = edge

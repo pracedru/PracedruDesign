@@ -186,6 +186,7 @@ class Parameter(IdObject, ObservableObject):
 		elif self._locked:
 			raise ValueError("This parameter " + self.name + " has been locked")
 		old_value = self.get_instance_value(instance_uid)
+		old_formula = self.get_instance_internal_formula(instance_uid)
 		if value is None and instance_uid is not None:
 			if instance_uid in self._instance_values:
 				self._instance_values.pop(instance_uid)
@@ -208,16 +209,23 @@ class Parameter(IdObject, ObservableObject):
 					self._formula = formula.replace(' ', '')
 					self._value = self.evaluate(instance_uid)
 				else:
-					self._instance_formula[instance_uid] = formula.replace(' ', '')
-					self._instance_values[instance_uid] = self.evaluate(instance_uid)
+					self.set_instance_internal_formula(instance_uid, formula.replace(' ', ''))
+					self.set_instance_internal_value(instance_uid, self.evaluate(instance_uid))
 			else:
 				if instance_uid is None:
 					self._value = value
 					self._formula = str(value)
 				else:
-					self._instance_values[instance_uid] = value
-					self._instance_formula[instance_uid] = str(value)
-		self.changed(ChangeEvent(self, ChangeEvent.ValueChanged, {'new value': value, 'old value': old_value, 'instance': instance_uid}))
+					self.set_instance_internal_formula(instance_uid, str(value))
+					self.set_instance_internal_value(instance_uid, value)
+		change_object = {
+			'new value': value,
+			'old value': old_value,
+			'new formula': self.get_instance_internal_formula(instance_uid),
+			'old formula': old_formula,
+			'instance': instance_uid
+		}
+		self.changed(ChangeEvent(self, ChangeEvent.ValueChanged, change_object))
 
 	@property
 	def formula(self):
@@ -267,6 +275,31 @@ class Parameter(IdObject, ObservableObject):
 		if instance_uid in self._instance_formula:
 			return self._instance_formula[instance_uid]
 		return self._formula
+
+	def set_instance_internal_formula(self, instance_uid, value):
+		if instance_uid in self._instance_formula:
+			if value == self._formula:
+				self._instance_formula.pop(instance_uid)
+			else:
+				self._instance_formula[instance_uid] = value
+		else:
+			if value != self._formula:
+				self._instance_formula[instance_uid] = value
+
+	def get_instance_internal_value(self, instance_uid):
+		if instance_uid in self._instance_values:
+			return self._instance_values[instance_uid]
+		return self._value
+
+	def set_instance_internal_value(self, instance_uid, value):
+		if instance_uid in self._instance_values:
+			if value == self._value:
+				self._instance_values.pop(instance_uid)
+			else:
+				self._instance_values[instance_uid] = value
+		else:
+			if value != self._formula:
+				self._instance_values[instance_uid] = value
 
 	@property
 	def base_unit(self):
@@ -365,6 +398,10 @@ class Parameter(IdObject, ObservableObject):
 			old_value = self._value
 			self._value = self.evaluate(instance_uid)
 			new_value = self._value
+			for formula_tuple in self._instance_formula.items():
+				uid = formula_tuple[0]
+				if event.sender.uid in formula_tuple[1]:
+					self.set_instance_internal_value(uid, self.evaluate(uid))
 		else:
 			old_value = self.get_instance_value(instance_uid)
 			new_value = self.evaluate(instance_uid)
@@ -492,7 +529,7 @@ class Parameters(ParametersBase):
 				param = self._params[uid]
 				old_value = param.value
 				param.internal_formula = val['if']
-				param.internal_value = val['iv']
+				param.internal_value = param.evaluate(None)
 				change_object = {
 					'new value': param.value,
 					'old value': old_value,
@@ -571,8 +608,9 @@ class Parameters(ParametersBase):
 		param = event.sender
 		self.changed(ChangeEvent(self, event.type, event.sender))
 		if self._current_type is not None and param.uid in self._params:
-			if 'instance' in event.object:
-				if event.object['instance'] is None:
+			if 'instance' in event.object and 'new formula' in event.object:
+				if event.object['instance'] is None and event.object['new formula'] != event.object['old formula']:
+
 					if param.uid in self._current_type:
 						predef = self._current_type[param.uid]
 					else:
@@ -628,6 +666,7 @@ class Parameters(ParametersBase):
 		self._standards = data.get('pps', self._standards)
 		self._current_standard_name = data.get("csn", self._current_standard_name)
 		self._current_type_name = data.get("ctn", self._current_type_name)
+		self._current_type = self._standards[self._current_standard_name][self._current_type_name]
 		for param_data in data.get('params', {}).items():
 			param = Parameter.deserialize(param_data[1], self)
 			self._params[param.uid] = param
@@ -646,8 +685,14 @@ class ParametersInstance(IdObject, ParametersBase):
 		ParametersBase.__init__(self, name)
 		IdObject.__init__(self)
 		self._parameters = None
-		self._current_standard = ""
-		self._current_type = ""
+		self._current_standard_name = ""
+		self._current_type_name = ""
+
+	@property
+	def document(self):
+		if self._parameters is None:
+			return None
+		return self._parameters.document
 
 	@property
 	def length(self):
@@ -672,20 +717,42 @@ class ParametersInstance(IdObject, ParametersBase):
 			return []
 		return self._parameters.standards
 
-
 	def get_types_from_standard(self, standard):
 		if self._parameters is None:
 			return []
 		return self._parameters.get_types_from_standard(standard)
 
-
 	@property
 	def standard(self):
-		return self._current_standard
+		return self._current_standard_name
 
 	@property
 	def type(self):
-	    return self._current_type
+	    return self._current_type_name
+
+	@type.setter
+	def type(self, type_name):
+		if self._parameters is None:
+			return
+		current_type = self._parameters._standards[self._current_standard_name][type_name]
+		self._current_type_name = type_name
+
+		for param_definition_tuple in current_type.items():
+			uid = param_definition_tuple[0]
+			val = param_definition_tuple[1]
+
+			param = self._parameters.get_parameter_by_uid(uid)
+			if param is not None:
+				old_value = param.value
+				param.set_instance_internal_formula(self.uid, val['if'])
+				param.set_instance_internal_value(self.uid, param.evaluate(self.uid))
+				change_object = {
+					'new value': param.value,
+					'old value': old_value,
+					'instance': self.uid
+				}
+				param.changed(ChangeEvent(param, ChangeEvent.ValueChanged, change_object))
+		self.changed(ChangeEvent(self, ChangeEvent.ObjectChanged, self))
 
 	def param_in_current_type(self, index):
 		return False

@@ -30,17 +30,19 @@ class ChangeParameterDoObject(DoObject):
 		self._instance = instance
 
 	def undo(self):
-		old_value = None
-		value = self._old_value
+		new_formula = self._parameter.get_instance_internal_formula(self._instance)
 		if self._instance is None:
-			self._parameter._instance_values[self._instance] = self._old_value
-			self._parameter._instance_formula[self._instance] = self._old_formula
-		else:
 			self._parameter._value = self._old_value
 			self._parameter._formula = self._old_formula
+		else:
+			self._parameter.set_instance_internal_value(self._instance, self._old_value)
+			self._parameter.set_instance_internal_formula(self._instance, self._old_formula)
+
 		change_object = {
 			'new value': self._old_value,
 			'old value': self._new_value,
+			'new formula': self._old_formula,
+			'old formula': new_formula,
 			'instance': self._instance
 		}
 		self._parameter.changed(ChangeEvent(self._parameter, ChangeEvent.ValueChanged, change_object))
@@ -100,9 +102,13 @@ class DeleteParametersDoObject(DoObject):
 
 
 def add_parameter(parameters_object: Parameters):
-	parameter = parameters_object.create_parameter()
-	parameters_object.document.undo_stack.append(AddParameterDoObject(parameter))
-	return parameter
+	try:
+		parameter = parameters_object.create_parameter()
+		parameters_object.document.undo_stack.append(AddParameterDoObject(parameter))
+		return parameter
+	except Exception as e:
+		parameters_object.document.set_status(str(e))
+	return None
 
 
 def set_parameter(parameter, value, instance):
@@ -126,5 +132,8 @@ def delete_parameters(parent, parameters):
 			obj = change_handler.__self__
 			if type(obj) is Parameter or issubclass(type(obj), Parameter):
 				dependents.append(obj)
-	parent.delete_parameters(parameters)
-	parent.document.undo_stack.append(DeleteParametersDoObject(parent, parameters, dependents))
+	try:
+		parent.delete_parameters(parameters)
+		parent.document.undo_stack.append(DeleteParametersDoObject(parent, parameters, dependents))
+	except Exception as e:
+		parent.document.set_status(str(e))

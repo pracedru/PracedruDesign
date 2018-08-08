@@ -184,7 +184,7 @@ def draw_edge(edge: Edge, qp: QPainter, scale, offset, center, pens, instance=No
 			fillet_offset_y = 0
 
 			if fillet1 is not None and other_edge1 is not None:
-				r = fillet1.get_meta_data("r")
+				r = fillet1.get_meta_data("r", instance)
 				a1 = edge.angle(key_points[0])
 				dist = get_fillet_offset_distance(key_points[0], r, edge, other_edge1)
 				fillet_offset_x = dist * cos(a1)
@@ -197,7 +197,7 @@ def draw_edge(edge: Edge, qp: QPainter, scale, offset, center, pens, instance=No
 			fillet_offset_y = 0
 
 			if fillet2 is not None and other_edge2 is not None:
-				r = fillet2.get_meta_data("r")
+				r = fillet2.get_meta_data("r", instance)
 				a1 = edge.angle(key_points[1])
 				dist = get_fillet_offset_distance(key_points[1], r, edge, other_edge2)
 				fillet_offset_x = dist * cos(a1)
@@ -209,10 +209,10 @@ def draw_edge(edge: Edge, qp: QPainter, scale, offset, center, pens, instance=No
 		elif edge.type == EdgeType.ArcEdge:
 			cx = (key_points[0].get_instance_x(instance) + offset.x) * scale + center.x
 			cy = -(key_points[0].get_instance_y(instance) + offset.y) * scale + center.y
-			radius = edge.get_meta_data("r") * scale
+			radius = edge.get_meta_data("r", instance) * scale
 			rect = QRectF(cx - radius, cy - 1 * radius, radius * 2, radius * 2)
-			start_angle = edge.get_meta_data("sa") * 180 * 16 / pi
-			end_angle = edge.get_meta_data("ea") * 180 * 16 / pi
+			start_angle = edge.get_meta_data("sa", instance) * 180 * 16 / pi
+			end_angle = edge.get_meta_data("ea", instance) * 180 * 16 / pi
 			span = end_angle - start_angle
 			if span < 0:
 				span += 2 * 180 * 16
@@ -220,7 +220,7 @@ def draw_edge(edge: Edge, qp: QPainter, scale, offset, center, pens, instance=No
 		elif edge.type == EdgeType.CircleEdge:
 			cx = (key_points[0].get_instance_x(instance) + offset.x) * scale + center.x
 			cy = -(key_points[0].get_instance_y(instance) + offset.y) * scale + center.y
-			radius = edge.get_meta_data("r") * scale
+			radius = edge.get_meta_data("r", instance) * scale
 			rect = QRectF(cx - radius, cy - 1 * radius, radius * 2, radius * 2)
 
 			qp.drawEllipse(rect)
@@ -235,7 +235,7 @@ def draw_edge(edge: Edge, qp: QPainter, scale, offset, center, pens, instance=No
 				kp1 = edge1.get_other_kp(kp)
 				kp2 = edge2.get_other_kp(kp)
 				angle_between = kp.angle_between_untouched(kp1, kp2)
-				radius = edge.get_meta_data("r")
+				radius = edge.get_meta_data("r", instance)
 				dist = radius / sin(angle_between / 2)
 				radius *= scale
 				angle_larger = False
@@ -273,9 +273,10 @@ def draw_edge(edge: Edge, qp: QPainter, scale, offset, center, pens, instance=No
 				span = end_angle - start_angle
 				qp.drawArc(rect, start_angle, span)
 		elif edge.type == EdgeType.NurbsEdge:
-			draw_data = edge.get_draw_data()
+			draw_data = edge.get_draw_data(instance)
 			coords = draw_data['coords']
 			x1 = None
+			y1 = None
 			for coord in coords:
 				x2 = (coord.x + offset.x) * scale + center.x
 				y2 = -(coord.y + offset.y) * scale + center.y
@@ -286,8 +287,8 @@ def draw_edge(edge: Edge, qp: QPainter, scale, offset, center, pens, instance=No
 
 
 def draw_kp(qp, key_point, scale, offset, center, instance = None):
-	x1 = (key_point.x + offset.x) * scale + center.x
-	y1 = -(key_point.y + offset.y) * scale + center.y
+	x1 = (key_point.get_instance_x(instance) + offset.x) * scale + center.x
+	y1 = -(key_point.get_instance_y(instance) + offset.y) * scale + center.y
 	qp.drawEllipse(QPointF(x1, y1), 4, 4)
 
 
@@ -316,10 +317,10 @@ def draw_area(area, qp, scale, offset, half_height, half_width, show_names, brus
 	counter = 0
 
 	if type(area) == CompositeArea:
-		path = get_area_path(area.base_area, scale, offset, half_height, half_width, limits)
+		path = get_area_path(area.base_area, scale, offset, half_height, half_width, limits, instance)
 		for subarea in area.subtracted_areas:
 			other_limits = Limits()
-			sub_area_path = get_area_path(subarea, scale, offset, half_height, half_width, other_limits)
+			sub_area_path = get_area_path(subarea, scale, offset, half_height, half_width, other_limits, instance)
 			limits.check_limits(other_limits)
 			path = path.subtracted(sub_area_path)
 		qp.fillPath(path, brush)
@@ -360,7 +361,7 @@ def get_area_path(area, scale, offset, half_height, half_width, limits, instance
 			fillet_dist = 0
 			for edge in edges:
 				if edge.type == EdgeType.FilletLineEdge:
-					r = edge.get_meta_data("r")
+					r = edge.get_meta_data("r", instance)
 					is_fillet_kp = True
 					edge1 = None
 					edge2 = None
@@ -403,15 +404,12 @@ def get_area_path(area, scale, offset, half_height, half_width, limits, instance
 					cx = (center_kp.x + offset.x) * scale + half_width
 					cy = -(center_kp.y + offset.y) * scale + half_height
 					radius = edge.get_meta_data('r')
-					start_angle = edge.get_meta_data('sa')
-					end_angle = edge.get_meta_data('ea')
+					start_angle = edge.get_meta_data('sa', instance)
+					end_angle = edge.get_meta_data('ea', instance)
 					diff = (x - (cx + cos(end_angle) * radius * scale)) + (y - (cy - sin(end_angle) * radius * scale))
 					end_angle *= 180 / pi
 					start_angle *= 180 / pi
 					sweep_length = end_angle - start_angle
-					# if abs(diff) > 0.01 * radius * scale:
-					#  start_angle = end_angle
-					#  sweep_length = -sweep_length
 					if sweep_length < 0:
 						sweep_length += 360
 
@@ -443,6 +441,14 @@ def get_area_path(area, scale, offset, half_height, half_width, limits, instance
 						start_angle = angle * 180 / pi + 90
 					sweep_length = -(180 - angle_between * 180 / pi)
 					path.arcTo(cx - r * scale, cy - r * scale, scale * r * 2, scale * r * 2, start_angle, sweep_length)
+				elif edge.type == EdgeType.NurbsEdge:
+					draw_data = edge.get_draw_data(instance)
+					coords = draw_data['coords']
+
+					for coord in coords:
+						x2 = (coord.x + offset.x) * scale + half_width
+						y2 = -(coord.y + offset.y) * scale + half_height
+						path.lineTo(QPointF(x2, y2))
 
 				else:
 					path.lineTo(QPointF(x, y))
