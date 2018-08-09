@@ -267,7 +267,6 @@ class Edge(IdObject, NamedObservableObject):
 		elif self.type == EdgeType.CircleEdge:
 			center = kps[0]
 			radius = self._meta_data['r']
-
 			dist = abs(center.distance(point) - radius)
 			return dist
 		elif self.type == EdgeType.FilletLineEdge:
