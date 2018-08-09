@@ -1,3 +1,5 @@
+from enum import EnumMeta
+
 import numpy
 from PyQt5.QtCore import QAbstractTableModel, QSize
 from PyQt5.QtCore import QLocale
@@ -66,7 +68,8 @@ rows_by_type = {
 		['Color', 'color'],
 		['Line type', 'line_type']],
 	"Brush": [
-		['Name', 'name']],
+		['Name', 'name'],
+		['Type', 'type']],
 	"HatchStyle": [
 		['Name', 'name']],
 	"Feature": [

@@ -17,7 +17,7 @@ class Sketch(Geometry):
 		self._texts = {}
 		self._areas = {}
 		self._sketch_instances = {}
-		self._patterns = []
+		self._proformers = {}
 		self.threshold = 0.1
 		self.edge_naming_index = 1
 
@@ -45,11 +45,11 @@ class Sketch(Geometry):
 
 	@property
 	def key_point_count(self):
-		return len(self._key_points)
+		return len(self.get_key_points())
 
 	@property
 	def edges_count(self):
-		return len(self._edges)
+		return len(self.get_edges())
 
 	@property
 	def sketch_instances(self):
@@ -62,7 +62,11 @@ class Sketch(Geometry):
 		if uid in self._edges:
 			return self._edges[uid]
 		else:
-			return None
+			for proformer in self._proformers.values():
+				edge = proformer.get_edge(uid)
+				if edge is not None:
+					return edge
+		return None
 
 	def get_edge_by_name(self, name):
 		for edge in self._edges.items():
@@ -71,10 +75,14 @@ class Sketch(Geometry):
 		return None
 
 	def get_keypoint(self, uid):
-		try:
+		if uid in self._key_points:
 			return self._key_points[uid]
-		except KeyError:
-			return KeyPoint(self)
+		else:
+			for proformer in self._proformers.values():
+				kp = proformer.get_keypoint(uid)
+				if kp is not None:
+					return kp
+		return KeyPoint(self)
 
 	def get_area(self, uid):
 		if uid in self._areas:
@@ -143,6 +151,14 @@ class Sketch(Geometry):
 		self._key_points[key_point.uid] = key_point
 		self.changed(ChangeEvent(self, ChangeEvent.ObjectAdded, key_point))
 		key_point.add_change_handler(self.on_kp_changed)
+
+	def create_proformer(self, type, name):
+		proformer = Proformer(self, type, name)
+		self.changed(ChangeEvent(self, ChangeEvent.BeforeObjectAdded, proformer))
+		self._proformers[proformer.uid] = proformer
+		self.changed(ChangeEvent(self, ChangeEvent.ObjectAdded, proformer))
+		proformer.add_change_handler(self.on_proformer_changed)
+		return proformer
 
 	def create_sketch_instance(self, sketch_to_insert, kp):
 		sketch_instance = SketchInstance(self, sketch_to_insert.name)
@@ -273,10 +289,18 @@ class Sketch(Geometry):
 		return area
 
 	def get_edges(self):
-		return self._edges.values()
+		edges = []
+		edges.extend(self._edges.values())
+		for proformer in self._proformers.values():
+			edges.extend(proformer.result_edges)
+		return edges
 
 	def get_key_points(self):
-		return self._key_points.values()
+		kps = []
+		kps.extend(self._key_points.values())
+		for proformer in self._proformers.values():
+			kps.extend(proformer.result_keypoints)
+		return kps
 
 	def get_texts(self):
 		return self._texts.values()
@@ -321,6 +345,9 @@ class Sketch(Geometry):
 				self._sketch_instances.pop(event.object.uid)
 				self.changed(ChangeEvent(self, ChangeEvent.ObjectRemoved, event.sender))
 			event.object.remove_change_handler(self.on_sketch_instance_changed)
+
+	def on_proformer_changed(self, event: ChangeEvent):
+		pass
 
 	def delete(self):
 		self.changed(ChangeEvent(self, ChangeEvent.Deleted, self))
@@ -537,16 +564,20 @@ class Attribute(Text):
 		self._name = data['name']
 
 
-class PatternType(Enum):
+class ProformerType(Enum):
 	Circular = 0
 	Diamond = 1
 	Triangular = 2
 	Square = 3
 	Rectangular = 4
+	Mirror = 5
+	MirrorX = 6
+	MirrorY = 7
+	MirrorXY = 8
 
 
-class Pattern(IdObject, NamedObservableObject):
-	def __init__(self, sketch, type=PatternType.Circular, name="New pattern"):
+class Proformer(IdObject, NamedObservableObject):
+	def __init__(self, sketch, type=ProformerType.Circular, name="New proformation"):
 		IdObject.__init__(self)
 		NamedObservableObject.__init__(self, name)
 		self._sketch = sketch
@@ -554,6 +585,188 @@ class Pattern(IdObject, NamedObservableObject):
 		self._kps = []
 		self._edges = []
 		self._areas = []
+		self._result_kps = {}
+		self._result_edges = {}
+		self._result_areas = {}
+		self._lookup_kps = {}
+		self._lookup_edges = {}
+		self._lookup_areas = {}
+		self._meta_data = {}
+		self._meta_data_parameters = {}
+
+	@property
+	def keypoints(self):
+		return self._kps
+
+	@keypoints.setter
+	def keypoints(self, value):
+		self._kps = value
+
+	def get_keypoint(self, uid):
+		if uid in self._result_kps:
+			return self._result_kps[uid]
+		return None
+
+	@property
+	def edges(self):
+		return self._edges
+
+	@edges.setter
+	def edges(self, value):
+		self._edges = value
+
+	def get_edge(self, uid):
+		if uid in self._result_edges:
+			return self._result_edges[uid]
+		return None
+
+	@property
+	def areas(self):
+		return self._areas
+
+	@areas.setter
+	def areas(self, value):
+		self._areas = value
+
+	@property
+	def result_keypoints(self):
+		return self._result_kps.values()
+
+	@property
+	def result_edges(self):
+		return self._result_edges.values()
+
+	@property
+	def result_areas(self):
+		return self._result_areas.values()
+
+	def kp_changed(self, event: ChangeEvent):
+		self.update_kp(event.sender)
+
+	def edge_changed(self, event: ChangeEvent):
+		self.update_edge(event.sender)
+
+	def area_changed(self, event: ChangeEvent):
+		self.update_area(event.sender)
+
+	def clear_all(self):
+		for area in self._result_areas:
+			area.delete()
+		for edge in self._result_edges:
+			edge.delete()
+		for kp in self._result_kps:
+			kp.delete()
+		self._lookup_kps = {}
+		self._lookup_edges = {}
+		self._lookup_areas = {}
+
+	def update_kp(self, kp):
+		if self._type == ProformerType.MirrorX:
+			new_kp = self._lookup_kps[kp.uid]
+			new_kp.y = -kp.y
+			new_kp.x = kp.x
+		if self._type == ProformerType.MirrorY:
+			new_kp = self._lookup_kps[kp.uid]
+			new_kp.y = kp.y
+			new_kp.x = -kp.x
+
+	def update_edge(self, edge):
+		pass
+
+	def update_area(self, area):
+		pass
+
+	def generate_kp(self, kp):
+		if self._type == ProformerType.MirrorX or self._type == ProformerType.MirrorY:
+			kp.add_change_handler(self.kp_changed)
+			new_kp = KeyPoint(self._sketch)
+			new_kp.editable = False
+			self._result_kps[new_kp.uid] = new_kp
+			self._lookup_kps[kp.uid] = new_kp
+
+	def generate_edge(self, edge):
+		if self._type == ProformerType.MirrorX:
+			edge.add_change_handler(self.edge_changed)
+			new_edge = Edge(self._sketch, edge.type, edge.name+"MIRX")
+			for kp in edge.get_key_points():
+				new_edge.add_key_point(self._lookup_kps[kp.uid])
+			new_edge.me
+			new_edge.editable = False
+			self._result_edges[new_edge.uid] = new_edge
+			self._lookup_edges[edge.uid] = new_edge
+
+	def generate_area(self, area):
+		if self._type == ProformerType.MirrorX:
+			pass
+
+	def generate_all(self):
+		for edge in self._edges:
+			for kp in edge.get_key_points():
+				if kp not in self._kps:
+					self._kps.append(kp)
+		for kp in self._kps:
+			self.generate_kp(kp)
+			self.update_kp(kp)
+		for edge in self._edges:
+			self.generate_edge(edge)
+			self.update_edge(edge)
+		for area in self._areas:
+			self.generate_area(area)
+			self.update_area(area)
+
+	def resolve(self):
+		self.clear_all()
+		self.generate_all()
+
+
+	def on_parameter_change(self, event: ChangeEvent):
+		param = event.sender
+		uid = param.uid
+		meta_name = self._meta_data_parameters[uid]
+		self._meta_data[meta_name] = param.value
+
+	def serialize_json(self):
+		return {
+			'uid': IdObject.serialize_json(self),
+			'no': NamedObservableObject.serialize_json(self),
+			'type': self._type,
+			'kps': get_uids(self._kps),
+			'edges': get_uids(self._edges),
+			'areas': get_uids(self._areas),
+			'meta_data': self._meta_data,
+			'meta_data_parameters': self._meta_data_parameters
+		}
+
+	@staticmethod
+	def deserialize(parent, data):
+		proformer = Proformer(parent)
+		if data is not None:
+			proformer.deserialize_data(data)
+		return proformer
+
+	def deserialize_data(self, data):
+		IdObject.deserialize_data(self, data['uid'])
+		NamedObservableObject.deserialize_data(self, data['no'])
+		self._type = data['type']
+		for kp_uid in data['kps']:
+			kp = self._sketch.get_keypoint(kp_uid)
+			self._kps.append(kp)
+			kp.add_change_handler(self.kp_changed)
+		for edge_uid in data['edges']:
+			edge = self._sketch.get_edge(edge_uid)
+			self._edges.append(edge)
+			edge.add_change_handler(self.edge_changed)
+		for area_uid in data['areas']:
+			area = self._sketch.get_area(area_uid)
+			self._areas.append(area)
+			area.add_change_handler(self.area_changed)
+		self._meta_data = data.get('meta_data')
+		self._meta_data_parameters = data.get('meta_data_parameters')
+		for parameter_uid in self._meta_data_parameters:
+			param = self._geometry.get_parameter_by_uid(parameter_uid)
+			if param is not None:
+				param.add_change_handler(self.on_parameter_change)
+
 
 
 class SketchInstance(ParametersInstance):

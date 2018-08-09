@@ -292,6 +292,12 @@ def draw_kp(qp, key_point, scale, offset, center, instance = None):
 	qp.drawEllipse(QPointF(x1, y1), 4, 4)
 
 
+def draw_vertex(qp, vertex, scale, offset, center, instance = None):
+	x1 = (vertex.x + offset.x) * scale + center.x
+	y1 = -(vertex.y + offset.y) * scale + center.y
+	qp.drawEllipse(QPointF(x1, y1), 4, 4)
+
+
 class Limits():
 	def __init__(self):
 		self.x_max = 0

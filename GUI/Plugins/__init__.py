@@ -10,7 +10,7 @@ import GUI.Plugins.SketchGenerateAreas
 import GUI.Plugins.SketchCreateArea
 import GUI.Plugins.SketchCreateCompositeArea
 import GUI.Plugins.SketchScale
-import GUI.Plugins.SketchPattern
+import GUI.Plugins.SketchProformation
 import GUI.Plugins.SketchParametry
 
 import GUI.Plugins.DrawingSelect

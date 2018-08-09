@@ -5,6 +5,7 @@ from PyQt5.QtGui import QColor, QLinearGradient, QTransform
 from PyQt5.QtWidgets import QDialog, QInputDialog, QMessageBox, QWidget
 
 from Business.SketchActions import *
+from Data.Style import BrushType
 
 from Data.Vertex import Vertex
 from GUI.init import is_dark_theme
@@ -423,7 +424,10 @@ class SketchEditorViewWidget(QWidget):
 
 			draw_area(area, qp, scale, self._offset, half_height, half_width, self._states.show_area_names or area in self._selected_areas, brush, None)
 			if area.brush is not None:
-				brush = QBrush(QColor(0, 0, 0), Qt.HorPattern)
+				if area.brush.type == BrushType.Solid:
+					brush = QBrush(QColor(0, 0, 0))
+				else:
+					brush = QBrush(QColor(0, 0, 0), Qt.HorPattern)
 				transx = self._offset.x * scale + half_width
 				transy = -self._offset.y * scale + half_height
 				transform = QTransform().translate(transx, transy).scale(2, 2).rotate(area.brush_rotation)

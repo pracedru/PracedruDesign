@@ -17,7 +17,7 @@ from Data.Parameters import Parameters, Parameter
 from Data.Part import Part, Feature
 from Data.Point3d import KeyPoint
 from Data.Sketch import Sketch, Edge, Text, Attribute, SketchInstance
-from Data.Style import EdgeStyle
+from Data.Style import EdgeStyle, Brush
 from GUI.init import tr
 from GUI.Icons import get_icon
 
@@ -44,8 +44,12 @@ class DocumentItemModel(QAbstractItemModel):
 	def populate(self):
 		glocal_params_item = DocumentModelItem(self._doc.get_parameters(), self, self._root_item, "Parameters")
 		styles_item = DocumentModelItem(self._doc.get_styles(), self, self._root_item, "Styles")
+		pens_item = DocumentModelItem(None, self, styles_item, "Pens")
+		brushes_item = DocumentModelItem(None, self, styles_item, "Brushes")
 		for style in self._doc.get_styles().get_edge_styles():
-			DocumentModelItem(style, self, styles_item)
+			DocumentModelItem(style, self, pens_item)
+		for style in self._doc.get_styles().get_brushes():
+			DocumentModelItem(style, self, brushes_item)
 		for param_tuple in self._doc.get_parameters().get_all_parameters():
 			DocumentModelItem(param_tuple[1], self, glocal_params_item)
 		geoms_item = DocumentModelItem(self._doc.get_geometries(), self, self._root_item)
@@ -266,6 +270,12 @@ class DocumentItemModel(QAbstractItemModel):
 					new_item = self.populate_sketch(sketch, parent_item)
 				else:
 					new_item = DocumentModelItem(object, self, parent_item)
+		elif type(object) is EdgeStyle:
+			pens_item = parent_item.get_child_by_name('Pens')
+			new_item = DocumentModelItem(object, self, pens_item)
+		elif type(object) is Brush:
+			pens_item = parent_item.get_child_by_name('Brushes')
+			new_item = DocumentModelItem(object, self, pens_item)
 		else:
 			new_item = DocumentModelItem(object, self, parent_item)
 			if type(object) is Sketch:
@@ -309,6 +319,12 @@ class DocumentModelItem(QObject):
 		except Exception as e:
 			print(str(e))
 
+	def get_child_by_name(self, name):
+		for child in self.children():
+			if child.name == name:
+				return child
+		return None
+
 	@property
 	def name(self):
 		if self._name is not None:
@@ -341,7 +357,8 @@ class DocumentModelItem(QObject):
 		elif event.type == ChangeEvent.ValueChanged:
 			self._model.on_object_changed(self)
 
-	def get_icon_based_on_type(self, obj):
+	@staticmethod
+	def get_icon_based_on_type(obj):
 		if type(obj) is Parameter:
 			return get_icon("param")
 		elif type(obj) is Sketch:
@@ -383,4 +400,6 @@ class DocumentModelItem(QObject):
 				return get_icon("extrude")
 		elif issubclass(type(obj), Parameters):
 			return get_icon("params")
+		elif type(obj) is Brush:
+			return get_icon("brush")
 		return get_icon("default")

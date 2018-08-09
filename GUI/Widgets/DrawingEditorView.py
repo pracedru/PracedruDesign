@@ -15,7 +15,7 @@ from PyQt5.QtWidgets import QWidget
 from Business.DrawingActions import *
 from Data.Vertex import Vertex
 from GUI.init import is_dark_theme
-from GUI.Widgets.Drawers import draw_sketch, create_pens, draw_kp
+from GUI.Widgets.Drawers import draw_sketch, create_pens, draw_kp, draw_vertex
 
 
 class DrawingEditorViewWidget(QWidget):
@@ -268,10 +268,10 @@ class DrawingEditorViewWidget(QWidget):
 			draw_sketch(qp, view.sketch, scale, 0.0002 * sc, offset, c, pens, {})
 		if self._view_hover is not None:
 			qp.setPen(self._kp_pen_hover)
-			draw_kp(qp, self._view_hover._offset, self._scale, self._offset, center)
+			draw_vertex(qp, self._view_hover.offset, self._scale, self._offset, center)
 		for view in self._selected_views:
 			qp.setPen(self._kp_pen_hl)
-			draw_kp(qp, view._offset, self._scale, self._offset, center)
+			draw_vertex(qp, view.offset, self._scale, self._offset, center)
 
 	def draw_header(self, event, qp, cx, cy, center, pens):
 		sketch = self._drawing.header_sketch

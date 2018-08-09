@@ -94,7 +94,7 @@ class BrushType(Enum):
 
 
 class Brush(NamedObservableObject, IdObject):
-	def __init__(self, name="New Brush", thickness=0.00033, type=BrushType.Solid):
+	def __init__(self, name="New Brush", thickness=0.00033, type=BrushType.Line):
 		NamedObservableObject.__init__(self, name)
 		IdObject.__init__(self)
 		self._type = type
@@ -108,9 +108,16 @@ class Brush(NamedObservableObject, IdObject):
 	def type(self):
 		return self._type
 
+	@type.setter
+	def type(self, value):
+		if type(value) is int:
+			self._type = BrushType(value)
+		else:
+			self._type = value
+
 	@property
 	def type_name(self):
-		return self._type.value
+		return self._type.name
 
 	def serialize_json(self):
 		return {
