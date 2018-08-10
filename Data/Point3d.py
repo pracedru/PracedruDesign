@@ -47,6 +47,10 @@ class KeyPoint(Point3d, ObservableObject):
 		self._component_change_handlers.append(self.on_y_param_changed)
 		self._component_change_handlers.append(self.on_z_param_changed)
 
+	@property
+	def instances(self):
+		return self._instances.items()
+
 	def delete(self):
 		self.changed(ChangeEvent(self, ChangeEvent.Deleted, self))
 
@@ -213,6 +217,7 @@ class KeyPoint(Point3d, ObservableObject):
 		return \
 			{
 				'p3d': Point3d.serialize_json(self),
+				'instances': self._instances,
 				'x_param_uid': self.get_param_uid(self._component_parameters[0]),
 				'y_param_uid': self.get_param_uid(self._component_parameters[1]),
 				'z_param_uid': self.get_param_uid(self._component_parameters[2])
@@ -226,6 +231,10 @@ class KeyPoint(Point3d, ObservableObject):
 
 	def deserialize_data(self, data):
 		Point3d.deserialize_data(self, data.get('p3d'))
+		for instance_tuple in data.get('instances', {}).items():
+			instance_uid = instance_tuple[0]
+			vertex = Vertex.deserialize(instance_tuple[1])
+			self._instances[instance_uid] = vertex
 		self.set_parameter_generic(data['x_param_uid'], 0)
 		self.set_parameter_generic(data['y_param_uid'], 1)
 		self.set_parameter_generic(data['z_param_uid'], 2)

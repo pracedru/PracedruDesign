@@ -155,30 +155,20 @@ class Parameter(IdObject, ObservableObject):
 	def value(self, value):
 		self.set_instance_value(None, value)
 
-	# old_value = self._value
-	# self.clear_change_handler()
-	# if isinstance(value, str):
-	#   formula = " " + insert_spaces(value) + " "
-	#   params = self._parent.get_all_parameters()
-	#   for param_tuple in params:
-	#     param = param_tuple[1]
-	#     if " " + param.name + " " in formula:
-	#       if param is self:
-	#         raise Exception("Formula may not reference it self.")
-	#       formula = formula.replace(" " + param.name + " ", '{' + param.uid + '}')
-	#       param.add_change_handler(self.on_parameter_changed)
-	#       self._change_senders.append(param)
-	#   self._formula = formula.replace(' ', '')
-	#   self._value = self.evaluate()
-	# else:
-	#   self._value = value
-	#   self._formula = str(value)
-	# self.changed(ChangeEvent(self, ChangeEvent.ValueChanged, {'new value': value, 'old value': old_value}))
-
 	def get_instance_value(self, instance_uid):
 		if instance_uid in self._instance_values:
 			return self._instance_values[instance_uid]
 		return self._value
+
+	def create_value_change_object(self, new_value, old_value, old_formula, instance_uid):
+		change_object = {
+			'new value': new_value,
+			'old value': old_value,
+			'new formula': self.get_instance_internal_formula(instance_uid),
+			'old formula': old_formula,
+			'instance': instance_uid
+		}
+		return change_object
 
 	def set_instance_value(self, instance_uid, value):
 		if self._base_unit:
@@ -207,36 +197,27 @@ class Parameter(IdObject, ObservableObject):
 						self._change_senders.append(param)
 				if instance_uid is None:
 					self._formula = formula.replace(' ', '')
-					self._value = self.evaluate(instance_uid)
+					new_value = self.evaluate(instance_uid)
+					self._value = new_value
 				else:
 					self.set_instance_internal_formula(instance_uid, formula.replace(' ', ''))
-					self.set_instance_internal_value(instance_uid, self.evaluate(instance_uid))
+					new_value = self.evaluate(instance_uid)
+					self.set_instance_internal_value(instance_uid, new_value)
 			else:
 				if instance_uid is None:
-					self._value = value
 					self._formula = str(value)
+					new_value = value
+					self._value = value
 				else:
 					self.set_instance_internal_formula(instance_uid, str(value))
+					new_value = value
 					self.set_instance_internal_value(instance_uid, value)
-		change_object = {
-			'new value': value,
-			'old value': old_value,
-			'new formula': self.get_instance_internal_formula(instance_uid),
-			'old formula': old_formula,
-			'instance': instance_uid
-		}
+		change_object = self.create_value_change_object(new_value, old_value, old_formula, instance_uid)
 		self.changed(ChangeEvent(self, ChangeEvent.ValueChanged, change_object))
 
 	@property
 	def formula(self):
 		return self.get_instance_formula(None)
-
-	# uids = re.findall("{(.*?)}", self._formula)
-	# expr = self._formula
-	# for uid in uids:
-	#   param = self._parent.get_parameter_by_uid(uid)
-	#   expr = expr.replace('{' + uid + '}', param.name)
-	# return expr
 
 	def get_instance_formula(self, instance_uid):
 		formula = ""

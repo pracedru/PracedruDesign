@@ -361,6 +361,7 @@ class Sketch(Geometry):
 			'areas': self._areas,
 			'texts': self._texts,
 			'instances': self._sketch_instances,
+			'proformers': self._proformers,
 			'threshold': self.threshold,
 			'edge_naming_index': self.edge_naming_index,
 			'type': self._geometry_type
@@ -409,6 +410,12 @@ class Sketch(Geometry):
 			sketch_instance = SketchInstance.deserialize(self, sketch_instance_data)
 			self._sketch_instances[sketch_instance.uid] = sketch_instance
 			sketch_instance.add_change_handler(self.on_sketch_instance_changed)
+
+		for proformer_data in data.get('proformers', {}).values():
+			proformer = Proformer.deserialize(self, proformer_data)
+			self._proformers[proformer.uid] = proformer
+			proformer.resolve()
+			proformer.add_change_handler(self.on_proformer_changed)
 
 		if self.edge_naming_index == 0:
 			for edge_tuple in self._edges.items():
@@ -671,6 +678,9 @@ class Proformer(IdObject, Parameters):
 				new_kp = self._lookup_kps[kp.uid]
 				new_kp.y = -kp.y
 				new_kp.x = kp.x
+				for vertext_instance_tuple in kp.instances:
+					new_kp.set_instance_x(vertext_instance_tuple[0], vertext_instance_tuple[1].x)
+					new_kp.set_instance_y(vertext_instance_tuple[0], -vertext_instance_tuple[1].y)
 			else:
 				instance = event.object['instance']
 				new_kp = self._lookup_kps[kp.uid]
@@ -680,6 +690,7 @@ class Proformer(IdObject, Parameters):
 			new_kp = self._lookup_kps[kp.uid]
 			new_kp.y = kp.y
 			new_kp.x = -kp.x
+
 
 	def update_edge(self, edge):
 		pass
@@ -744,7 +755,7 @@ class Proformer(IdObject, Parameters):
 		return {
 			'uid': IdObject.serialize_json(self),
 			'no': NamedObservableObject.serialize_json(self),
-			'type': self._type,
+			'type': self._type.value,
 			'kps': get_uids(self._kps),
 			'edges': get_uids(self._edges),
 			'areas': get_uids(self._areas),
@@ -762,7 +773,7 @@ class Proformer(IdObject, Parameters):
 	def deserialize_data(self, data):
 		IdObject.deserialize_data(self, data['uid'])
 		NamedObservableObject.deserialize_data(self, data['no'])
-		self._type = data['type']
+		self._type = ProformerType(data['type'])
 		for kp_uid in data['kps']:
 			kp = self._sketch.get_keypoint(kp_uid)
 			self._kps.append(kp)
