@@ -33,7 +33,7 @@ class Edge(IdObject, NamedObservableObject):
 		self._meta_data_parameters = {}
 		self._style = geometry.document.get_styles().get_edge_style_by_name('default')
 		self._plane = plane
-
+		self.editable = True
 		self._draw_data = None
 
 	@property

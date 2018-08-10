@@ -34,6 +34,9 @@ class Vertex(object):
 		else:
 			raise TypeError("Vertex can not be multiplied by: " + str(other))
 
+	def equals(self, other):
+		return self.x == other.x and self.y == other.y and self.z == other.z
+
 	@property
 	def x(self):
 		return self.xyz[0]

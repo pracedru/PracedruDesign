@@ -576,10 +576,10 @@ class ProformerType(Enum):
 	MirrorXY = 8
 
 
-class Proformer(IdObject, NamedObservableObject):
+class Proformer(IdObject, Parameters):
 	def __init__(self, sketch, type=ProformerType.Circular, name="New proformation"):
 		IdObject.__init__(self)
-		NamedObservableObject.__init__(self, name)
+		Parameters.__init__(self, name)
 		self._sketch = sketch
 		self._type = type
 		self._kps = []
@@ -641,7 +641,7 @@ class Proformer(IdObject, NamedObservableObject):
 		return self._result_areas.values()
 
 	def kp_changed(self, event: ChangeEvent):
-		self.update_kp(event.sender)
+		self.update_kp(event.sender, event)
 
 	def edge_changed(self, event: ChangeEvent):
 		self.update_edge(event.sender)
@@ -656,15 +656,26 @@ class Proformer(IdObject, NamedObservableObject):
 			edge.delete()
 		for kp in self._result_kps:
 			kp.delete()
+		self._result_kps = {}
+		self._result_edges = {}
+		self._result_areas = {}
 		self._lookup_kps = {}
 		self._lookup_edges = {}
 		self._lookup_areas = {}
+		for parameter in self.get_all_parameters():
+			parameter.delete()
 
-	def update_kp(self, kp):
+	def update_kp(self, kp, event = None):
 		if self._type == ProformerType.MirrorX:
-			new_kp = self._lookup_kps[kp.uid]
-			new_kp.y = -kp.y
-			new_kp.x = kp.x
+			if event is None:
+				new_kp = self._lookup_kps[kp.uid]
+				new_kp.y = -kp.y
+				new_kp.x = kp.x
+			else:
+				instance = event.object['instance']
+				new_kp = self._lookup_kps[kp.uid]
+				new_kp.set_instance_y(instance, -kp.get_instance_y(instance))
+				new_kp.set_instance_x(instance, kp.get_instance_x(instance))
 		if self._type == ProformerType.MirrorY:
 			new_kp = self._lookup_kps[kp.uid]
 			new_kp.y = kp.y
@@ -690,7 +701,11 @@ class Proformer(IdObject, NamedObservableObject):
 			new_edge = Edge(self._sketch, edge.type, edge.name+"MIRX")
 			for kp in edge.get_key_points():
 				new_edge.add_key_point(self._lookup_kps[kp.uid])
-			new_edge.me
+			if edge.type == EdgeType.FilletLineEdge:
+				r = edge.get_meta_data('r', None)
+				new_edge.set_meta_data('r', r)
+				r_param = edge.get_meta_data_parameter('r')
+				new_edge.set_meta_data_parameter('r', r_param)
 			new_edge.editable = False
 			self._result_edges[new_edge.uid] = new_edge
 			self._lookup_edges[edge.uid] = new_edge

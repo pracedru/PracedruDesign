@@ -267,7 +267,7 @@ class SketchEditorViewWidget(QWidget):
 
 		#                             ****    Keypoint move    ****
 		if self._states.left_button_hold and self._kp_hover is not None and self._states.allow_move:
-			if self._kp_hover in self._selected_key_points:
+			if self._kp_hover in self._selected_key_points and self._kp_hover.editable:
 				self._kp_move = self._kp_hover
 
 		for event_handler in self._mouse_press_event_handlers:
