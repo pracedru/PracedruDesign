@@ -277,6 +277,8 @@ class PartViewWidget(QOpenGLWidget):
 		f = QSurfaceFormat()  # The default
 		vp = QOpenGLVersionProfile(f)
 		self._gl = c.versionFunctions(vp)
+		if self._gl is None:
+			return
 		self._gl.initializeOpenGLFunctions()
 		self._gl.glEnable(self._gl.GL_MULTISAMPLE)
 		self._gl.glEnable(self._gl.GL_DEPTH_TEST)
@@ -299,6 +301,8 @@ class PartViewWidget(QOpenGLWidget):
 
 	def paintGL(self):
 		gl = self._gl
+		if gl is None:
+			return
 		if self._part is not None:
 			if self._part.update_needed:
 				self.redraw_drawables(False)
@@ -389,7 +393,7 @@ class PartViewWidget(QOpenGLWidget):
 
 	def resizeGL(self, width, height):
 		side = min(width, height)
-		if side < 0:
+		if side < 0 or self._gl is None:
 			return
 		self._gl.glViewport((width - side) // 2, (height - side) // 2, width, height)
 		aspect_ratio = width / height
