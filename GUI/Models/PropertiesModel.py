@@ -25,7 +25,8 @@ rows_by_type = {
 		['End angle', {'name': 'get_meta_data', 'args': ['ea', None], 'setName': 'set_meta_data'}, {'condition': ['type', EdgeType.ArcEdge]}]],
 	"SketchInstance": [
 		['Name', 'name'],
-		['Scale', 'scale']],
+		['Scale', 'scale'],
+		['Rotation', 'rotation']],
 	"EdgeLoopArea": [
 		['Name', 'name'],
 		['Brush', 'brush_name'],

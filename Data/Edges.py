@@ -53,6 +53,9 @@ class Edge(IdObject, NamedObservableObject):
 
 	@style_name.setter
 	def style_name(self, value):
+		if value == "" or value is None or value == "No style":
+			self._style = None
+			return
 		styles = self._geometry.document.get_styles()
 		edge_style = styles.get_edge_style_by_name(value)
 		self._style = edge_style

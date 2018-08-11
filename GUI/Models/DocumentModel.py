@@ -16,6 +16,7 @@ from Data.Geometry import Geometry
 from Data.Parameters import Parameters, Parameter
 from Data.Part import Part, Feature
 from Data.Point3d import KeyPoint
+from Data.Proformer import Proformer, ProformerType
 from Data.Sketch import Sketch, Edge, Text, Attribute, SketchInstance
 from Data.Style import EdgeStyle, Brush
 from GUI.init import tr
@@ -78,7 +79,11 @@ class DocumentItemModel(QAbstractItemModel):
 		for area in sketch.get_areas():
 			area_item = DocumentModelItem(area, self, geom_item.children()[4])
 		for sketch_instance in sketch.sketch_instances:
-			sketch_instance_item = DocumentModelItem(sketch_instance, self, geom_item.children()[5])
+			parent_item = geom_item.get_child_by_name("Sketch instances")
+			sketch_instance_item = DocumentModelItem(sketch_instance, self, parent_item)
+		for proformer in sketch.proformers:
+			parent_item = geom_item.get_child_by_name("Proformers")
+			proformer_item = DocumentModelItem(proformer, self, parent_item)
 		return geom_item
 
 	def populate_drawing(self, drawing, parent_item):
@@ -247,11 +252,17 @@ class DocumentItemModel(QAbstractItemModel):
 				edges_item = parent_item.children()[2]
 				new_item = DocumentModelItem(object, self, edges_item)
 			elif isinstance(object, Text):
-				anno_item = parent_item.children()[3]
-				new_item = DocumentModelItem(object, self, anno_item)
+				annos_item = parent_item.children()[3]
+				new_item = DocumentModelItem(object, self, annos_item)
 			elif type(object) is Area:
-				anno_item = parent_item.children()[4]
-				new_item = DocumentModelItem(object, self, anno_item)
+				areas_item = parent_item.children()[4]
+				new_item = DocumentModelItem(object, self, areas_item)
+			elif type(object) is Proformer:
+				proformers_item = parent_item.get_child_by_name("Proformers")
+				proformer_item = DocumentModelItem(object, self, proformers_item)
+			elif type(object) is SketchInstance:
+				instances_item = parent_item.get_child_by_name("Sketch instances")
+				sketch_instance_item = DocumentModelItem(object, self, instances_item)
 			else:
 				new_item = DocumentModelItem(object, self, parent_item)
 		elif type(parent_item.data) is Drawings and type(object) is Sketch:
@@ -284,6 +295,7 @@ class DocumentItemModel(QAbstractItemModel):
 				DocumentModelItem(None, self, new_item, "Edges")
 				DocumentModelItem(None, self, new_item, "Annotation")
 				DocumentModelItem(None, self, new_item, "Areas")
+				DocumentModelItem(None, self, new_item, "Proformers")
 				DocumentModelItem(None, self, new_item, "Sketch instances")
 
 			if type(object) is Drawing:
@@ -402,4 +414,7 @@ class DocumentModelItem(QObject):
 			return get_icon("params")
 		elif type(obj) is Brush:
 			return get_icon("brush")
+		elif type(obj) is Proformer:
+			if ProformerType.Mirror.value <= obj.type.value <= ProformerType.MirrorXY.value:
+				return get_icon("mirror")
 		return get_icon("default")

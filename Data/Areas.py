@@ -46,12 +46,18 @@ class Area(IdObject, NamedObservableObject):
 	@brush_rotation.setter
 	def brush_rotation(self, value):
 		self._brush_rotation = value
+		self.changed(ChangeEvent(self, ChangeEvent.ValueChanged, {'name': 'brush_rotation'}))
 
 	@brush_name.setter
 	def brush_name(self, value):
+		if value == "" or value is None or value == "None":
+			self._brush = None
+			self.changed(ChangeEvent(self, ChangeEvent.ValueChanged, {'name': 'brush_name'}))
+			return
 		styles = self._sketch.document.get_styles()
 		brush = styles.get_brush_by_name(value)
 		self._brush = brush
+		self.changed(ChangeEvent(self, ChangeEvent.ValueChanged, {'name': 'brush_name'}))
 
 	@staticmethod
 	def deserialize(data, sketch):

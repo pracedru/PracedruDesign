@@ -1,7 +1,7 @@
 from PyQt5.QtCore import Qt
 
 from Business.SketchActions import create_mirror
-from Data.Sketch import ProformerType
+from Data.Proformer import ProformerType
 from GUI.init import plugin_initializers
 
 from GUI.Ribbon.RibbonButton import RibbonButton

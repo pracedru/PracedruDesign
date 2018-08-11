@@ -9,10 +9,10 @@ text_formats_endings = ['.json', '.jadoc', '.jobj', '.jgeom', '.inp', '.si_mpl',
 
 def complex_handler(Obj):
 	if hasattr(Obj, 'serialize_json'):
-		try:
+		#try:
 			return Obj.serialize_json()
-		except TypeError as e:
-			print(str(e))
+		#except TypeError as e:
+		#	print(str(e))
 	else:
 		raise Exception('Object of type %s with value of %s is not JSON serializable' % (type(Obj), repr(Obj)))
 

@@ -405,8 +405,8 @@ def angle_between_edges(common_kp, kp1, kp2):
 
 def create_mirror(sketch, type, kps, edges, areas):
 	proformer = sketch.create_proformer(type, "New Mirror")
-	proformer.keypoints = kps
-	proformer.edges = edges
-	proformer.areas = areas
+	proformer.base_keypoints = kps
+	proformer.base_edges = edges
+	proformer.base_areas = areas
 	proformer.resolve()
 	return proformer

@@ -5,7 +5,7 @@ from PyQt5.QtGui import QBrush, QFont, QPen, QPainter, QFontMetrics, QColor, QPa
 
 from Data.Nurbs import Nurbs
 from Data.Sketch import *
-from Data.Style import EdgeLineType
+from Data.Style import EdgeLineType, BrushType
 from Data.Vertex import Vertex
 
 
@@ -66,7 +66,10 @@ def draw_sketch(qp: QPainter, sketch, scale, brush_scale, offset, center, pens, 
 
 	for area in areas:
 		if area.brush is not None:
-			brush = QBrush(QColor(0, 0, 0), Qt.HorPattern)
+			if area.brush.type == BrushType.Solid:
+				brush = QBrush(QColor(0, 0, 0))
+			else:
+				brush = QBrush(QColor(0, 0, 0), Qt.HorPattern)
 			transx = offset.x * scale + center.x
 			transy = -offset.y * scale + center.y
 			transform = QTransform().translate(transx, transy).scale(brush_scale, brush_scale).rotate(area.brush_rotation)

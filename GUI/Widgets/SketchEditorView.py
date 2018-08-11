@@ -337,19 +337,19 @@ class SketchEditorViewWidget(QWidget):
 			if type(text) is Text:
 				draw_text(text, qp, sc, self._offset, center)
 			elif type(text) is Attribute:
-				draw_attribute(text, qp, sc, self._offset, center, {})
+				draw_attribute(text, qp, sc, self._offset, center)
 		if self._text_hover is not None:
 			qp.setPen(kp_pen_hover)
 			if type(self._text_hover) is Text:
 				draw_text(self._text_hover, qp, sc, self._offset, center)
 			elif type(self._text_hover) is Attribute:
-				draw_attribute(self._text_hover, qp, sc, self._offset, center, {})
+				draw_attribute(self._text_hover, qp, sc, self._offset, center)
 		qp.setPen(kp_pen_hl)
 		for text in self._selected_texts:
 			if type(text) is Text:
 				draw_text(text, qp, sc, self._offset, center)
 			elif type(text) is Attribute:
-				draw_attribute(text, qp, sc, self._offset, center, {})
+				draw_attribute(text, qp, sc, self._offset, center)
 
 	def draw_edges(self, event, qp):
 		pens = create_pens(self._doc, 6000)
