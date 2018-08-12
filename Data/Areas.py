@@ -94,16 +94,20 @@ class Area(IdObject, NamedObservableObject):
 class EdgeLoopArea(Area):
 	def __init__(self, sketch):
 		Area.__init__(self, sketch)
-		self._edges = []
+		self._edge_uids = []
 		self._key_points = None
 		self._type = AreaType.EdgeLoop
+		self._change_events_initalized = True
+
+	def get_edge_by_index(self, index):
+		return self._sketch.get_edge(self._edge_uids[index])
 
 	def inside(self, point):
 		anglesum = 0.0
 		last_point = None
-		if self._edges[0].type == EdgeType.CircleEdge:
-			kp = self._edges[0].get_key_points()[0]
-			r = self._edges[0].get_meta_data('r')
+		if self.get_edge_by_index(0).type == EdgeType.CircleEdge:
+			kp = self.get_edge_by_index(0).get_key_points()[0]
+			r = self.get_edge_by_index(0).get_meta_data('r')
 			if r > kp.distance(point):
 				return True
 			return False
@@ -121,7 +125,8 @@ class EdgeLoopArea(Area):
 
 	def get_intersecting_edges(self, kp, gamma):
 		intersecting_edges = []
-		for edge in self._edges:
+		for edge_uid in self._edge_uids:
+			edge = self._sketch.get_edge(edge_uid)
 			if edge.type is EdgeType.LineEdge:
 				kps = edge.get_end_key_points()
 				x1 = kps[0].x
@@ -162,14 +167,14 @@ class EdgeLoopArea(Area):
 		if kps[0] in self.get_key_points():
 			index = self._key_points.index(kps[0])
 		if index != -1:
-			self._edges.insert(index, edge)
+			self._edge_uids.insert(index, edge.uid)
 		else:
-			self._edges.append(edge)
+			self._edge_uids.append(edge.uid)
 		edge.add_change_handler(self.on_edge_changed)
 		self._key_points = None
 
 	def add_edge(self, edge):
-		self._edges.append(edge)
+		self._edge_uids.append(edge.uid)
 		edge.add_change_handler(self.on_edge_changed)
 		self._key_points = None
 
@@ -183,7 +188,7 @@ class EdgeLoopArea(Area):
 					self.changed(ChangeEvent(self, ChangeEvent.Deleted, self))
 				else:
 					fillet_edge = event.object
-					self._edges.remove(fillet_edge)
+					self._edge_uids.remove(fillet_edge.uid)
 					fillet_edge.remove_change_handler(self.on_edge_changed)
 					self._key_points = None
 			if type(event.object) is KeyPoint:
@@ -196,15 +201,15 @@ class EdgeLoopArea(Area):
 		"""
 		if self._key_points is None:
 			self._key_points = []
-			this_kp = self._edges[0].get_end_key_points()[0]
-			next_kp = self._edges[0].get_end_key_points()[1]
-			if this_kp == self._edges[1].get_end_key_points()[0] or this_kp == self._edges[1].get_end_key_points()[1]:
-				this_kp = self._edges[0].get_end_key_points()[1]
-				next_kp = self._edges[0].get_end_key_points()[0]
+			this_kp =  self.get_edge_by_index(0).get_end_key_points()[0]
+			next_kp = self.get_edge_by_index(0).get_end_key_points()[1]
+			if this_kp == self.get_edge_by_index(1).get_end_key_points()[0] or this_kp == self.get_edge_by_index(1).get_end_key_points()[1]:
+				this_kp = self.get_edge_by_index(0).get_end_key_points()[1]
+				next_kp = self.get_edge_by_index(0).get_end_key_points()[0]
 			self._key_points.append(this_kp)
 			self._key_points.append(next_kp)
-			for i in range(1, len(self._edges)):
-				edge = self._edges[i]
+			for i in range(1, len(self._edge_uids)):
+				edge = self.get_edge_by_index(i)
 				if edge.type != EdgeType.FilletLineEdge:
 					if next_kp == edge.get_end_key_points()[0]:
 						next_kp = edge.get_end_key_points()[1]
@@ -219,28 +224,28 @@ class EdgeLoopArea(Area):
 		:return: list of points describing the outside limits
 		"""
 		key_points = []
-		if self._edges[0].type == EdgeType.CircleEdge:
-			key_points.append(self._edges[0].get_end_key_points()[0])
+		if self.get_edge_by_index(0).type == EdgeType.CircleEdge:
+			key_points.append(self.get_edge_by_index(0).get_end_key_points()[0])
 		else:
-			this_kp = self._edges[0].get_end_key_points()[0]
-			next_kp = self._edges[0].get_end_key_points()[1]
-			if this_kp == self._edges[1].get_end_key_points()[0] or this_kp == self._edges[1].get_end_key_points()[1]:
-				this_kp = self._edges[0].get_end_key_points()[1]
-				next_kp = self._edges[0].get_end_key_points()[0]
+			this_kp = self.get_edge_by_index(0).get_end_key_points()[0]
+			next_kp = self.get_edge_by_index(0).get_end_key_points()[1]
+			if this_kp == self.get_edge_by_index(1).get_end_key_points()[0] or this_kp == self.get_edge_by_index(1).get_end_key_points()[1]:
+				this_kp = self.get_edge_by_index(0).get_end_key_points()[1]
+				next_kp = self.get_edge_by_index(0).get_end_key_points()[0]
 			key_points.append(this_kp)
-			if self._edges[0].type == EdgeType.ArcEdge:
-				ckp = self._edges[0].get_key_points()[0]
-				sa = self._edges[0].get_meta_data('sa')
-				ea = self._edges[0].get_meta_data('ea')
-				r = self._edges[0].get_meta_data('r')
+			if self.get_edge_by_index(0).type == EdgeType.ArcEdge:
+				ckp = self.get_edge_by_index(0).get_key_points()[0]
+				sa = self.get_edge_by_index(0).get_meta_data('sa')
+				ea = self.get_edge_by_index(0).get_meta_data('ea')
+				r = self.get_edge_by_index(0).get_meta_data('r')
 				diff = ea - sa
 				if diff < 0:
 					diff += 2 * pi
 				ma = sa + diff / 2
 				key_points.append(Vertex(ckp.x + cos(ma) * r, ckp.y + sin(ma) * r))
 			key_points.append(next_kp)
-			for i in range(1, len(self._edges)):
-				edge = self._edges[i]
+			for i in range(1, len(self._edge_uids)):
+				edge = self.get_edge_by_index(i)
 				if edge.type != EdgeType.FilletLineEdge:
 					if edge.type == EdgeType.ArcEdge:
 						ckp = edge.get_key_points()[0]
@@ -259,28 +264,31 @@ class EdgeLoopArea(Area):
 					key_points.append(next_kp)
 		return key_points
 
-	def get_edges(self):
-		return self._edges
+	def initialize_change_events(self):
+		self._change_events_initalized = True
+		for uid in self._edge_uids:
+			edge = self._sketch.get_edge(uid)
+			edge.add_change_handler(self.on_edge_changed)
 
-	def get_edge_uids(self):
-		edge_uids = []
-		for edge in self._edges:
-			edge_uids.append(edge.uid)
-		return edge_uids
+	def get_edges(self):
+		if not self._change_events_initalized:
+			self.initialize_change_events()
+		edges = []
+		for uid in self._edge_uids:
+			edges.append(self._sketch.get_edge(uid))
+		return edges
 
 	def serialize_json(self):
 		return \
 			{
 				'area': Area.serialize_json(self),
-				'edges': self.get_edge_uids()
+				'edges': self._edge_uids
 			}
 
 	def deserialize_data(self, data, sketch):
 		Area.deserialize_data(self, data['area'])
-		for edge_uid in data['edges']:
-			edge = sketch.get_edge(edge_uid)
-			self._edges.append(edge)
-			edge.add_change_handler(self.on_edge_changed)
+		self._edge_uids = data['edges']
+		self._change_events_initalized = False
 
 
 class CompositeArea(Area):

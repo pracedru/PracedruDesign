@@ -362,7 +362,6 @@ def get_area_path(area, scale, offset, half_height, half_width, limits, instance
 		limits.y_max = y + r * scale
 		limits.y_min = y - r * scale
 		path.addEllipse(QRectF(x - r * scale, y - r * scale, 2 * r * scale, 2 * r * scale))
-
 	else:
 		for kp in area.get_key_points():
 			edges = kp.get_edges()

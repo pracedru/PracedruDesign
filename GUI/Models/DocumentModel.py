@@ -254,8 +254,8 @@ class DocumentItemModel(QAbstractItemModel):
 			elif isinstance(object, Text):
 				annos_item = parent_item.children()[3]
 				new_item = DocumentModelItem(object, self, annos_item)
-			elif type(object) is Area:
-				areas_item = parent_item.children()[4]
+			elif issubclass(type(object), Area):
+				areas_item = parent_item.get_child_by_name("Areas")
 				new_item = DocumentModelItem(object, self, areas_item)
 			elif type(object) is Proformer:
 				proformers_item = parent_item.get_child_by_name("Proformers")
@@ -332,6 +332,7 @@ class DocumentModelItem(QObject):
 			print(str(e))
 
 	def get_child_by_name(self, name):
+		name = tr(name, 'model')
 		for child in self.children():
 			if child.name == name:
 				return child

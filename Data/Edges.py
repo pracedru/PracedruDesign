@@ -35,6 +35,7 @@ class Edge(IdObject, NamedObservableObject):
 		self._plane = plane
 		self.editable = True
 		self._draw_data = None
+		self._change_events_initalized = True
 
 	@property
 	def style(self):
@@ -75,7 +76,7 @@ class Edge(IdObject, NamedObservableObject):
 				return
 		self._meta_data[name] = value
 
-	def get_meta_data(self, name, instance):
+	def get_meta_data(self, name, instance=None):
 		if instance is None:
 			return self._meta_data[name]
 		else:
@@ -108,12 +109,15 @@ class Edge(IdObject, NamedObservableObject):
 			self.update_linked_kps(ckp)
 
 	def get_key_points(self):
+		if not self._change_events_initalized:
+			self.initialize_change_events()
 		kps = []
 		for uid in self._key_points:
 			kps.append(self._geometry.get_keypoint(uid))
 		return kps
 
 	def get_key_point_uids(self):
+
 		kps = []
 		for uid in self._key_points:
 			kps.append(uid)
@@ -215,7 +219,7 @@ class Edge(IdObject, NamedObservableObject):
 			start_kp.y = pc1[1]
 			start_kp.z = pc1[2]
 
-	def distance(self, point, instance):
+	def distance(self, point, instance=None):
 		kps = self.get_key_points()
 		if self.type == EdgeType.LineEdge:
 			kp1 = kps[0]
@@ -286,7 +290,7 @@ class Edge(IdObject, NamedObservableObject):
 				dist = kp.distance(point)
 			return dist
 
-	def get_draw_data(self, instance):
+	def get_draw_data(self, instance=None):
 		edge_data = {}
 
 		key_points = self.get_key_points()
@@ -521,6 +525,13 @@ class Edge(IdObject, NamedObservableObject):
 	def type(self):
 		return self._type
 
+
+	def initialize_change_events(self):
+		self._change_events_initalized = True
+		for uid in self._key_points:
+			kp = self._geometry.get_keypoint(uid)
+			kp.add_change_handler(self.on_key_point_changed)
+
 	@staticmethod
 	def deserialize(sketch, data):
 		edge = Edge(sketch)
@@ -558,6 +569,6 @@ class Edge(IdObject, NamedObservableObject):
 			param = self._geometry.get_parameter_by_uid(parameter_uid)
 			if param is not None:
 				param.add_change_handler(self.on_parameter_change)
-			else:
-				i = 20
+		self._change_events_initalized = False
+
 				# self._meta_data_parameters.pop(parameter_uid)

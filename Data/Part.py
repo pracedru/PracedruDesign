@@ -158,7 +158,7 @@ class Part(Geometry):
 		self._update_needed = True
 		self._cal_limits()
 
-	def create_key_point(self, x, y, z, ts=0.000001):
+	def create_keypoint(self, x, y, z, ts=0.000001):
 		key_point = None
 		for p_tuple in self._keypoints.items():
 			p = p_tuple[1]
@@ -254,14 +254,14 @@ class Part(Geometry):
 				r = axis.distance(kp)
 				c = axis.project_point(kp)
 				c = pm.dot(c)
-				kp = self.create_key_point(c[0], c[1], c[2])
+				kp = self.create_keypoint(c[0], c[1], c[2])
 				edge1 = self.create_arc_edge(kp, r, 0, span, cpm)
 
 				kp = kps[1]
 				r = axis.distance(kp)
 				c = axis.project_point(kp)
 				c = pm.dot(c)
-				kp = self.create_key_point(c[0], c[1], c[2])
+				kp = self.create_keypoint(c[0], c[1], c[2])
 				edge2 = self.create_arc_edge(kp, r, 0, span, cpm)
 
 				kps1 = edge1.get_end_key_points()
@@ -282,11 +282,11 @@ class Part(Geometry):
 				sa = draw_data['sa'] * pi / (180 * 16)
 				sp = draw_data['span'] * pi / (180 * 16)
 				gc = global_axis_origo + plane1.get_global_xyz_array(c)
-				kp = self.create_key_point(gc[0], gc[1], gc[2])
+				kp = self.create_keypoint(gc[0], gc[1], gc[2])
 				edge1 = self.create_arc_edge(kp, r, sa, sp, plane1)
 
 				gc = global_axis_origo + plane2.get_global_xyz_array(c)
-				kp = self.create_key_point(gc[0], gc[1], gc[2])
+				kp = self.create_keypoint(gc[0], gc[1], gc[2])
 				edge2 = self.create_arc_edge(kp, r, sa, sp, plane2)
 				if abs(span) < 2 * pi:
 					front_edges.append(edge1)
@@ -296,11 +296,11 @@ class Part(Geometry):
 				kps1 = edge1.get_end_key_points()
 				r1 = global_axis1.distance(kps1[0])
 				c1 = global_axis1.project_point(kps1[0])
-				kp1 = self.create_key_point(c1[0], c1[1], c1[2])
+				kp1 = self.create_keypoint(c1[0], c1[1], c1[2])
 				edge3 = self.create_arc_edge(kp1, r1, 0, span, cpm)
 				r2 = global_axis1.distance(kps1[1])
 				c2 = global_axis1.project_point(kps1[1])
-				kp2 = self.create_key_point(c2[0], c2[1], c2[2])
+				kp2 = self.create_keypoint(c2[0], c2[1], c2[2])
 				edge4 = self.create_arc_edge(kp2, r2, 0, span, cpm)
 				surface.set_main_edges([edge3, edge4, edge1, edge2])
 				surface.set_sweep_axis(global_axis1)
@@ -341,14 +341,14 @@ class Part(Geometry):
 				c = draw_data['coords']
 				c1 = p1 + pm.dot(c[0].xyz)
 				c2 = p1 + pm.dot(c[1].xyz)
-				kp1 = self.create_key_point(c1[0], c1[1], c1[2])
-				kp2 = self.create_key_point(c2[0], c2[1], c2[2])
+				kp1 = self.create_keypoint(c1[0], c1[1], c1[2])
+				kp2 = self.create_keypoint(c2[0], c2[1], c2[2])
 				edge1 = self.create_line_edge(kp1, kp2)
 				front_edges.append(edge1)
 				c3 = p2 + pm.dot(c[0].xyz)
 				c4 = p2 + pm.dot(c[1].xyz)
-				kp3 = self.create_key_point(c3[0], c3[1], c3[2])
-				kp4 = self.create_key_point(c4[0], c4[1], c4[2])
+				kp3 = self.create_keypoint(c3[0], c3[1], c3[2])
+				kp4 = self.create_keypoint(c4[0], c4[1], c4[2])
 				edge2 = self.create_line_edge(kp3, kp4)
 				back_edges.append(edge2)
 				edge3 = self.create_line_edge(kp1, kp3)
@@ -363,14 +363,14 @@ class Part(Geometry):
 					if coord1 is not None:
 						c1 = p1 + pm.dot(coord1.xyz)
 						c2 = p1 + pm.dot(coord2.xyz)
-						kp1 = self.create_key_point(c1[0], c1[1], c1[2])
-						kp2 = self.create_key_point(c2[0], c2[1], c2[2])
+						kp1 = self.create_keypoint(c1[0], c1[1], c1[2])
+						kp2 = self.create_keypoint(c2[0], c2[1], c2[2])
 						edge1 = self.create_line_edge(kp1, kp2)
 						front_edges.append(edge1)
 						c1 = p2 + pm.dot(coord1.xyz)
 						c2 = p2 + pm.dot(coord2.xyz)
-						kp1 = self.create_key_point(c1[0], c1[1], c1[2])
-						kp2 = self.create_key_point(c2[0], c2[1], c2[2])
+						kp1 = self.create_keypoint(c1[0], c1[1], c1[2])
+						kp2 = self.create_keypoint(c2[0], c2[1], c2[2])
 						edge2 = self.create_line_edge(kp1, kp2)
 						back_edges.append(edge2)
 					coord1 = coord2
@@ -383,12 +383,12 @@ class Part(Geometry):
 				sa = draw_data['sa'] * pi / (180 * 16)
 				span = draw_data['span'] * pi / (180 * 16)
 				center1 = p1 + pm.dot(c.xyz)
-				center_kp = self.create_key_point(center1[0], center1[1], center1[2])
+				center_kp = self.create_keypoint(center1[0], center1[1], center1[2])
 				edge1 = self.create_arc_edge(center_kp, r, sa, span, plane)
 				front_edges.append(edge1)
 				kps1 = edge1.get_end_key_points()
 				center2 = p2 + pm.dot(c.xyz)
-				center_kp = self.create_key_point(center2[0], center2[1], center2[2])
+				center_kp = self.create_keypoint(center2[0], center2[1], center2[2])
 				edge2 = self.create_arc_edge(center_kp, r, sa, span, plane)
 				back_edges.append(edge2)
 				kps2 = edge2.get_end_key_points()
@@ -424,11 +424,11 @@ class Part(Geometry):
 			edge = sketch.get_edge(order_item)
 			kps = edge.get_key_points()
 			c = p.xyz + pm.dot(kps[0].xyz)
-			kp = self.create_key_point(c[0], c[1], c[2])
+			kp = self.create_keypoint(c[0], c[1], c[2])
 			surf_edge = self.create_nurbs_edge(kp)
 			for i in range(1, len(kps)):
 				c = p.xyz + pm.dot(kps[i].xyz)
-				kp = self.create_key_point(c[0], c[1], c[2])
+				kp = self.create_keypoint(c[0], c[1], c[2])
 				surf_edge.add_key_point(kp)
 			edges.append(surf_edge)
 
