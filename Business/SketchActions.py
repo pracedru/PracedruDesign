@@ -131,7 +131,7 @@ def set_similar_y(document: Document, sketch: Sketch, key_points: [], name):
 
 
 def find_all_similar(doc, sketch, digits):
-	key_points = sketch.get_key_points()
+	key_points = sketch.get_keypoints()
 	sim_x_dict = {}
 	sim_y_dict = {}
 	arcs = []
@@ -321,7 +321,7 @@ def follow_branch(branch, branches, connections):
 			smallest_angle = None
 			for edge in this_connection['edges']:
 				if edge is not previous_edge and edge.type != EdgeType.FilletLineEdge and edge.type != EdgeType.CircleEdge:
-					kps = edge.get_key_points()
+					kps = edge.get_keypoints()
 					if kps[0] == this_kp:
 						next_kp = kps[1]
 					else:

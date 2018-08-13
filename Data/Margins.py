@@ -214,7 +214,7 @@ class Margins(ObservableObject):
 			okp = Vertex(kp.x + cos(angle1) * margin, kp.y + sin(angle1) * margin)
 			return okp
 		elif edge.type == Edge.ArcEdge:
-			ckp = edge.get_key_points()[0]
+			ckp = edge.get_keypoints()[0]
 			angle1 = edge.angle(kp) + pi / 2
 			sa = edge.get_meta_data('sa')
 			ea = edge.get_meta_data('ea')

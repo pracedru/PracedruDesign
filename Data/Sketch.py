@@ -37,7 +37,8 @@ class Sketch(Geometry):
 
 	def get_limits(self):
 		limits = [1.0e16, 1.0e16, -1.0e16, -1.0e16]
-		for pnt in self._key_points.values():
+		kps = self.get_keypoints()
+		for pnt in kps:
 			limits[0] = min(pnt.x, limits[0])
 			limits[1] = min(pnt.y, limits[1])
 			limits[2] = max(pnt.x, limits[2])
@@ -46,7 +47,7 @@ class Sketch(Geometry):
 
 	@property
 	def key_point_count(self):
-		return len(self.get_key_points())
+		return len(self.get_keypoints())
 
 	@property
 	def edges_count(self):
@@ -74,9 +75,13 @@ class Sketch(Geometry):
 		return None
 
 	def get_edge_by_name(self, name):
-		for edge in self._edges.items():
-			if edge[1].name == name:
-				return edge[1]
+		for edge in self._edges.values():
+			if edge.name == name:
+				return edge
+		for proformer in self._proformers.values():
+			for edge in proformer.result_edges:
+				if edge.name == name:
+					return edge
 		return None
 
 	def get_keypoint(self, uid):
@@ -106,7 +111,7 @@ class Sketch(Geometry):
 			edges.extend(proformer.result_edges)
 		return edges
 
-	def get_key_points(self):
+	def get_keypoints(self):
 		kps = []
 		kps.extend(self._key_points.values())
 		for proformer in self._proformers.values():
@@ -231,7 +236,7 @@ class Sketch(Geometry):
 			for area_tuple in self._areas.items():
 				area = area_tuple[1]
 				if area.type == AreaType.EdgeLoop:
-					kps = area.get_key_points()
+					kps = area.get_keypoints()
 					if kp in kps:
 						area.add_edge(fillet_edge)
 		return fillet_edge

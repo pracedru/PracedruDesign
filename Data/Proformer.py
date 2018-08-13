@@ -190,7 +190,7 @@ class Proformer(IdObject, Parameters):
 			self._sketch.changed(ChangeEvent(self._sketch, ChangeEvent.BeforeObjectAdded, new_edge))
 			new_edge._uid = edge.uid + "-" + self._type.name
 			new_edge.style_name = edge.style_name
-			for kp in edge.get_key_points():
+			for kp in edge.get_keypoints():
 				new_edge.add_key_point(self._lookup_kps[kp.uid])
 			if edge.type == EdgeType.FilletLineEdge:
 				r = edge.get_meta_data('r', None)
@@ -249,7 +249,7 @@ class Proformer(IdObject, Parameters):
 			for edge in area.get_edges():
 				self._edges.add(edge)
 		for edge in self._edges:
-			for kp in edge.get_key_points():
+			for kp in edge.get_keypoints():
 				if kp not in self._kps:
 					self._kps.add(kp)
 		for kp in self._kps:

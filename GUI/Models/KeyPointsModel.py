@@ -24,7 +24,7 @@ class KeyPointsModel(QAbstractTableModel):
 			self._sketch.remove_change_handler(self.on_sketch_changed)
 			self._rows.clear()
 		self._sketch = sketch
-		for kp in self._sketch.get_key_points():
+		for kp in self._sketch.get_keypoints():
 			self._rows.append(kp.uid)
 		self._sketch.add_change_handler(self.on_sketch_changed)
 		self.layoutChanged.emit()

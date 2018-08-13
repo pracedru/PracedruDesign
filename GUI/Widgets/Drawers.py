@@ -165,7 +165,7 @@ def draw_edge(edge: Edge, qp: QPainter, scale, offset, center, pens, instance=No
 	else:
 		qp.setPen(pens[edge.style.uid])
 	if edge is not None:
-		key_points = edge.get_key_points()
+		key_points = edge.get_keypoints()
 		if edge.type == EdgeType.LineEdge:
 			edges_list = key_points[0].get_edges()
 			fillet1 = None
@@ -363,7 +363,7 @@ def get_area_path(area, scale, offset, half_height, half_width, limits, instance
 		limits.y_min = y - r * scale
 		path.addEllipse(QRectF(x - r * scale, y - r * scale, 2 * r * scale, 2 * r * scale))
 	else:
-		for kp in area.get_key_points():
+		for kp in area.get_keypoints():
 			edges = kp.get_edges()
 			is_fillet_kp = False
 			fillet_dist = 0
@@ -382,13 +382,13 @@ def get_area_path(area, scale, offset, half_height, half_width, limits, instance
 					fillet_dist = get_fillet_offset_distance(kp, r, edge1, edge2)
 			if is_fillet_kp:
 				if first_kp:
-					kp_prev = area.get_key_points()[len(area.get_key_points()) - 2]
+					kp_prev = area.get_keypoints()[len(area.get_keypoints()) - 2]
 				else:
-					kp_prev = area.get_key_points()[counter - 1]
-				if counter + 1 == len(area.get_key_points()):
-					kp_next = area.get_key_points()[1]
+					kp_prev = area.get_keypoints()[counter - 1]
+				if counter + 1 == len(area.get_keypoints()):
+					kp_next = area.get_keypoints()[1]
 				else:
-					kp_next = area.get_key_points()[counter + 1]
+					kp_next = area.get_keypoints()[counter + 1]
 				angle = kp.angle2d(kp_prev)
 				angle_next = kp.angle2d(kp_next)
 				fillet_offset_x = fillet_dist * cos(angle_next)
@@ -408,7 +408,7 @@ def get_area_path(area, scale, offset, half_height, half_width, limits, instance
 			else:
 				edge = area.get_edges()[counter - 1]
 				if edge.type == EdgeType.ArcEdge:
-					center_kp = edge.get_key_points()[0]
+					center_kp = edge.get_keypoints()[0]
 					cx = (center_kp.x + offset.x) * scale + half_width
 					cy = -(center_kp.y + offset.y) * scale + half_height
 					radius = edge.get_meta_data('r')

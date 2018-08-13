@@ -70,7 +70,7 @@ class DocumentItemModel(QAbstractItemModel):
 		geom_item = self.create_model_item(parent_item, sketch)
 		for param_tuple in sketch.get_all_local_parameters():
 			param_item = DocumentModelItem(param_tuple[1], self, geom_item.children()[0])
-		for kp in sketch.get_key_points():
+		for kp in sketch.get_keypoints():
 			kp_item = DocumentModelItem(kp, self, geom_item.children()[1], "Key point")
 		for edge in sketch.get_edges():
 			edge_item = DocumentModelItem(edge, self, geom_item.children()[2])

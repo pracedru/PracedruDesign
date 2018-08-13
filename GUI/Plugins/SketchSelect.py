@@ -31,7 +31,7 @@ class SketchSelect():
 		update_view = False
 		view = self._sketch_editor_view
 		sketch = view.sketch
-		key_points = sketch.get_key_points()
+		key_points = sketch.get_keypoints()
 
 		view.kp_hover = None
 		view.edge_hover = None
@@ -94,7 +94,7 @@ class SketchSelect():
 		sketch = view.sketch
 		if sketch is None:
 			return
-		key_points = sketch.get_key_points()
+		key_points = sketch.get_keypoints()
 
 		#                             ****    Keypoint select    ****
 		if view.kp_hover is not None and self._states.select_kp:

@@ -9,9 +9,9 @@ from Data.Sketch import Sketch, Attribute
 from Data.Vertex import Vertex
 
 
-def load_document(file_path):
+def load_document(file_path, ignore_version=False):
 	data = Data.read_json_data_from_disk(file_path)
-	doc = Data.Document.Document.deserialize(data)
+	doc = Data.Document.Document.deserialize(data, ignore_version)
 	doc.path = os.path.dirname(file_path)
 	doc.name = os.path.basename(file_path)
 	return doc

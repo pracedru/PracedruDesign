@@ -103,7 +103,7 @@ class SketchParametry():
 		view = self._sketch_editor_view
 		if self._states.set_similar_x and view.kp_hover is not None:
 			sketch = view.sketch
-			key_points = sketch.get_key_points()
+			key_points = sketch.get_keypoints()
 			self._similar_coords.clear()
 			for kp_tuple in key_points:
 				key_point = kp_tuple[1]
@@ -114,7 +114,7 @@ class SketchParametry():
 			view._selected_key_points = list(self._similar_coords)
 		if self._states.set_similar_y and view.kp_hover is not None:
 			sketch = view.sketch
-			key_points = sketch.get_key_points()
+			key_points = sketch.get_keypoints()
 			self._similar_coords.clear()
 			for kp_tuple in key_points:
 				key_point = kp_tuple[1]

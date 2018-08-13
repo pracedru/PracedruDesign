@@ -6,13 +6,11 @@ __author__ = 'mamj'
 
 text_formats_endings = ['.json', '.jadoc', '.jobj', '.jgeom', '.inp', '.si_mpl', '.ts']
 
+pracedru_design_version = [0,1,0,0]
 
 def complex_handler(Obj):
 	if hasattr(Obj, 'serialize_json'):
-		#try:
-			return Obj.serialize_json()
-		#except TypeError as e:
-		#	print(str(e))
+		return Obj.serialize_json()
 	else:
 		raise Exception('Object of type %s with value of %s is not JSON serializable' % (type(Obj), repr(Obj)))
 

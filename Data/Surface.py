@@ -152,7 +152,7 @@ class Surface(ObservableObject, IdObject):
 
 	def get_double_surface_center_and_radius(self, edge2, relative2):
 		plane2 = edge2.plane
-		c2 = edge2.get_key_points()[0]
+		c2 = edge2.get_keypoints()[0]
 		r2 = edge2.get_meta_data('r')
 		sa2 = edge2.get_meta_data('sa')
 		ea2 = edge2.get_meta_data('ea')
@@ -188,7 +188,7 @@ class Surface(ObservableObject, IdObject):
 			sa = edge.get_meta_data('sa')
 			ea = edge.get_meta_data('ea')
 			span = ea - sa
-			c = edge.get_key_points()[0]
+			c = edge.get_keypoints()[0]
 			x = cos(sa + span * relative) * r
 			y = sin(sa + span * relative) * r
 			z = 0
@@ -216,7 +216,7 @@ class Surface(ObservableObject, IdObject):
 		edges = self._main_edge_loop
 		controls = []
 		for edge in edges:
-			kps = edge.get_key_points()
+			kps = edge.get_keypoints()
 			cps = []
 			for kp in kps:
 				cps.append(kp.xyz)
@@ -365,7 +365,7 @@ class Surface(ObservableObject, IdObject):
 				r = edge.get_meta_data('r')
 				sa = edge.get_meta_data('sa')
 				ea = edge.get_meta_data('ea')
-				c = edge.get_key_points()[0]
+				c = edge.get_keypoints()[0]
 				cc = c.xyz + plane.get_global_xyz(cos(sa) * r, sin(sa) * r, 0)
 				ln1 = np.linalg.norm(kps[len(kps) - 1].xyz - cc)
 				cc = c.xyz + plane.get_global_xyz(cos(ea) * r, sin(ea) * r, 0)

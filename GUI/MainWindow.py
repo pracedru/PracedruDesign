@@ -190,9 +190,9 @@ class MainWindow(QMainWindow):
 		file_path = file_name[0]
 
 		if file_path != "":
-			doc = Business.load_document(file_path)
+			# doc = Business.load_document(file_path)
 			try:
-				doc = Business.load_document(file_path)
+				doc = Business.load_document(file_path, True)
 			except ValueError as e:
 				QMessageBox.information(self, "Error on load", "ValueError" + str(e))
 				return

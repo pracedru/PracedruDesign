@@ -422,7 +422,7 @@ class Part(Geometry):
 		edges = []
 		for order_item in order_items:
 			edge = sketch.get_edge(order_item)
-			kps = edge.get_key_points()
+			kps = edge.get_keypoints()
 			c = p.xyz + pm.dot(kps[0].xyz)
 			kp = self.create_keypoint(c[0], c[1], c[2])
 			surf_edge = self.create_nurbs_edge(kp)
@@ -578,7 +578,7 @@ class Part(Geometry):
 				lines.append(kps[1].xyz)
 			if edge.type == EdgeType.ArcEdge:
 				radius = edge.get_meta_data("r")
-				c = edge.get_key_points()[0]
+				c = edge.get_keypoints()[0]
 				start_angle = edge.get_meta_data("sa")
 				end_angle = edge.get_meta_data("ea")
 				span = end_angle - start_angle

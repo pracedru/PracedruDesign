@@ -108,7 +108,7 @@ class Edge(IdObject, NamedObservableObject):
 			ckp = self._geometry.get_keypoint(self._key_points[0])
 			self.update_linked_kps(ckp)
 
-	def get_key_points(self):
+	def get_keypoints(self):
 		if not self._change_events_initalized:
 			self.initialize_change_events()
 		kps = []
@@ -125,9 +125,9 @@ class Edge(IdObject, NamedObservableObject):
 
 	def get_end_key_points(self):
 		if self._type == EdgeType.LineEdge:
-			return self.get_key_points()
+			return self.get_keypoints()
 		if self._type == EdgeType.NurbsEdge:
-			key_points = self.get_key_points()
+			key_points = self.get_keypoints()
 			kps = [key_points[0]]
 			if len(key_points) > 1:
 				kps.append(key_points[len(key_points) - 1])
@@ -164,11 +164,11 @@ class Edge(IdObject, NamedObservableObject):
 				self._meta_data['end_kp'] = end_kp.uid
 			return [start_kp, end_kp]
 		elif self.type == EdgeType.CircleEdge:
-			return self.get_key_points()
+			return self.get_keypoints()
 		elif self.type == EdgeType.PolyLineEdge:
-			return self.get_key_points()
+			return self.get_keypoints()
 		elif self.type == EdgeType.FilletLineEdge:
-			return self.get_key_points()
+			return self.get_keypoints()
 
 	def get_other_kp(self, kp):
 		kps = self.get_end_key_points()
@@ -220,7 +220,7 @@ class Edge(IdObject, NamedObservableObject):
 			start_kp.z = pc1[2]
 
 	def distance(self, point, instance=None):
-		kps = self.get_key_points()
+		kps = self.get_keypoints()
 		if self.type == EdgeType.LineEdge:
 			kp1 = kps[0]
 			kp2 = kps[1]
@@ -293,7 +293,7 @@ class Edge(IdObject, NamedObservableObject):
 	def get_draw_data(self, instance=None):
 		edge_data = {}
 
-		key_points = self.get_key_points()
+		key_points = self.get_keypoints()
 		if self.type == EdgeType.LineEdge:
 			edges_list = key_points[0].get_edges()
 			fillet1 = None
@@ -424,7 +424,7 @@ class Edge(IdObject, NamedObservableObject):
 			edge_data["c"] = Vertex(cx, cy)
 		elif self.type == EdgeType.NurbsEdge:
 			if self._draw_data is None:
-				kps = self.get_key_points()
+				kps = self.get_keypoints()
 				nurbs = Nurbs()
 				controls = []
 				coords = []
@@ -470,7 +470,7 @@ class Edge(IdObject, NamedObservableObject):
 				elif kp == kps[1]:
 					return self._meta_data['ea'] - pi / 2
 				else:
-					center_kp = self.get_key_points()[0]
+					center_kp = self.get_keypoints()[0]
 					return center_kp.angle2d(kp) + pi / 2
 
 	@property
@@ -490,7 +490,7 @@ class Edge(IdObject, NamedObservableObject):
 			return abs(diff * r)
 
 	def coincident(self, key_point, coin_thress=None):
-		kps = self.get_key_points()
+		kps = self.get_keypoints()
 		if coin_thress is None:
 			threshold = self._geometry.threshold
 		else:
@@ -512,7 +512,7 @@ class Edge(IdObject, NamedObservableObject):
 		return False
 
 	def split(self, key_point):
-		kps = self.get_key_points()
+		kps = self.get_keypoints()
 		second_key_point = kps[1]
 		second_key_point.remove_change_handler(self.on_key_point_changed)
 		self._key_points.remove(second_key_point.uid)

@@ -1,3 +1,4 @@
+from Data import pracedru_design_version
 from Data.Analyses import Analyses
 from Data.Axis import Axis
 from Data.Collections import ObservableList
@@ -42,6 +43,7 @@ class Document(IdObject, Parameters):
 		self._persistent_status_message = ""
 		self._persistent_status_progress = 100
 		self.is_modified = False
+		self._version = pracedru_design_version
 
 	def init_change_handlers(self):
 		# self.add_change_handler(self.on_parameters_changed)
@@ -170,11 +172,17 @@ class Document(IdObject, Parameters):
 				'sweeps': self._sweeps,
 				'drawings': self._drawings,
 				'analysees': self._analyses,
-				'path': self.path
+				'path': self.path,
+				'version': self._version
 			}
 
 	@staticmethod
-	def deserialize(data):
+	def deserialize(data, ignore_version=False):
+		if data.get('version', [0,0,0,0]) != pracedru_design_version:
+			if ignore_version:
+				print("Document saved in different version of PracedruDesign.")
+			else:
+				raise Exception("Document saved in different version of PracedruDesign.")
 		doc = Document()
 		doc.deserialize_data(data)
 		return doc

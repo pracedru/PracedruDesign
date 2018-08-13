@@ -106,7 +106,7 @@ class EdgeLoopArea(Area):
 		anglesum = 0.0
 		last_point = None
 		if self.get_edge_by_index(0).type == EdgeType.CircleEdge:
-			kp = self.get_edge_by_index(0).get_key_points()[0]
+			kp = self.get_edge_by_index(0).get_keypoints()[0]
 			r = self.get_edge_by_index(0).get_meta_data('r')
 			if r > kp.distance(point):
 				return True
@@ -145,7 +145,7 @@ class EdgeLoopArea(Area):
 					if edge.distance(int_kp) < 0.001:
 						intersecting_edges.append([edge, int_kp])
 			elif edge.type is EdgeType.ArcEdge:
-				center_kp = edge.get_key_points()[0]
+				center_kp = edge.get_keypoints()[0]
 				radius = edge.get_meta_data('r')
 				sa = edge.get_meta_data('sa')
 				ea = edge.get_meta_data('ea')
@@ -164,7 +164,7 @@ class EdgeLoopArea(Area):
 	def insert_edge(self, edge):
 		kps = edge.get_end_key_points()
 		index = -1
-		if kps[0] in self.get_key_points():
+		if kps[0] in self.get_keypoints():
 			index = self._key_points.index(kps[0])
 		if index != -1:
 			self._edge_uids.insert(index, edge.uid)
@@ -194,7 +194,7 @@ class EdgeLoopArea(Area):
 			if type(event.object) is KeyPoint:
 				self.changed(ChangeEvent(self, ChangeEvent.Deleted, self))
 
-	def get_key_points(self):
+	def get_keypoints(self):
 		"""
 		This function returns the key points that control the edges of this area.
 		:return:
@@ -224,31 +224,32 @@ class EdgeLoopArea(Area):
 		:return: list of points describing the outside limits
 		"""
 		key_points = []
-		if self.get_edge_by_index(0).type == EdgeType.CircleEdge:
-			key_points.append(self.get_edge_by_index(0).get_end_key_points()[0])
+		edges = self.get_edges()
+		if edges[0].type == EdgeType.CircleEdge:
+			key_points.append(edges[0].get_end_key_points()[0])
 		else:
-			this_kp = self.get_edge_by_index(0).get_end_key_points()[0]
-			next_kp = self.get_edge_by_index(0).get_end_key_points()[1]
-			if this_kp == self.get_edge_by_index(1).get_end_key_points()[0] or this_kp == self.get_edge_by_index(1).get_end_key_points()[1]:
-				this_kp = self.get_edge_by_index(0).get_end_key_points()[1]
-				next_kp = self.get_edge_by_index(0).get_end_key_points()[0]
+			this_kp = edges[0].get_end_key_points()[0]
+			next_kp = edges[0].get_end_key_points()[1]
+			if this_kp == edges[1].get_end_key_points()[0] or this_kp == edges[1].get_end_key_points()[1]:
+				this_kp = edges[0].get_end_key_points()[1]
+				next_kp = edges[0].get_end_key_points()[0]
 			key_points.append(this_kp)
-			if self.get_edge_by_index(0).type == EdgeType.ArcEdge:
-				ckp = self.get_edge_by_index(0).get_key_points()[0]
-				sa = self.get_edge_by_index(0).get_meta_data('sa')
-				ea = self.get_edge_by_index(0).get_meta_data('ea')
-				r = self.get_edge_by_index(0).get_meta_data('r')
+			if edges[0].type == EdgeType.ArcEdge:
+				ckp = edges[0].get_keypoints()[0]
+				sa = edges[0].get_meta_data('sa')
+				ea = edges[0].get_meta_data('ea')
+				r = edges[0].get_meta_data('r')
 				diff = ea - sa
 				if diff < 0:
 					diff += 2 * pi
 				ma = sa + diff / 2
 				key_points.append(Vertex(ckp.x + cos(ma) * r, ckp.y + sin(ma) * r))
 			key_points.append(next_kp)
-			for i in range(1, len(self._edge_uids)):
-				edge = self.get_edge_by_index(i)
+			for i in range(1, len(edges)):
+				edge = edges[i]
 				if edge.type != EdgeType.FilletLineEdge:
 					if edge.type == EdgeType.ArcEdge:
-						ckp = edge.get_key_points()[0]
+						ckp = edge.get_keypoints()[0]
 						sa = edge.get_meta_data('sa')
 						ea = edge.get_meta_data('ea')
 						r = edge.get_meta_data('r')
@@ -257,6 +258,11 @@ class EdgeLoopArea(Area):
 							diff += 2 * pi
 						ma = sa + diff / 2
 						key_points.append(Vertex(ckp.x + cos(ma) * r, ckp.y + sin(ma) * r))
+					if edge.type == EdgeType.NurbsEdge:
+						edge_kps = edge.get_keypoints()
+						for i in range(1, len(edge_kps)-1):
+							edge_kp = edge_kps[i]
+							key_points.append(edge_kp)
 					if next_kp == edge.get_end_key_points()[0]:
 						next_kp = edge.get_end_key_points()[1]
 					else:

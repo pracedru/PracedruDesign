@@ -387,7 +387,7 @@ class SketchEditorViewWidget(QWidget):
 
 		qp.setPen(pens['default'])
 
-		key_points = self._sketch.get_key_points()
+		key_points = self._sketch.get_keypoints()
 		for kp in key_points:
 			qp.setPen(kp_pen)
 			key_point = kp
