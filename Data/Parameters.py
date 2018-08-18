@@ -198,10 +198,16 @@ class Parameter(IdObject, ObservableObject):
 				if instance_uid is None:
 					self._formula = formula.replace(' ', '')
 					new_value = self.evaluate(instance_uid)
+					if type(new_value) is str:
+						new_value = value
+						self._formula = value
 					self._value = new_value
 				else:
 					self.set_instance_internal_formula(instance_uid, formula.replace(' ', ''))
 					new_value = self.evaluate(instance_uid)
+					if type(new_value) is str:
+						new_value = value
+						self.set_instance_internal_formula(instance_uid, value)
 					self.set_instance_internal_value(instance_uid, new_value)
 			else:
 				if instance_uid is None:

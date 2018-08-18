@@ -10,6 +10,7 @@ from PyQt5.QtWidgets import QVBoxLayout
 from PyQt5.QtWidgets import QWidget
 
 from Data.Axis import Axis
+from Data.Proformer import ProformerType
 from GUI.Widgets.SketchViewWidget import SketchViewWidget
 
 
@@ -349,6 +350,93 @@ class StandardTypeManager(QDialog):
 		dialog_buttons.close.connect(self.accept)
 		self.layout().addWidget(dialog_buttons)
 
+
+class SketchMirrorDialog(QDialog):
+	def __init__(self, parent, sketch):
+		QDialog.__init__(self, parent)
+		self._sketch = sketch
+		self.setWindowTitle("Mirror")
+		self.setLayout(QVBoxLayout())
+		contents_widget = QWidget(self)
+		contents_layout = QGridLayout()
+		contents_widget.setLayout(contents_layout)
+		self._mirror_type = ProformerType.Mirror
+
+		contents_layout.addWidget(QLabel("Mirror type"), 0, 0)
+		contents_layout.addWidget(QLabel("Mirror line"), 1, 0)
+
+		self._mirror_type_combo_box = QComboBox()
+		self._mirror_line_combo_box = QComboBox()
+		self._mirror_type_combo_box.currentIndexChanged.connect(self.on_mirror_type_selection_changed)
+
+		self._mirror_type_combo_box.addItem(ProformerType.Mirror.name)
+		self._mirror_type_combo_box.addItem(ProformerType.MirrorX.name)
+		self._mirror_type_combo_box.addItem(ProformerType.MirrorY.name)
+		self._mirror_type_combo_box.addItem(ProformerType.MirrorXY.name)
+		self._mirror_type_combo_box.setEditable(True)
+		#self._mirror_line_combo_box.addItems(self._params)
+		self._mirror_line_combo_box.setEditable(True)
+		#self._ea_combo_box.addItems(self._params)
+		#self._ea_combo_box.setEditable(True)
+		contents_layout.addWidget(self._mirror_type_combo_box, 0, 1)
+		contents_layout.addWidget(self._mirror_line_combo_box, 1, 1)
+
+		self.layout().addWidget(contents_widget)
+		self._sketch_view = SketchViewWidget(self, sketch, sketch.document)
+		self._sketch_view.set_change_listener(self)
+		self._sketch_view.edges_selectable = True
+		#self._sketch_view.set_sketch(sketch)
+		self.layout().addWidget(self._sketch_view)
+
+		dialog_buttons = QDialogButtonBox(QDialogButtonBox.Cancel | QDialogButtonBox.Ok)
+		dialog_buttons.accepted.connect(self.accept)
+		dialog_buttons.rejected.connect(self.reject)
+		self.layout().addWidget(dialog_buttons)
+		self.fill_mirror_axi()
+
+	@property
+	def mirror_type(self):
+		return self._mirror_type
+
+	@property
+	def mirror_axis(self):
+		return self._sketch.get_edge_by_name(self._mirror_line_combo_box.currentText())
+
+	def on_edge_selected(self, edge):
+		self._mirror_line_combo_box.setCurrentText(edge.name)
+
+	def on_area_selected(self, area):
+		self._area_combo_box.setCurrentText(area.name)
+
+	def on_mirror_type_selection_changed(self):
+		index = self._mirror_type_combo_box.currentIndex()
+		if index == 0:
+			self._mirror_type = ProformerType.Mirror
+			self._mirror_line_combo_box.setEnabled(True)
+			self._mirror_line_combo_box.setCurrentIndex(0)
+		elif index == 1:
+			self._mirror_type = ProformerType.MirrorX
+			self._mirror_line_combo_box.setEnabled(False)
+			self._mirror_line_combo_box.setCurrentText("X axis")
+		elif index == 2:
+			self._mirror_type = ProformerType.MirrorY
+			self._mirror_line_combo_box.setEnabled(False)
+			self._mirror_line_combo_box.setCurrentText("Y axis")
+		else:
+			self._mirror_type = ProformerType.MirrorXY
+			self._mirror_line_combo_box.setEnabled(False)
+			self._mirror_line_combo_box.setCurrentText("XY axis")
+
+	def fill_mirror_axi(self):
+		self._mirror_line_combo_box.clear()
+		# self._mirror_line_combo_box.addItems(['X Axis', 'Y Axis'])
+		edge_names = []
+		sketch = self._sketch
+		self._sketch_view.set_sketch(sketch)
+		for edge in sketch.get_edges():
+			edge_names.append(edge.name)
+		edge_names.sort()
+		self._mirror_line_combo_box.addItems(edge_names)
 
 class CompositeAreaDialog(QDialog):
 	def __init__(self, parent, sketch):

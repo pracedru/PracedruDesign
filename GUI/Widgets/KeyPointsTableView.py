@@ -44,12 +44,13 @@ class KeyPointsTableView(QTableView):
 		self.selectionModel().clear()
 		for kp in selected_kps:
 			index = self._key_points_model.get_index_from_key_point(kp)
-			if first:
-				sel_type = QItemSelectionModel.ClearAndSelect
-				first = False
-			else:
-				sel_type = QItemSelectionModel.Select
-			self.selectionModel().select(index, sel_type)
+			if index is not None:
+				if first:
+					sel_type = QItemSelectionModel.ClearAndSelect
+					first = False
+				else:
+					sel_type = QItemSelectionModel.Select
+				self.selectionModel().select(index, sel_type)
 		self.update_hidden_rows()
 		self._throw_selection_changed_event = True
 

@@ -168,5 +168,7 @@ class KeyPointsModel(QAbstractTableModel):
 		return self._sketch.get_keypoint(self._rows[row])
 
 	def get_index_from_key_point(self, kp):
-		row = self._rows.index(kp.uid)
-		return self.index(row, 0)
+		if kp.uid in self._rows:
+			row = self._rows.index(kp.uid)
+			return self.index(row, 0)
+		return None

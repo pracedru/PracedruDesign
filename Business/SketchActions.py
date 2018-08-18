@@ -204,8 +204,9 @@ def find_all_similar(doc, sketch, digits):
 
 
 def remove_key_points(doc, sketch, kps):
-	sketch.remove_key_points(kps)
-
+	for kp in kps:
+		kp.delete()
+	#sketch.remove_key_points(kps)
 
 def remove_areas(doc, sketch, areas):
 	sketch.remove_areas(areas)
@@ -216,7 +217,9 @@ def remove_edge(doc, sketch, edge):
 
 
 def remove_edges(doc, sketch, edges):
-	sketch.remove_edges(edges)
+	for edge in edges:
+		edge.delete()
+	#sketch.remove_edges(edges)
 
 
 def create_area(sketch, branch):

@@ -222,7 +222,8 @@ class Sketch(Geometry):
 
 	def create_fillet_edge(self, kp, radius_param):
 		fillet_edge = None
-		if kp.uid in self._key_points:
+
+		if kp in self.get_keypoints():
 			fillet_edge = Edge(self, EdgeType.FilletLineEdge)
 			fillet_edge.name = "Edge" + str(self.edge_naming_index)
 			fillet_edge.add_key_point(kp)
@@ -340,7 +341,10 @@ class Sketch(Geometry):
 		self.changed(ChangeEvent(self, ChangeEvent.ObjectChanged, event.sender))
 		if event.type == ChangeEvent.Deleted:
 			if event.sender.uid in self._key_points:
+				self.changed(ChangeEvent(self, ChangeEvent.BeforeObjectRemoved, event.sender))
 				self._key_points.pop(event.sender.uid)
+				self.changed(ChangeEvent(self, ChangeEvent.ObjectRemoved, event.sender))
+			event.object.remove_change_handler(self.on_kp_changed)
 
 	def on_text_changed(self, event):
 		self.changed(ChangeEvent(self, ChangeEvent.ObjectChanged, event.sender))

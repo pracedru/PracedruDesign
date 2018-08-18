@@ -37,6 +37,13 @@ class CalcTableModel(QAbstractTableModel):
 			cell = self._calc_table.get_cell(index.row(), index.column())
 			if cell is not None:
 				return formula_to_locale(cell.formula)
+		if role == Qt.TextAlignmentRole:
+			cell = self._calc_table.get_cell(index.row(), index.column())
+			if cell is not None:
+				if type(cell.value) is str:
+					return Qt.AlignLeft | Qt.AlignVCenter
+				else:
+					return Qt.AlignRight | Qt.AlignVCenter
 		return None
 
 	def headerData(self, p_int, orientation, role):

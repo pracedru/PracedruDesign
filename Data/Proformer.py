@@ -33,9 +33,9 @@ class Proformer(IdObject, Parameters):
 		self._result_kps = {}
 		self._result_edges = {}
 		self._result_areas = {}
-		self._lookup_kps = {}
-		self._lookup_edges = {}
-		self._lookup_areas = {}
+		self._lookups_kps = []
+		self._lookups_edges = []
+		self._lookups_areas = []
 		self._meta_data = {}
 		self._meta_data_parameters = {}
 
@@ -128,70 +128,149 @@ class Proformer(IdObject, Parameters):
 		self._result_kps = {}
 		self._result_edges = {}
 		self._result_areas = {}
-		self._lookup_kps = {}
-		self._lookup_edges = {}
-		self._lookup_areas = {}
+		self._lookups_kps = []
+		self._lookups_edges = []
+		self._lookups_areas = []
 		for parameter in self.get_all_parameters():
 			parameter.delete()
 
 	def update_kp(self, kp, event = None):
-		if self._type == ProformerType.MirrorX:
-			if event is None:
-				new_kp = self._lookup_kps[kp.uid]
-				new_kp.x = kp.x
-				new_kp.y = -kp.y
-				for vertext_instance_tuple in kp.instances:
-					new_kp.set_instance_x(vertext_instance_tuple[0], vertext_instance_tuple[1].x)
-					new_kp.set_instance_y(vertext_instance_tuple[0], -vertext_instance_tuple[1].y)
-			else:
-				instance = event.object['instance']
-				new_kp = self._lookup_kps[kp.uid]
-				new_kp.set_instance_x(instance, kp.get_instance_x(instance))
-				new_kp.set_instance_y(instance, -kp.get_instance_y(instance))
-		if self._type == ProformerType.MirrorY:
-			if event is None:
-				new_kp = self._lookup_kps[kp.uid]
-				new_kp.x = -kp.x
-				new_kp.y = kp.y
-				for vertext_instance_tuple in kp.instances:
-					new_kp.set_instance_x(vertext_instance_tuple[0], -vertext_instance_tuple[1].x)
-					new_kp.set_instance_y(vertext_instance_tuple[0], vertext_instance_tuple[1].y)
-			else:
-				instance = event.object['instance']
-				new_kp = self._lookup_kps[kp.uid]
-				new_kp.set_instance_x(instance, -kp.get_instance_x(instance))
-				new_kp.set_instance_y(instance, kp.get_instance_y(instance))
+		if event is not None:
+			if event.type == ChangeEvent.Deleted:
+				kp = event.object
+				kp.remove_change_handler(self.kp_changed)
+				if kp in self._kps:
+					self._kps.remove(kp)
+				for lookup_kps in self._lookups_kps:
+					if kp.uid in lookup_kps:
+						new_kp = lookup_kps[kp.uid]
+						self._sketch.changed(ChangeEvent(self._sketch, ChangeEvent.BeforeObjectRemoved, new_kp))
+						lookup_kps.pop(kp.uid)
+						if new_kp.uid in self._result_kps:
+							self._result_kps.pop(new_kp.uid)
+						new_kp.delete()
+						self._sketch.changed(ChangeEvent(self._sketch, ChangeEvent.ObjectRemoved, new_kp))
+				return
+		if self._type == ProformerType.MirrorX or self._type == ProformerType.MirrorY or self._type == ProformerType.Mirror:
+			self.update_kp_mirror(kp, event, 0)
+		elif self._type == ProformerType.MirrorXY:
+			self.update_kp_mirror(kp, event, 0)
+			self.update_kp_mirror(kp, event, 1)
+			self.update_kp_mirror(kp, event, 2)
 
+	def update_kp_mirror(self, kp, event, p_index):
+		if event is None:
+			new_kp = self._lookups_kps[p_index][kp.uid]
+			coord = self.get_coordinate(kp.x, kp.y, p_index)
+			new_kp.x = coord[0]
+			new_kp.y = coord[1]
+			for vertext_instance_tuple in kp.instances:
+				coord = self.get_coordinate(vertext_instance_tuple[1].x, vertext_instance_tuple[1].y, p_index)
+				new_kp.set_instance_x(vertext_instance_tuple[0], coord[0])
+				new_kp.set_instance_y(vertext_instance_tuple[0], coord[1])
+		else:
+			instance = event.object['instance']
+			new_kp = self._lookups_kps[p_index][kp.uid]
+			coord = self.get_coordinate(kp.get_instance_x(instance), kp.get_instance_y(instance), p_index)
+			new_kp.set_instance_x(instance, coord[0])
+			new_kp.set_instance_y(instance, coord[1])
+
+	def get_coordinate(self, x, y, p_index):
+		coord = [0.0, 0.0]
+		if self._type == ProformerType.MirrorX:
+			coord[0] = x
+			coord[1] = -y
+		elif self._type == ProformerType.MirrorY:
+			coord[0] = -x
+			coord[1] = y
+		elif self._type == ProformerType.MirrorXY:
+			if p_index == 0:
+				coord[0] = x
+				coord[1] = -y
+			elif p_index == 1:
+				coord[0] = -x
+				coord[1] = y
+			elif p_index == 2:
+				coord[0] = -x
+				coord[1] = -y
+		else:
+			# todo: line mirror needs implementation
+			coord[0] = x
+			coord[1] = y
+		return coord
 
 	def update_edge(self, edge, event=None):
-		pass
+		if event is None:
+			pass
+		else:
+			if event.type == ChangeEvent.Deleted:
+				edge.remove_change_handler(self.edge_changed)
+				if edge in self._edges:
+					self._edges.remove(edge)
+				for lookup_edges in self._lookups_edges:
+					if edge.uid in lookup_edges:
+						new_edge = lookup_edges[edge.uid]
+						self._sketch.changed(ChangeEvent(self._sketch, ChangeEvent.BeforeObjectRemoved, new_edge))
+						lookup_edges.pop(edge.uid)
+						if new_edge.uid in self._result_edges:
+							self._result_edges.pop(new_edge.uid)
+						new_edge.delete()
+						self._sketch.changed(ChangeEvent(self._sketch, ChangeEvent.ObjectRemoved, new_edge))
+				return
 
 	def update_area(self, area, event=None):
-		new_area = self._lookup_areas[area.uid]
-		new_area.name = area.name + self._type.name
-		new_area.brush_name = area.brush_name
-		new_area.brush_rotation = area.brush_rotation
+		if event is None:
+			pass
+		else:
+			if event.type == ChangeEvent.Deleted:
+				area.remove_change_handler(self.area_changed)
+				if area in self._areas:
+					self._areas.remove(area)
+				for lookup_areas in self._lookups_areas:
+					if area.uid in lookup_areas:
+						new_area = lookup_areas[area.uid]
+						self._sketch.changed(ChangeEvent(self._sketch, ChangeEvent.BeforeObjectRemoved, new_area))
+						lookup_areas.pop(area.uid)
+						if new_area.uid in self._result_areas:
+							self._result_areas.pop(new_area.uid)
+						new_area.delete()
+						self._sketch.changed(ChangeEvent(self._sketch, ChangeEvent.ObjectRemoved, new_area))
+				return
+		for lookup_areas in self._lookups_areas:
+			if area.uid in lookup_areas:
+				new_area = lookup_areas[area.uid]
+				new_area.name = area.name + self._type.name
+				new_area.brush_name = area.brush_name
+				new_area.brush_rotation = area.brush_rotation
 
 	def generate_kp(self, kp):
 		if self._type == ProformerType.MirrorX or self._type == ProformerType.MirrorY:
+			count = 1
+		if self._type == ProformerType.MirrorXY:
+			count = 3
+		for i in range(count):
 			kp.add_change_handler(self.kp_changed)
 			new_kp = KeyPoint(self._sketch)
 			self._sketch.changed(ChangeEvent(self._sketch, ChangeEvent.BeforeObjectAdded, new_kp))
-			new_kp._uid = kp.uid + "-" + self._type.name
+			new_kp._uid = kp.uid + "-" + self._type.name + str(i)
 			new_kp.editable = False
 			self._result_kps[new_kp.uid] = new_kp
-			self._lookup_kps[kp.uid] = new_kp
+			self._lookups_kps[i][kp.uid] = new_kp
 			self._sketch.changed(ChangeEvent(self._sketch, ChangeEvent.ObjectAdded, new_kp))
 
 	def generate_edge(self, edge):
 		if self._type == ProformerType.MirrorX or self._type == ProformerType.MirrorY:
+			count = 1
+		if self._type == ProformerType.MirrorXY:
+			count = 3
+		for i in range(count):
 			edge.add_change_handler(self.edge_changed)
 			new_edge = Edge(self._sketch, edge.type, edge.name+self._type.name)
 			self._sketch.changed(ChangeEvent(self._sketch, ChangeEvent.BeforeObjectAdded, new_edge))
-			new_edge._uid = edge.uid + "-" + self._type.name
+			new_edge._uid = edge.uid + "-" + self._type.name + str(i)
 			new_edge.style_name = edge.style_name
 			for kp in edge.get_keypoints():
-				new_edge.add_key_point(self._lookup_kps[kp.uid])
+				new_edge.add_key_point(self._lookups_kps[i][kp.uid])
 			if edge.type == EdgeType.FilletLineEdge:
 				r = edge.get_meta_data('r', None)
 				new_edge.set_meta_data('r', r)
@@ -199,36 +278,40 @@ class Proformer(IdObject, Parameters):
 				new_edge.set_meta_data_parameter('r', r_param)
 			new_edge.editable = False
 			self._result_edges[new_edge.uid] = new_edge
-			self._lookup_edges[edge.uid] = new_edge
+			self._lookups_edges[i][edge.uid] = new_edge
 			self._sketch.changed(ChangeEvent(self._sketch, ChangeEvent.ObjectAdded, new_edge))
 
 	def generate_area(self, area):
 		if self._type == ProformerType.MirrorX or self._type == ProformerType.MirrorY:
+			count = 1
+		if self._type == ProformerType.MirrorXY:
+			count = 3
+		for i in range(count):
 			if issubclass(type(area), CompositeArea):
 				area.add_change_handler(self.area_changed)
 				new_area = CompositeArea(self._sketch)
-				new_area._uid = area.uid + "-" + self._type.name
+				new_area._uid = area.uid + "-" + self._type.name + str(i)
 				self._sketch.changed(ChangeEvent(self._sketch, ChangeEvent.BeforeObjectAdded, new_area))
-				new_base_area = self._lookup_areas[area.base_area.uid]
+				new_base_area = self._lookups_areas[i][area.base_area.uid]
 				new_area.base_area = new_base_area
 				for subtracted_area in area.subtracted_areas:
-					new_subtracted_area = self._lookup_areas[subtracted_area.uid]
+					new_subtracted_area = self._lookups_areas[i][subtracted_area.uid]
 					new_area.add_subtract_area(new_subtracted_area)
 				new_area.brush_name = area.brush_name
 				new_area.name = area.name + self._type.name
 				self._result_areas[new_area.uid] = new_area
-				self._lookup_areas[area.uid] = new_area
+				self._lookups_areas[i][area.uid] = new_area
 			else:
 				area.add_change_handler(self.area_changed)
 				new_area = EdgeLoopArea(self._sketch)
-				new_area._uid = area.uid + "-" + self._type.name
+				new_area._uid = area.uid + "-" + self._type.name + str(i)
 				self._sketch.changed(ChangeEvent(self._sketch, ChangeEvent.BeforeObjectAdded, new_area))
 				for edge in area.get_edges():
-					new_edge = self._lookup_edges[edge.uid]
+					new_edge = self._lookups_edges[i][edge.uid]
 					new_area.add_edge(new_edge)
 				new_area.name = area.name + self._type.name
 				self._result_areas[new_area.uid] = new_area
-				self._lookup_areas[area.uid] = new_area
+				self._lookups_areas[i][area.uid] = new_area
 				new_area.brush_name = area.brush_name
 
 			self._sketch.changed(ChangeEvent(self._sketch, ChangeEvent.ObjectAdded, new_area))
@@ -252,6 +335,17 @@ class Proformer(IdObject, Parameters):
 			for kp in edge.get_keypoints():
 				if kp not in self._kps:
 					self._kps.add(kp)
+
+		if self._type == ProformerType.MirrorX or self._type == ProformerType.MirrorY or self._type == ProformerType.Mirror:
+			self._lookups_kps.append({})
+			self._lookups_edges.append({})
+			self._lookups_areas.append({})
+		elif self._type == ProformerType.MirrorXY:
+			for i in range(3):
+				self._lookups_kps.append({})
+				self._lookups_edges.append({})
+				self._lookups_areas.append({})
+
 		for kp in self._kps:
 			self.generate_kp(kp)
 			self.update_kp(kp)
@@ -265,7 +359,6 @@ class Proformer(IdObject, Parameters):
 	def resolve(self):
 		self.clear_all()
 		self.generate_all()
-
 
 	def on_parameter_change(self, event: ChangeEvent):
 		param = event.sender
@@ -314,3 +407,4 @@ class Proformer(IdObject, Parameters):
 			param = self._sketch.get_parameter_by_uid(parameter_uid)
 			if param is not None:
 				param.add_change_handler(self.on_parameter_change)
+

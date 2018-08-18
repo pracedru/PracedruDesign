@@ -1,20 +1,20 @@
 from math import *
 
-from PyQt5.QtCore import QEvent, QPoint
-from PyQt5.QtGui import QColor, QLinearGradient, QTransform
+from PyQt5.QtCore import QEvent, QPoint, Qt, QPointF
+from PyQt5.QtGui import QColor, QLinearGradient, QTransform, QPen, QPainter, QBrush
 from PyQt5.QtWidgets import QDialog, QInputDialog, QMessageBox, QWidget
 
 from Business.SketchActions import *
 from Data.Style import BrushType
 
-from Data.Vertex import Vertex
 from GUI.init import is_dark_theme
-from GUI.Widgets.Drawers import *
-from GUI.Widgets.SimpleDialogs import AddArcDialog
+from GUI.Widgets.Drawers import draw_text, draw_vertex, draw_kp, draw_area, draw_attribute, draw_edge, create_pens
+import GUI.Widgets.NewDrawers
 
 
 class SketchEditorViewWidget(QWidget):
 	def __init__(self, parent, document, main_window):
+
 		QWidget.__init__(self, parent)
 		self._main_window = main_window
 		self._states = main_window.get_states()
@@ -430,12 +430,12 @@ class SketchEditorViewWidget(QWidget):
 					brush = QBrush(QColor(0, 0, 0), Qt.HorPattern)
 				transx = self._offset.x * scale + half_width
 				transy = -self._offset.y * scale + half_height
-				transform = QTransform().translate(transx, transy).scale(2, 2).rotate(area.brush_rotation)
+				transform = QTransform().translate(transx, transy).rotate(area.brush_rotation)
 				brush.setTransform(transform)
 				draw_area(area, qp, scale, self._offset, half_height, half_width, self._states.show_area_names or area in self._selected_areas, brush, None)
 
 	def draw_instances(self, event, qp):
-		pens = create_pens(self._doc, 6000)
+
 		if self._sketch is None:
 			return
 		half_width = self.width() / 2
@@ -444,7 +444,8 @@ class SketchEditorViewWidget(QWidget):
 		for sketch_instance in self._sketch.sketch_instances:
 			si = sketch_instance.sketch
 			os = (self._offset + sketch_instance.offset) / sketch_instance.scale
-			draw_sketch(qp, si, sketch_instance.scale * self._scale, 2, os, center, pens, {}, sketch_instance.uid)
+			pens = create_pens(self._doc, 6000 / (self._scale*sketch_instance.scale))
+			GUI.Widgets.NewDrawers.draw_sketch(qp, si, sketch_instance.scale * self._scale, 1, os, center, sketch_instance.rotation, pens, {}, sketch_instance.uid)
 
 	def update_status(self):
 		self._doc.set_status("")

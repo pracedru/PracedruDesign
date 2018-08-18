@@ -1,7 +1,9 @@
 from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import QDialog
 
 from Business.SketchActions import create_mirror
 from Data.Proformer import ProformerType
+from GUI.Widgets.SimpleDialogs import SketchMirrorDialog
 from GUI.init import plugin_initializers
 
 from GUI.Ribbon.RibbonButton import RibbonButton
@@ -74,7 +76,12 @@ class SketchPattern():
 			self._edges_to_proform.append(edge)
 		for area in view.selected_areas:
 			self._areas_to_proform.append(area)
-		create_mirror(sketch, ProformerType.MirrorX, self._kps_to_proform, self._edges_to_proform, self._areas_to_proform)
+
+		smd = SketchMirrorDialog(self._main_window, sketch)
+		value = smd.exec_()
+		if value == QDialog.Accepted:
+			mirror_type = smd.mirror_type
+			create_mirror(sketch, mirror_type, self._kps_to_proform, self._edges_to_proform, self._areas_to_proform)
 		view.on_escape()
 		#self._states.add_mirror = True
 

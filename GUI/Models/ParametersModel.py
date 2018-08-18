@@ -76,6 +76,22 @@ class ParametersModel(QAbstractTableModel):
 				data = param.get_instance_value(self._instance)
 			elif col == 3:
 				data = None  # param_item.hidden
+		elif int_role == Qt.TextAlignmentRole:
+			if col == 0:
+				return None
+			else:
+				param_item = self._parameters.get_parameter_item(row)
+				if param_item is not None:
+					if col == 1:
+						if type(param_item.formula) is str:
+							return Qt.AlignLeft | Qt.AlignVCenter
+						else:
+							return Qt.AlignRight | Qt.AlignVCenter
+					else:
+						if type(param_item.value) is str:
+							return Qt.AlignLeft | Qt.AlignVCenter
+						else:
+							return Qt.AlignRight | Qt.AlignVCenter
 		elif int_role == Qt.CheckStateRole:
 			param_item = self._parameters.get_parameter_item(row)
 			if col == 3:
