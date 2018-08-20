@@ -154,7 +154,8 @@ def draw_attribute(text, qp, instance=None, show_value=False, value=None):
 def draw_text(text, qp, instance=None):
 	key_point = text.key_point
 	factor = 10 / text.height  # Factor takes care of wierd bug in Qt with fonts that are smaller than 1 in height
-	font = QFont("Helvetica", text.height * factor)
+	font = QFont()
+	font.setPointSizeF(text.height * factor)
 	fm = QFontMetrics(font)
 	qp.setFont(font)
 	width = fm.width(text.value) / factor
