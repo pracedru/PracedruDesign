@@ -6,7 +6,7 @@ from reportlab.lib.pagesizes import letter, A0
 from reportlab.pdfgen import canvas
 
 from Business.Undo import DoObject
-from Data.Sketch import Sketch, Text
+from Data.Sketch import Sketch, Text, Alignment
 
 
 class CreateDrawingDoObject(DoObject):
@@ -114,35 +114,35 @@ def create_default_header(document):
 		pntchk = header.create_keypoint(13 * width / 16, height / 2 + rev_height / 2 + i * rev_height, 0)
 		pntapp = header.create_keypoint(15 * width / 16, height / 2 + rev_height / 2 + i * rev_height, 0)
 		if (i == 0):
-			header.create_text(pntrev, "Rev", valueTextHeight).horizontal_alignment = Text.Center
-			header.create_text(pntrtit, "Revision Title", valueTextHeight).horizontal_alignment = Text.Right
-			header.create_text(pntdt, "Date", valueTextHeight).horizontal_alignment = Text.Center
-			header.create_text(pntmk, "Maker", valueTextHeight).horizontal_alignment = Text.Center
-			header.create_text(pntchk, "Checker", valueTextHeight).horizontal_alignment = Text.Center
-			header.create_text(pntapp, "Approver", valueTextHeight).horizontal_alignment = Text.Center
+			header.create_text(pntrev, "Rev", valueTextHeight).horizontal_alignment = Alignment.Center
+			header.create_text(pntrtit, "Revision Title", valueTextHeight).horizontal_alignment = Alignment.Right
+			header.create_text(pntdt, "Date", valueTextHeight).horizontal_alignment = Alignment.Center
+			header.create_text(pntmk, "Maker", valueTextHeight).horizontal_alignment = Alignment.Center
+			header.create_text(pntchk, "Checker", valueTextHeight).horizontal_alignment = Alignment.Center
+			header.create_text(pntapp, "Approver", valueTextHeight).horizontal_alignment = Alignment.Center
 		else:
 			revtext = ""
 			if (i == 1):
 				revtext = "First issue"
-			header.create_attribute(pntrev, "Rev" + str(i), str(i - 1), valueTextHeight).horizontal_alignment = Text.Center
-			header.create_attribute(pntrtit, "RevText" + str(i), revtext, valueTextHeight).horizontal_alignment = Text.Right
-			header.create_attribute(pntdt, "RevDate" + str(i), "", valueTextHeight).horizontal_alignment = Text.Center
-			header.create_attribute(pntmk, "RevMaker" + str(i), "", valueTextHeight).horizontal_alignment = Text.Center
-			header.create_attribute(pntchk, "RevChecker" + str(i), "", valueTextHeight).horizontal_alignment = Text.Center
-			header.create_attribute(pntapp, "RevApprover" + str(i), "", valueTextHeight).horizontal_alignment = Text.Center
+			header.create_attribute(pntrev, "Rev" + str(i), str(i - 1), valueTextHeight).horizontal_alignment = Alignment.Center
+			header.create_attribute(pntrtit, "RevText" + str(i), revtext, valueTextHeight).horizontal_alignment = Alignment.Right
+			header.create_attribute(pntdt, "RevDate" + str(i), "", valueTextHeight).horizontal_alignment = Alignment.Center
+			header.create_attribute(pntmk, "RevMaker" + str(i), "", valueTextHeight).horizontal_alignment = Alignment.Center
+			header.create_attribute(pntchk, "RevChecker" + str(i), "", valueTextHeight).horizontal_alignment = Alignment.Center
+			header.create_attribute(pntapp, "RevApprover" + str(i), "", valueTextHeight).horizontal_alignment = Alignment.Center
 		header.create_line_edge(pnta, pntb)
 
 	header.create_attribute(header.create_keypoint(textDist / 2, textDist * 1, 0), "DocTitle3", "Document Title 3",
-													valueTextHeight).horizontal_alignment = Text.Right
+													valueTextHeight).horizontal_alignment = Alignment.Right
 	header.create_attribute(header.create_keypoint(textDist / 2, textDist * 2, 0), "DocTitle2", "Document Title 2",
-													valueTextHeight).horizontal_alignment = Text.Right
+													valueTextHeight).horizontal_alignment = Alignment.Right
 	header.create_attribute(header.create_keypoint(textDist / 2, textDist * 3, 0), "DocTitle1", "Document Title 1",
-													valueTextHeight).horizontal_alignment = Text.Right
+													valueTextHeight).horizontal_alignment = Alignment.Right
 
 	header.create_text(header.create_keypoint(width / 2 + textDist / 2, textDist * 1, 0), "Document number",
-										 valueTextHeight).horizontal_alignment = Text.Right
+										 valueTextHeight).horizontal_alignment = Alignment.Right
 	header.create_attribute(header.create_keypoint(width / 2 + textDist / 2, textDist * 3, 0), "DocNumber", "123456",
-													valueTextHeight * 1.5).horizontal_alignment = Text.Right
+													valueTextHeight * 1.5).horizontal_alignment = Alignment.Right
 
 	return header
 

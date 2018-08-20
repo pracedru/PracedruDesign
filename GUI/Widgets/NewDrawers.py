@@ -1,11 +1,11 @@
 from math import cos, sin, pi, tan
 
 from PyQt5.QtCore import Qt, QPointF, QRectF
-from PyQt5.QtGui import QPainter, QBrush, QColor, QPen, QPainterPath, QTransform
+from PyQt5.QtGui import QPainter, QBrush, QColor, QPen, QPainterPath, QTransform, QFont, QFontMetrics
 
 from Data.Areas import CompositeArea
 from Data.Edges import Edge, EdgeType
-from Data.Sketch import Attribute
+from Data.Sketch import Attribute, Text, Alignment
 from Data.Style import BrushType, EdgeLineType
 from Data.Vertex import Vertex
 
@@ -82,7 +82,7 @@ def draw_sketch(qp: QPainter, sketch, scale, annotation_scale, offset, view_cent
 				#transy = -offset.y * scale + center.y
 				transform = QTransform().scale(annotation_scale/scale, annotation_scale/scale).rotate(area.brush_rotation)
 				brush.setTransform(transform)
-				draw_area(area, qp, False, brush, instance)
+				draw_area(area, qp, False, brush, instance, annotation_scale)
 		for edge in edges:
 			draw_edge(edge, qp, pens, instance)
 		for text in sketch.get_texts():
@@ -106,12 +106,75 @@ def draw_sketch(qp: QPainter, sketch, scale, annotation_scale, offset, view_cent
 	qp.restore()
 
 
+def draw_kp(qp, key_point, scale, instance=None):
+	x1 = key_point.get_instance_x(instance)
+	y1 = -key_point.get_instance_y(instance)
+	qp.drawEllipse(QPointF(x1, y1), 4/scale, 4/scale)
+
+
+def draw_vertex(qp, vertex, scale):
+	x1 = vertex.x
+	y1 = -vertex.y
+	qp.drawEllipse(QPointF(x1, y1), 4/scale, 4/scale)
+
+
 def draw_attribute(text, qp, instance=None, show_value=False, value=None):
-	pass
+	key_point = text.key_point
+	factor = 10 / text.height
+	font = QFont("Helvetica", text.height * factor)
+	fm = QFontMetrics(font)
+	qp.setFont(font)
+	if show_value:
+		if value is None:
+			txt = text.value
+		else:
+			txt = value
+	else:
+		txt = "<" + text.name + ">"
+	width = fm.width(txt) / factor
+	qp.save()
+	x1 = key_point.get_instance_x(instance)
+	y1 = -key_point.get_instance_y(instance)
+	if text.horizontal_alignment == Alignment.Left:
+		x1 -= width
+	elif text.horizontal_alignment == Alignment.Center:
+		x1 -= width / 2
+	if text.vertical_alignment == Alignment.Top:
+		y1 -= text.height * 2
+	elif text.vertical_alignment == Alignment.Center:
+		y1 -= text.height
+	qp.translate(x1, y1)
+	qp.scale(1/factor, 1/factor)
+	qp.rotate(text.angle * 180 / pi)
+	qp.drawText(QRectF(0, 0, width * factor, text.height * 2 * factor), Qt.AlignHCenter | Qt.AlignVCenter, txt)
+	#qp.drawRect(QRectF(0, 0, width * factor, text.height * 2 * factor))
+	qp.restore()
 
 
 def draw_text(text, qp, instance=None):
-	pass
+	key_point = text.key_point
+	factor = 10 / text.height  # Factor takes care of wierd bug in Qt with fonts that are smaller than 1 in height
+	font = QFont("Helvetica", text.height * factor)
+	fm = QFontMetrics(font)
+	qp.setFont(font)
+	width = fm.width(text.value) / factor
+	qp.save()
+	x1 = key_point.get_instance_x(instance)
+	y1 = -key_point.get_instance_y(instance)
+	if text.horizontal_alignment == Alignment.Left:
+		x1 -= width
+	elif text.horizontal_alignment == Alignment.Center:
+		x1 -= width / 2
+	if text.vertical_alignment == Alignment.Top:
+		y1 -= text.height * 2
+	elif text.vertical_alignment == Alignment.Center:
+		y1 -= text.height
+	qp.translate(x1, y1)
+	qp.scale(1 / factor, 1 / factor)
+	qp.rotate(text.angle * 180 / pi)
+	qp.drawText(QRectF(0, 0, width * factor, text.height * 2 * factor), Qt.AlignHCenter | Qt.AlignVCenter, text.value)
+	# qp.drawRect(QRectF(0, 0, width*factor, text.height*2*factor))
+	qp.restore()
 
 
 def get_fillet_offset_distance(fillet_kp, r, edge1, edge2):
@@ -268,12 +331,15 @@ class Limits():
 		if other_limits.y_min < self.y_min:
 			self.y_min = other_limits.y_min
 
-def draw_area(area, qp, show_names, brush, instance):
-	first_kp = True
+	def mul(self, other):
+		self.x_max *= other
+		self.y_max *= other
+		self.x_min *= other
+		self.y_min *= other
+
+
+def draw_area(area, qp, show_names, brush, annotation_scale, instance):
 	limits = Limits()
-
-	counter = 0
-
 	if type(area) == CompositeArea:
 		path = get_area_path(area.base_area, limits, instance)
 		for subarea in area.subtracted_areas:
@@ -287,6 +353,10 @@ def draw_area(area, qp, show_names, brush, instance):
 		qp.fillPath(path, brush)
 
 	if show_names:
+		qp.save()
+		qp.scale(annotation_scale, annotation_scale)
+		limits.mul(1/annotation_scale)
+
 		qp.setPen(QPen(QColor(0, 0, 0), 2))
 		if limits.x_max - limits.x_min < (limits.y_max - limits.y_min) * 0.75:
 			qp.rotate(-90)
@@ -294,6 +364,7 @@ def draw_area(area, qp, show_names, brush, instance):
 			qp.rotate(90)
 		else:
 			qp.drawText(QRectF(limits.x_min, limits.y_min, limits.x_max - limits.x_min, limits.y_max - limits.y_min), Qt.AlignCenter, area.name)
+		qp.restore()
 
 
 def get_area_path(area, limits, instance=None):
@@ -401,12 +472,16 @@ def get_area_path(area, limits, instance=None):
 				elif edge.type == EdgeType.NurbsEdge:
 					draw_data = edge.get_draw_data(instance)
 					coords = draw_data['coords']
+
+					# Make sure the direction is correct.
 					f_kp = coords[0]
 					l_kp = coords[len(coords)-1]
-					first_dist = f_kp.distance(Vertex(x, -y))
-					last_dist = l_kp.distance(Vertex(x, -y))
+					n_kp = Vertex(x, -y)
+					first_dist = f_kp.distance(n_kp)
+					last_dist = l_kp.distance(n_kp)
 					if first_dist < last_dist:
 						coords = reversed(coords)
+
 					for coord in coords:
 						x2 = (coord.x)
 						y2 = -(coord.y)

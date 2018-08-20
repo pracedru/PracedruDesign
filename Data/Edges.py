@@ -559,10 +559,7 @@ class Edge(IdObject, NamedObservableObject):
 		self._key_points = data['key_points']
 		self._plane = Plane.deserialize(data.get('plane', None))
 		self._style = self._geometry.document.get_styles().get_edge_style(data.get('style', None))
-		for kp_uid in self._key_points:
-			kp = self._geometry.get_keypoint(kp_uid)
-			kp.add_change_handler(self.on_key_point_changed)
-			kp.add_edge(self)
+		self._geometry.document.add_late_init_object(self)
 		self._meta_data = data.get('meta_data')
 		self._meta_data_parameters = data.get('meta_data_parameters')
 		for parameter_uid in self._meta_data_parameters:
@@ -571,4 +568,9 @@ class Edge(IdObject, NamedObservableObject):
 				param.add_change_handler(self.on_parameter_change)
 		self._change_events_initalized = False
 
-				# self._meta_data_parameters.pop(parameter_uid)
+	def late_init(self):
+		for kp_uid in self._key_points:
+			kp = self._geometry.get_keypoint(kp_uid)
+			kp.add_change_handler(self.on_key_point_changed)
+			kp.add_edge(self)
+

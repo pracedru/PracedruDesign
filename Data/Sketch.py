@@ -92,7 +92,7 @@ class Sketch(Geometry):
 				kp = proformer.get_keypoint(uid)
 				if kp is not None:
 					return kp
-		return KeyPoint(self)
+		return None
 
 	def get_area(self, uid):
 		if uid in self._areas:
@@ -348,6 +348,12 @@ class Sketch(Geometry):
 
 	def on_text_changed(self, event):
 		self.changed(ChangeEvent(self, ChangeEvent.ObjectChanged, event.sender))
+		if event.type == ChangeEvent.Deleted:
+			if event.object.uid in self._texts:
+				self.changed(ChangeEvent(self, ChangeEvent.BeforeObjectRemoved, event.sender))
+				self._texts.pop(event.object.uid)
+				self.changed(ChangeEvent(self, ChangeEvent.ObjectRemoved, event.sender))
+			event.object.remove_change_handler(self.on_text_changed)
 
 	def on_edge_changed(self, event):
 		if event.type == ChangeEvent.Deleted:
@@ -461,17 +467,20 @@ class Sketch(Geometry):
 			self.edge_naming_index += 1
 
 
-class Text(IdObject, ObservableObject):
+class Alignment(Enum):
 	Bottom = 0
 	Top = 1
 	Center = 2
 	Left = 0
 	Right = 1
+
+
+class Text(IdObject, ObservableObject):
 	SimpleTextType = 0
 	AttributeType = 1
 
-	def __init__(self, sketch, key_point=None, value="", height=0.01, angle=0, vertical_alignment=Center,
-							 horizontal_alignment=Center):
+	def __init__(self, sketch, key_point=None, value="", height=0.01, angle=0, vertical_alignment=Alignment.Center,
+							 horizontal_alignment=Alignment.Center):
 		IdObject.__init__(self)
 		ObservableObject.__init__(self)
 		self._sketch = sketch
@@ -536,6 +545,9 @@ class Text(IdObject, ObservableObject):
 	def angle(self):
 		return self._angle
 
+	def delete(self):
+		self.changed(ChangeEvent(self, ChangeEvent.Deleted, self))
+
 	def serialize_json(self):
 		return {
 			'uid': IdObject.serialize_json(self),
@@ -543,8 +555,8 @@ class Text(IdObject, ObservableObject):
 			'value': self._value,
 			'height': self._height,
 			'angle': self._angle,
-			'valign': self._vertical_alignment,
-			'halign': self._horizontal_alignment,
+			'valign': self._vertical_alignment.value,
+			'halign': self._horizontal_alignment.value,
 			'type': self.text_type
 		}
 
@@ -561,8 +573,8 @@ class Text(IdObject, ObservableObject):
 		self._value = data['value']
 		self._height = data['height']
 		self._angle = data['angle']
-		self._vertical_alignment = data['valign']
-		self._horizontal_alignment = data['halign']
+		self._vertical_alignment = Alignment(data['valign'])
+		self._horizontal_alignment = Alignment(data['halign'])
 
 
 class Attribute(Text):

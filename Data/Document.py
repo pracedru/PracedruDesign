@@ -44,6 +44,7 @@ class Document(IdObject, Parameters):
 		self._persistent_status_progress = 100
 		self.is_modified = False
 		self._version = pracedru_design_version
+		self._late_initializing_object = []
 
 	def init_change_handlers(self):
 		# self.add_change_handler(self.on_parameters_changed)
@@ -65,6 +66,9 @@ class Document(IdObject, Parameters):
 	@property
 	def redo_stack(self):
 		return self._redo_stack
+
+	def add_late_init_object(self, obj):
+		self._late_initializing_object.append(obj)
 
 	def get_axes(self):
 		return self._axes
@@ -206,3 +210,6 @@ class Document(IdObject, Parameters):
 		self.name = data.get('name', "missing")
 		self.path = data.get('path', "missing")
 		self.init_change_handlers()
+		for late_init_obj in self._late_initializing_object:
+			late_init_obj.late_init()
+		self._late_initializing_object = []

@@ -91,37 +91,6 @@ class Feature(NamedObservableObject, IdObject):
 			self.changed(ChangeEvent(self, ChangeEvent.Deleted, self))
 
 	def get_objects(self):
-		if len(self._feature_objects_late_bind) > 0:
-			if self._feature_type == FeatureType.RevolveFeature:
-				area_uid = self._feature_objects_late_bind[0]
-				axis_uid = self._feature_objects_late_bind[1]
-				area_object = None
-				axis_object = None
-				for sketch in self._feature_parent.get_sketches():  # self._doc.get_geometries().get_sketches():
-					area_object = sketch.get_area(area_uid)
-					if area_object is not None:
-						break
-				if area_object is not None:
-					self.add_object(area_object)
-				if axis_uid in self._doc.get_axes():
-					axis_object = self._doc.get_axes()[axis_uid]
-				if axis_object is not None:
-					self.add_object(axis_object)
-
-			for feature_object_uid in self._feature_objects_late_bind:
-				feature_object = None
-				if self._feature_type == FeatureType.SketchFeature:
-					feature_object = self._feature_parent.get_sketch(
-						feature_object_uid)  # self._doc.get_geometries().get_geometry(feature_object_uid)
-				if self._feature_type == FeatureType.ExtrudeFeature:
-					for sketch in self._doc.get_geometries().get_sketches():
-						feature_object = sketch.get_area(feature_object_uid)
-						if feature_object is not None:
-							break
-				if feature_object is not None:
-					self.add_object(feature_object)
-					feature_object.add_change_handler(self.on_object_changed)
-			self._feature_objects_late_bind.clear()
 		feats = list(self._feature_objects)
 		return feats
 
@@ -222,3 +191,38 @@ class Feature(NamedObservableObject, IdObject):
 
 		for feature_object_uid in data.get('objects', []):
 			self._feature_objects_late_bind.append(feature_object_uid)
+
+		self._doc.add_late_init_object(self)
+
+	def late_init(self):
+		if len(self._feature_objects_late_bind) > 0:
+			if self._feature_type == FeatureType.RevolveFeature:
+				area_uid = self._feature_objects_late_bind[0]
+				axis_uid = self._feature_objects_late_bind[1]
+				area_object = None
+				axis_object = None
+				for sketch in self._feature_parent.get_sketches():  # self._doc.get_geometries().get_sketches():
+					area_object = sketch.get_area(area_uid)
+					if area_object is not None:
+						break
+				if area_object is not None:
+					self.add_object(area_object)
+				if axis_uid in self._doc.get_axes():
+					axis_object = self._doc.get_axes()[axis_uid]
+				if axis_object is not None:
+					self.add_object(axis_object)
+
+			for feature_object_uid in self._feature_objects_late_bind:
+				feature_object = None
+				if self._feature_type == FeatureType.SketchFeature:
+					feature_object = self._feature_parent.get_sketch(
+						feature_object_uid)  # self._doc.get_geometries().get_geometry(feature_object_uid)
+				if self._feature_type == FeatureType.ExtrudeFeature:
+					for sketch in self._doc.get_geometries().get_sketches():
+						feature_object = sketch.get_area(feature_object_uid)
+						if feature_object is not None:
+							break
+				if feature_object is not None:
+					self.add_object(feature_object)
+					feature_object.add_change_handler(self.on_object_changed)
+			self._feature_objects_late_bind.clear()

@@ -3,7 +3,7 @@ from PyQt5.QtGui import QPainter
 from PyQt5.QtWidgets import QWidget
 
 from Data.Vertex import Vertex
-from GUI.Widgets.Drawers import create_pens, draw_sketch, draw_area, draw_edge
+from GUI.Widgets.NewDrawers import create_pens, draw_sketch, draw_area, draw_edge
 
 
 class SketchViewWidget(QWidget):
@@ -145,19 +145,19 @@ class SketchViewWidget(QWidget):
 			scale_y = self.height() / sketch_height
 			scale = min(scale_x, scale_y) * 0.9
 			offset = Vertex(-limits[0] - sketch_width / 2, -limits[1] - sketch_height / 2)
-			draw_sketch(qp, self._sketch, scale, 1, offset, center, pens, {})
+			draw_sketch(qp, self._sketch, scale, 1, offset, center, 0, pens, {})
 			for edge in self._selected_edges:
-				draw_edge(edge, qp, scale, offset, center, pens_select_high)
+				draw_edge(edge, qp, pens_select_high, None)
 			for edge in self._selected_edges:
-				draw_edge(edge, qp, scale, offset, center, pens_select)
+				draw_edge(edge, qp, pens_select, None)
 			if self._edge_hover is not None:
-				draw_edge(self._edge_hover, qp, scale, offset, center, pens_hover)
+				draw_edge(self._edge_hover, qp, pens_hover, None)
 			if self._show_areas:
 				qp.setPen(pens['default'])
 				for area in self._sketch.get_areas():
-					draw_area(area, qp, scale, offset, half_height, half_width, True, QBrush(QColor(150, 150, 150, 80)))
+					draw_area(area, qp, True, QBrush(QColor(150, 150, 150, 80)), 1/scale, None)
 				for area in self._selected_areas:
-					draw_area(area, qp, scale, offset, half_height, half_width, True, QBrush(QColor(150, 150, 200, 150)))
+					draw_area(area, qp, True, QBrush(QColor(150, 150, 200, 150)), 1/scale, None)
 				if self._area_hover is not None:
-					draw_area(self._area_hover, qp, scale, offset, half_height, half_width, True, QBrush(QColor(150, 150, 200, 80)))
+					draw_area(self._area_hover, qp, True, QBrush(QColor(150, 150, 200, 80)), 1/scale, None)
 		qp.end()

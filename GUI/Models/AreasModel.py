@@ -74,7 +74,7 @@ class AreasModel(QAbstractTableModel):
 		areas = []
 		for row in rows:
 			areas.append(self._sketch.get_area(self._rows[row]))
-		remove_areas(self._doc, self._sketch, areas)
+		remove_areas(self._sketch, areas)
 
 	def on_areas_changed(self, event: ChangeEvent):
 		if event.type == event.BeforeObjectAdded:

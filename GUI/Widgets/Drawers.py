@@ -110,13 +110,13 @@ def draw_attribute(text, qp: QPainter, scale, offset, center, instance=None, sho
 	qp.save()
 	x1 = (key_point.get_instance_x(instance) + offset.x) * scale + center.x
 	y1 = -(key_point.get_instance_y(instance) + offset.y) * scale + center.y
-	if text.horizontal_alignment == Text.Left:
+	if text.horizontal_alignment == Alignment.Left:
 		x1 -= width * scale
-	elif text.horizontal_alignment == Text.Center:
+	elif text.horizontal_alignment == Alignment.Center:
 		x1 -= width * scale / 2
-	if text.vertical_alignment == Text.Top:
+	if text.vertical_alignment == Alignment.Top:
 		y1 -= text.height * 2 * scale
-	elif text.vertical_alignment == Text.Center:
+	elif text.vertical_alignment == Alignment.Center:
 		y1 -= text.height * 2 * scale / 2
 	qp.translate(x1, y1)
 	qp.scale(scale / factor, scale / factor)
@@ -135,13 +135,13 @@ def draw_text(text, qp: QPainter, scale, offset, center, instance=None):
 	qp.save()
 	x1 = (key_point.get_instance_x(instance) + offset.x) * scale + center.x
 	y1 = -(key_point.get_instance_y(instance) + offset.y) * scale + center.y
-	if text.horizontal_alignment == Text.Left:
+	if text.horizontal_alignment == Alignment.Left:
 		x1 -= width * scale
-	elif text.horizontal_alignment == Text.Center:
+	elif text.horizontal_alignment == Alignment.Center:
 		x1 -= width * scale / 2
-	if text.vertical_alignment == Text.Top:
+	if text.vertical_alignment == Alignment.Top:
 		y1 -= text.height * 2 * scale
-	elif text.vertical_alignment == Text.Center:
+	elif text.vertical_alignment == Alignment.Center:
 		y1 -= text.height * 2 * scale / 2
 	qp.translate(x1, y1)
 	qp.scale(scale / factor, scale / factor)

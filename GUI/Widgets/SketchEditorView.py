@@ -8,8 +8,8 @@ from Business.SketchActions import *
 from Data.Style import BrushType
 
 from GUI.init import is_dark_theme
-from GUI.Widgets.Drawers import draw_text, draw_vertex, draw_kp, draw_area, draw_attribute, draw_edge, create_pens
-import GUI.Widgets.NewDrawers
+from GUI.Widgets.NewDrawers import *
+
 
 
 class SketchEditorViewWidget(QWidget):
@@ -40,6 +40,14 @@ class SketchEditorViewWidget(QWidget):
 		self._mouse_move_event_handlers = []
 		self._escape_event_handlers = []
 		self.installEventFilter(self)
+		if self._is_dark_theme:
+			self._axis_pen = QPen(QColor(40, 50, 80), 1)
+			self._gradient_color_top = QColor(80, 80, 90)
+			self._gradient_color_bottom = QColor(50, 50, 60)
+		else:
+			self._axis_pen = QPen(QColor(140, 150, 180), 1)
+			self._gradient_color_top = QColor(220, 220, 230)
+			self._gradient_color_bottom = QColor(170, 170, 180)
 
 	@property
 	def sketch(self):
@@ -159,9 +167,9 @@ class SketchEditorViewWidget(QWidget):
 		txt = "Are you sure you want to delete these geometries?"
 		ret = QMessageBox.warning(self, "Delete geometries?", txt, QMessageBox.Yes | QMessageBox.Cancel)
 		if ret == QMessageBox.Yes:
-			pass
-			remove_key_points(self._doc, self._sketch, self._selected_key_points)
-			remove_edges(self._doc, self._sketch, self._selected_edges)
+			remove_key_points(self._sketch, self._selected_key_points)
+			remove_edges(self._sketch, self._selected_edges)
+			remove_texts(self._sketch, self._selected_texts)
 			self._selected_key_points.clear()
 			self._selected_edges.clear()
 
@@ -292,98 +300,95 @@ class SketchEditorViewWidget(QWidget):
 	def paintEvent(self, event):
 		qp = QPainter()
 		qp.begin(self)
+
+
 		p1 = QPoint(0, 0)
 		p2 = QPoint(self.width(), self.height())
 		p3 = QPoint(0, self.height())
 		gradient = QLinearGradient(p1, p3)
-		if self._is_dark_theme:
-			axis_pen = QPen(QColor(40, 50, 80), 1)
-			gradient.setColorAt(0, QColor(80, 80, 90))
-			gradient.setColorAt(1, QColor(50, 50, 60))
-		else:
-			axis_pen = QPen(QColor(140, 150, 180), 1)
-			gradient.setColorAt(0, QColor(220, 220, 230))
-			gradient.setColorAt(1, QColor(170, 170, 180))
+
+		gradient.setColorAt(0, self._gradient_color_top)
+		gradient.setColorAt(1, self._gradient_color_bottom)
+
 		qp.fillRect(event.rect(), gradient)
 		qp.setRenderHint(QPainter.HighQualityAntialiasing)
 
 		cx = self._offset.x * self._scale + self.width() / 2
 		cy = -self._offset.y * self._scale + self.height() / 2
 
-		qp.setPen(axis_pen)
+		qp.setPen(self._axis_pen)
 		if self.width() > cx > 0:
 			qp.drawLine(QPointF(cx, 0), QPointF(cx, self.height()))
 		if self.height() > cy > 0:
 			qp.drawLine(QPointF(0, cy), QPointF(self.width(), cy))
 
+		qp.save()
+		qp.translate(self.width()/2, self.height()/2)
+		qp.scale(self._scale, self._scale)
+		qp.translate(self._offset.x, -self._offset.y)
+
 		self.draw_areas(event, qp)
 		self.draw_edges(event, qp)
 		self.draw_texts(event, qp)
 		self.draw_instances(event, qp)
+		qp.restore()
 		qp.end()
 
 	def draw_texts(self, event, qp: QPainter):
 		if self._sketch is None:
 			return
-		sc = self._scale
-		half_width = self.width() / 2
-		half_height = self.height() / 2
-		center = Vertex(half_width, half_height)
 		normal_pen = QPen(QColor(0, 0, 0), 2)
 		kp_pen_hover = QPen(QColor(0, 120, 255), 3)
 		kp_pen_hl = QPen(QColor(180, 50, 0), 3)
 		qp.setPen(normal_pen)
 		for text in self._sketch.get_texts():
 			if type(text) is Text:
-				draw_text(text, qp, sc, self._offset, center)
+				draw_text(text, qp, 1/self._scale)
 			elif type(text) is Attribute:
-				draw_attribute(text, qp, sc, self._offset, center)
+				draw_attribute(text, qp, 1/self._scale)
 		if self._text_hover is not None:
 			qp.setPen(kp_pen_hover)
 			if type(self._text_hover) is Text:
-				draw_text(self._text_hover, qp, sc, self._offset, center)
+				draw_text(self._text_hover, qp, 1/self._scale)
 			elif type(self._text_hover) is Attribute:
-				draw_attribute(self._text_hover, qp, sc, self._offset, center)
+				draw_attribute(self._text_hover, qp, 1/self._scale)
 		qp.setPen(kp_pen_hl)
 		for text in self._selected_texts:
 			if type(text) is Text:
-				draw_text(text, qp, sc, self._offset, center)
+				draw_text(text, qp, 1/self._scale)
 			elif type(text) is Attribute:
-				draw_attribute(text, qp, sc, self._offset, center)
+				draw_attribute(text, qp, 1/self._scale)
 
 	def draw_edges(self, event, qp):
-		pens = create_pens(self._doc, 6000)
-		pens_hover = create_pens(self._doc, 6000, QColor(100, 100, 200), 1)
-		pens_select_high = create_pens(self._doc, 6000, QColor(255, 0, 0), 2)
-		pens_select = create_pens(self._doc, 6000, QColor(255, 255, 255))
+		pens = create_pens(self._doc, 6000/self._scale)
+		pens_hover = create_pens(self._doc, 6000/self._scale, QColor(100, 100, 200), 1)
+		pens_select_high = create_pens(self._doc, 6000/self._scale, QColor(255, 0, 0), 2)
+		pens_select = create_pens(self._doc, 6000/self._scale, QColor(255, 255, 255))
 		if self._is_dark_theme:
-			kp_pen = QPen(QColor(0, 200, 200), 1)
-			kp_pen_hl = QPen(QColor(190, 0, 0), 3)
-			kp_pen_hover = QPen(QColor(0, 60, 150), 3)
+			kp_pen = QPen(QColor(0, 200, 200), 1/self._scale)
+			kp_pen_hl = QPen(QColor(190, 0, 0), 3/self._scale)
+			kp_pen_hover = QPen(QColor(0, 60, 150), 3/self._scale)
 		else:
-			kp_pen = QPen(QColor(0, 100, 200), 1)
-			kp_pen_hl = QPen(QColor(180, 50, 0), 3)
-			kp_pen_hover = QPen(QColor(0, 120, 255), 3)
-		half_width = self.width() / 2
-		half_height = self.height() / 2
-		center = Vertex(half_width, half_height)
-		scale = self._scale
+			kp_pen = QPen(QColor(0, 100, 200), 1/self._scale)
+			kp_pen_hl = QPen(QColor(180, 50, 0), 3/self._scale)
+			kp_pen_hover = QPen(QColor(0, 120, 255), 3/self._scale)
+
 		if self._sketch is None:
 			return
 
 		edges = self._sketch.get_edges()
 
 		for edge in edges:
-			draw_edge(edge, qp, scale, self._offset, center, pens, None)
+			draw_edge(edge, qp, pens, None)
 
 		for edge in self._selected_edges:
-			draw_edge(edge, qp, scale, self._offset, center, pens_select_high, None)
+			draw_edge(edge, qp, pens_select_high, None)
 
 		for edge in self._selected_edges:
-			draw_edge(edge, qp, scale, self._offset, center, pens_select, None)
+			draw_edge(edge, qp, pens_select, None)
 
 		if self._edge_hover is not None:
-			draw_edge(self._edge_hover, qp, scale, self._offset, center, pens_hover, None)
+			draw_edge(self._edge_hover, qp, pens_hover, None)
 
 		qp.setPen(pens['default'])
 
@@ -396,25 +401,24 @@ class SketchEditorViewWidget(QWidget):
 				qp.setPen(kp_pen_hover)
 
 			if self._states.show_key_points or self._kp_hover is key_point or self._states.set_similar_x or self._states.set_similar_y:
-				draw_kp(qp, key_point, scale, self._offset, center)
+				draw_kp(qp, key_point, self._scale)
 
 		qp.setPen(kp_pen_hl)
 
 		for key_point in self._selected_key_points:
-			draw_kp(qp, key_point, scale, self._offset, center)
+			draw_kp(qp, key_point, self._scale)
 
 	def draw_areas(self, event, qp: QPainter):
 		if self._sketch is None:
 			return
-		# pens_select_high = create_pens(self._doc, 18000, QColor(255, 0, 0))
+
 		area_brush = QBrush(QColor(150, 150, 150, 80))
 		area_hover_brush = QBrush(QColor(150, 150, 200, 80))
 		area_selected_brush = QBrush(QColor(150, 150, 200, 120))
 		areas = self._sketch.get_areas()
-		scale = self._scale
+
 		qp.setPen(Qt.NoPen)
-		half_width = self.width() / 2
-		half_height = self.height() / 2
+
 		for area in areas:
 			brush = area_brush
 			if area in self._selected_areas:
@@ -422,30 +426,27 @@ class SketchEditorViewWidget(QWidget):
 			if area == self._area_hover:
 				brush = area_hover_brush
 
-			draw_area(area, qp, scale, self._offset, half_height, half_width, self._states.show_area_names or area in self._selected_areas, brush, None)
+			draw_area(area, qp, self._states.show_area_names or area in self._selected_areas, brush, 1/self._scale, None)
 			if area.brush is not None:
 				if area.brush.type == BrushType.Solid:
 					brush = QBrush(QColor(0, 0, 0))
 				else:
 					brush = QBrush(QColor(0, 0, 0), Qt.HorPattern)
-				transx = self._offset.x * scale + half_width
-				transy = -self._offset.y * scale + half_height
-				transform = QTransform().translate(transx, transy).rotate(area.brush_rotation)
+				transform = QTransform().scale(1 / self._scale, 1 / self._scale).rotate(area.brush_rotation)
 				brush.setTransform(transform)
-				draw_area(area, qp, scale, self._offset, half_height, half_width, self._states.show_area_names or area in self._selected_areas, brush, None)
+
+				draw_area(area, qp, self._states.show_area_names or area in self._selected_areas, brush, 1/self._scale, None)
 
 	def draw_instances(self, event, qp):
 
 		if self._sketch is None:
 			return
-		half_width = self.width() / 2
-		half_height = self.height() / 2
-		center = Vertex(half_width, half_height)
+
 		for sketch_instance in self._sketch.sketch_instances:
 			si = sketch_instance.sketch
-			os = (self._offset + sketch_instance.offset) / sketch_instance.scale
-			pens = create_pens(self._doc, 6000 / (self._scale*sketch_instance.scale))
-			GUI.Widgets.NewDrawers.draw_sketch(qp, si, sketch_instance.scale * self._scale, 1, os, center, sketch_instance.rotation, pens, {}, sketch_instance.uid)
+			os = sketch_instance.offset/sketch_instance.scale
+			pens = create_pens(self._doc, 6000/(self._scale*sketch_instance.scale))
+			draw_sketch(qp, si, sketch_instance.scale , 1/self._scale, os, Vertex(), sketch_instance.rotation, pens, {}, sketch_instance.uid)
 
 	def update_status(self):
 		self._doc.set_status("")
