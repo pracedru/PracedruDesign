@@ -96,7 +96,8 @@ def draw_sketch(qp: QPainter, sketch, scale, brush_scale, offset, center, pens, 
 def draw_attribute(text, qp: QPainter, scale, offset, center, instance=None, show_value=False, value=None):
 	key_point = text.key_point
 	factor = 10 / text.height
-	font = QFont("Helvetica", text.height * factor)
+	font = QFont()
+	font.setPointSizeF(text.height * factor)
 	fm = QFontMetrics(font)
 	qp.setFont(font)
 	if show_value:
@@ -128,7 +129,8 @@ def draw_attribute(text, qp: QPainter, scale, offset, center, instance=None, sho
 def draw_text(text, qp: QPainter, scale, offset, center, instance=None):
 	key_point = text.key_point
 	factor = 10 / text.height  # Factor takes care of wierd bug in Qt with fonts that are smaller than 1 in height
-	font = QFont("Helvetica", text.height * factor)
+	font = QFont()
+	font.setPointSizeF(text.height * factor)
 	fm = QFontMetrics(font)
 	qp.setFont(font)
 	width = fm.width(text.value) / factor

@@ -121,7 +121,8 @@ def draw_vertex(qp, vertex, scale):
 def draw_attribute(text, qp, instance=None, show_value=False, value=None):
 	key_point = text.key_point
 	factor = 10 / text.height
-	font = QFont("Helvetica", text.height * factor)
+	font = QFont()
+	font.setPointSizeF(text.height * factor)
 	fm = QFontMetrics(font)
 	qp.setFont(font)
 	if show_value:
