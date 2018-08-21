@@ -438,6 +438,11 @@ class SketchMirrorDialog(QDialog):
 		edge_names.sort()
 		self._mirror_line_combo_box.addItems(edge_names)
 
+class SketchPatternDialog(QDialog):
+	def __init__(self, parent, sketch):
+		QDialog.__init__(self, parent)
+		self._sketch = sketch
+
 class CompositeAreaDialog(QDialog):
 	def __init__(self, parent, sketch):
 		QDialog.__init__(self, parent)

@@ -82,7 +82,7 @@ def draw_sketch(qp: QPainter, sketch, scale, annotation_scale, offset, view_cent
 				#transy = -offset.y * scale + center.y
 				transform = QTransform().scale(annotation_scale/scale, annotation_scale/scale).rotate(area.brush_rotation)
 				brush.setTransform(transform)
-				draw_area(area, qp, False, brush, instance, annotation_scale)
+				draw_area(area, qp, False, brush, annotation_scale, instance)
 		for edge in edges:
 			draw_edge(edge, qp, pens, instance)
 		for text in sketch.get_texts():
@@ -369,7 +369,7 @@ def draw_area(area, qp, show_names, brush, annotation_scale, instance):
 		qp.restore()
 
 
-def get_area_path(area, limits, instance=None):
+def get_area_path(area, limits, instance):
 	path = QPainterPath()
 	first_kp = True
 	counter = 0

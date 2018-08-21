@@ -38,7 +38,7 @@ class ParametersModel(QAbstractTableModel):
 			input_handler(None)
 
 	def set_parameters(self, params):
-		self.layoutAboutToBeChanged.emit()
+
 		self._parameters.remove_change_handler(self.on_parameters_changed)
 		self._parameters = params
 		if issubclass(type(params), ParametersInstance):
@@ -46,7 +46,7 @@ class ParametersModel(QAbstractTableModel):
 		else:
 			self._instance = None
 		self._parameters.add_change_handler(self.on_parameters_changed)
-		self.layoutChanged.emit()
+		self.modelReset.emit()
 
 	def rowCount(self, model_index=None, *args, **kwargs):
 		return self._parameters.length_all

@@ -1,9 +1,9 @@
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QDialog
 
-from Business.SketchActions import create_mirror
+from Business.SketchActions import create_mirror, create_pattern
 from Data.Proformer import ProformerType
-from GUI.Widgets.SimpleDialogs import SketchMirrorDialog
+from GUI.Widgets.SimpleDialogs import SketchMirrorDialog, SketchPatternDialog
 from GUI.init import plugin_initializers
 
 from GUI.Ribbon.RibbonButton import RibbonButton
@@ -47,21 +47,32 @@ class SketchPattern():
 		edit_pane = sketch_tab.get_ribbon_pane("Edit")
 		edit_pane.add_ribbon_widget(RibbonButton(edit_pane, self._pattern_action, True))
 		edit_pane.add_ribbon_widget(RibbonButton(edit_pane, self._mirror_action, True))
-		self._pattern_action.setEnabled(False)
 
 	def on_pattern(self):
+		view = self._sketch_editor_view
 		self._sketch_editor_view.on_escape()
 		if self._sketch_editor_view.sketch is None:
 			return
-		self._sketch_editor_view.setCursor(Qt.OpenHandCursor)
-		self._states.select_edge = True
-		self._states.select_area = True
-		self._states.pattern_edges = True
-		if len(self._edges_to_scale) > 0:
-			self._main_window.document.set_status("Items to pattern", 0, True)
-		else:
-			self._main_window.document.set_status("Select edges to scale (press CTRL to multi select.)", 0, True)
-		self._main_window.update_ribbon_state()
+		doc = self._main_window.document
+		sketch = view.sketch
+		for kp in view.selected_key_points:
+			self._kps_to_proform.append(kp)
+		for edge in view.selected_edges:
+			self._edges_to_proform.append(edge)
+		for area in view.selected_areas:
+			self._areas_to_proform.append(area)
+		if len(self._areas_to_proform)==0 and len(self._edges_to_proform)==0 and len(self._kps_to_proform)==0:
+			view.on_escape()
+			doc.set_status("Please select geometry to pattern.")
+			return
+		spd = SketchPatternDialog(self._main_window, sketch)
+
+		value = spd.exec_()
+		if value == QDialog.Accepted:
+			count = spd.count
+			pattern_type = spd.pattern_type
+			create_pattern(sketch, pattern_type, self._kps_to_proform, self._edges_to_proform, self._areas_to_proform, count)
+		view.on_escape()
 
 	def on_mirror(self):
 		view = self._sketch_editor_view
@@ -76,6 +87,11 @@ class SketchPattern():
 			self._edges_to_proform.append(edge)
 		for area in view.selected_areas:
 			self._areas_to_proform.append(area)
+
+		if len(self._areas_to_proform)==0 and len(self._edges_to_proform)==0 and len(self._kps_to_proform)==0:
+			view.on_escape()
+			doc.set_status("Please select geometry to mirror.")
+			return
 
 		smd = SketchMirrorDialog(self._main_window, sketch)
 		value = smd.exec_()

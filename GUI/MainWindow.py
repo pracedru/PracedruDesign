@@ -167,6 +167,10 @@ class MainWindow(QMainWindow):
 	def part_editor_view(self):
 		return self._viewWidget.part_view
 
+	@property
+	def properties_view(self):
+		return self._properties_dock
+
 	def get_states(self) -> ActionStates:
 		return self._states
 

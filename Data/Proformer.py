@@ -27,6 +27,7 @@ class Proformer(IdObject, Parameters):
 		Parameters.__init__(self, name)
 		self._sketch = sketch
 		self._type = type
+		self._control_kps = []
 		self._kps = set()
 		self._edges = set()
 		self._areas = set()
@@ -51,6 +52,9 @@ class Proformer(IdObject, Parameters):
 		self.remove_change_handlers()
 		self.clear_all()
 		self.changed(ChangeEvent(self, ChangeEvent.Deleted, self))
+
+	def add_control_kp(self, kp):
+		self._control_kps.append(kp)
 
 	@property
 	def base_keypoints(self):
@@ -157,6 +161,13 @@ class Proformer(IdObject, Parameters):
 			self.update_kp_mirror(kp, event, 0)
 			self.update_kp_mirror(kp, event, 1)
 			self.update_kp_mirror(kp, event, 2)
+		else:
+			if self._type == ProformerType.Circular:
+				count = self._meta_data['count']
+			elif self._type == ProformerType.Rectangular:
+				counts = self._meta_data['count']
+				count = counts[0] * counts[1]
+
 
 	def update_kp_mirror(self, kp, event, p_index):
 		if event is None:
@@ -246,8 +257,13 @@ class Proformer(IdObject, Parameters):
 	def generate_kp(self, kp):
 		if self._type == ProformerType.MirrorX or self._type == ProformerType.MirrorY:
 			count = 1
-		if self._type == ProformerType.MirrorXY:
+		elif self._type == ProformerType.MirrorXY:
 			count = 3
+		elif self._type == ProformerType.Circular:
+			count = self._meta_data['count']
+		else:
+			counts = self._meta_data['count']
+			count = counts[0]*counts[1]
 		for i in range(count):
 			kp.add_change_handler(self.kp_changed)
 			new_kp = KeyPoint(self._sketch)
@@ -261,8 +277,13 @@ class Proformer(IdObject, Parameters):
 	def generate_edge(self, edge):
 		if self._type == ProformerType.MirrorX or self._type == ProformerType.MirrorY:
 			count = 1
-		if self._type == ProformerType.MirrorXY:
+		elif self._type == ProformerType.MirrorXY:
 			count = 3
+		elif self._type == ProformerType.Circular:
+			count = self._meta_data['count']
+		elif self._type == ProformerType.Rectangular :
+			counts = self._meta_data['count']
+			count = counts[0]*counts[1]
 		for i in range(count):
 			edge.add_change_handler(self.edge_changed)
 			new_edge = Edge(self._sketch, edge.type, edge.name+self._type.name)
@@ -284,8 +305,13 @@ class Proformer(IdObject, Parameters):
 	def generate_area(self, area):
 		if self._type == ProformerType.MirrorX or self._type == ProformerType.MirrorY:
 			count = 1
-		if self._type == ProformerType.MirrorXY:
+		elif self._type == ProformerType.MirrorXY:
 			count = 3
+		elif self._type == ProformerType.Circular:
+			count = self._meta_data['count']
+		elif self._type == ProformerType.Rectangular :
+			counts = self._meta_data['count']
+			count = counts[0]*counts[1]
 		for i in range(count):
 			if issubclass(type(area), CompositeArea):
 				area.add_change_handler(self.area_changed)

@@ -50,6 +50,7 @@ rows_by_type = {
 		['Horizontal Alignment', 'horizontal_alignment'],
 		['Vertical Alignment', 'vertical_alignment']],
 	"KeyPoint": [
+		['Name', 'name'],
 		['X Coordinate', 'x'],
 		['Y Coordinate', 'y'],
 		['Z Coordinate', 'z']],

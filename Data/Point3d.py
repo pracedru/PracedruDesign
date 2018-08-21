@@ -1,7 +1,7 @@
 from Data import Parameters
 from Data.Events import ChangeEvent
 from Data.Vertex import Vertex
-from Data.Objects import IdObject, ObservableObject
+from Data.Objects import IdObject, ObservableObject, NamedObservableObject
 
 __author__ = 'mamj'
 
@@ -33,10 +33,10 @@ class Point3d(Vertex, IdObject):
 		Vertex.deserialize_data(self, data['v'])
 
 
-class KeyPoint(Point3d, ObservableObject):
-	def __init__(self, parameters: Parameters, x=0.0, y=0.0, z=0.0):
+class KeyPoint(Point3d, NamedObservableObject):
+	def __init__(self, parameters: Parameters, x=0.0, y=0.0, z=0.0, name="Keypoint"):
 		Point3d.__init__(self, x, y, z)
-		ObservableObject.__init__(self)
+		NamedObservableObject.__init__(self, name)
 		self._component_parameters = [None, None, None]
 		self._instances = {}
 		self._parameters = parameters
@@ -217,6 +217,7 @@ class KeyPoint(Point3d, ObservableObject):
 		return \
 			{
 				'p3d': Point3d.serialize_json(self),
+				'no': NamedObservableObject.serialize_json(self),
 				'instances': self._instances,
 				'x_param_uid': self.get_param_uid(self._component_parameters[0]),
 				'y_param_uid': self.get_param_uid(self._component_parameters[1]),
@@ -231,6 +232,10 @@ class KeyPoint(Point3d, ObservableObject):
 
 	def deserialize_data(self, data):
 		Point3d.deserialize_data(self, data.get('p3d'))
+		if 'no' in data:
+			NamedObservableObject.deserialize_data(self, data['no'])
+		else:
+			self.name = "Keypoint"
 		for instance_tuple in data.get('instances', {}).items():
 			instance_uid = instance_tuple[0]
 			vertex = Vertex.deserialize(instance_tuple[1])

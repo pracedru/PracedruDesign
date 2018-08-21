@@ -67,6 +67,7 @@ class DrawingSelect():
 					else:
 						view.selected_views.clear()
 						view.selected_views.append(view.view_hover)
+					self._main_window.properties_view.set_item(view.view_hover)
 			else:
 				view.selected_views.clear()
 				view.update()

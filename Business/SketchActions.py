@@ -416,3 +416,14 @@ def create_mirror(sketch, type, kps, edges, areas):
 	proformer.base_areas = areas
 	proformer.resolve()
 	return proformer
+
+def create_pattern(sketch, pattern_type, kps, edges, areas, count, circular_kp=None):
+	proformer = sketch.create_proformer(pattern_type, "New Pattern")
+	proformer.base_keypoints = kps
+	proformer.base_edges = edges
+	proformer.base_areas = areas
+	proformer.add_meta_data("count", count)
+	if circular_kp is not None:
+		proformer.add_control_kp(circular_kp)
+	proformer.resolve()
+	return proformer

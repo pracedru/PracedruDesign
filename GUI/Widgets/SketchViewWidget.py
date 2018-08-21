@@ -129,10 +129,7 @@ class SketchViewWidget(QWidget):
 		qp = QPainter()
 		qp.begin(self)
 		qp.setRenderHint(QPainter.Antialiasing)
-		pens = create_pens(self._doc, 3000, QColor(0, 0, 0))
-		pens_hover = create_pens(self._doc, 12000, QColor(100, 100, 200))
-		pens_select_high = create_pens(self._doc, 18000, QColor(255, 0, 0))
-		pens_select = create_pens(self._doc, 6000, QColor(255, 255, 255))
+
 		qp.fillRect(event.rect(), QColor(255, 255, 255))
 		half_width = self.width() / 2
 		half_height = self.height() / 2
@@ -144,6 +141,12 @@ class SketchViewWidget(QWidget):
 			scale_x = self.width() / sketch_width
 			scale_y = self.height() / sketch_height
 			scale = min(scale_x, scale_y) * 0.9
+
+			pens = create_pens(self._doc, 3000/scale, QColor(0, 0, 0))
+			pens_hover = create_pens(self._doc, 12000/scale, QColor(100, 100, 200))
+			pens_select_high = create_pens(self._doc, 18000/scale, QColor(255, 0, 0))
+			pens_select = create_pens(self._doc, 6000/scale, QColor(255, 255, 255))
+
 			offset = Vertex(-limits[0] - sketch_width / 2, -limits[1] - sketch_height / 2)
 			draw_sketch(qp, self._sketch, scale, 1/scale, offset, center, 0, pens, {})
 			for edge in self._selected_edges:

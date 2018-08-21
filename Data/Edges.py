@@ -36,6 +36,7 @@ class Edge(IdObject, NamedObservableObject):
 		self.editable = True
 		self._draw_data = None
 		self._change_events_initalized = True
+		self._occluders = []
 
 	@property
 	def style(self):
@@ -64,6 +65,23 @@ class Edge(IdObject, NamedObservableObject):
 	@property
 	def plane(self):
 		return self._plane
+
+	@property
+	def occluded(self):
+	    return len(self._occluders>0)
+
+	def add_occluder(self, occluder):
+		was_occluded = self.occluded
+		self._occluders.append(occluder)
+		if was_occluded != self.occluded:
+			self.changed(ChangeEvent(self, ChangeEvent.HiddenChanged, self))
+
+	def remove_occluder(self, occluder):
+		if occluder in self._occluders:
+			was_occluded = self.occluded
+			self._occluders.remove(occluder)
+			if was_occluded != self.occluded:
+				self.changed(ChangeEvent(self, ChangeEvent.HiddenChanged, self))
 
 	def delete(self):
 		self.changed(ChangeEvent(self, ChangeEvent.Deleted, self))
