@@ -50,7 +50,6 @@ class SketchPattern():
 
 	def on_pattern(self):
 		view = self._sketch_editor_view
-		self._sketch_editor_view.on_escape()
 		if self._sketch_editor_view.sketch is None:
 			return
 		doc = self._main_window.document

@@ -369,10 +369,10 @@ class SketchMirrorDialog(QDialog):
 		self._mirror_line_combo_box = QComboBox()
 		self._mirror_type_combo_box.currentIndexChanged.connect(self.on_mirror_type_selection_changed)
 
-		self._mirror_type_combo_box.addItem(ProformerType.Mirror.name)
-		self._mirror_type_combo_box.addItem(ProformerType.MirrorX.name)
-		self._mirror_type_combo_box.addItem(ProformerType.MirrorY.name)
-		self._mirror_type_combo_box.addItem(ProformerType.MirrorXY.name)
+		self._mirror_type_combo_box.addItem(ProformerType.Mirror.name, ProformerType.Mirror.value)
+		self._mirror_type_combo_box.addItem(ProformerType.MirrorX.name, ProformerType.MirrorX.value)
+		self._mirror_type_combo_box.addItem(ProformerType.MirrorY.name, ProformerType.MirrorY.value)
+		self._mirror_type_combo_box.addItem(ProformerType.MirrorXY.name, ProformerType.MirrorXY.value)
 		self._mirror_type_combo_box.setEditable(True)
 		#self._mirror_line_combo_box.addItems(self._params)
 		self._mirror_line_combo_box.setEditable(True)
@@ -442,6 +442,46 @@ class SketchPatternDialog(QDialog):
 	def __init__(self, parent, sketch):
 		QDialog.__init__(self, parent)
 		self._sketch = sketch
+		self.setLayout(QVBoxLayout())
+
+		contents_widget = QWidget(self)
+		contents_layout = QGridLayout()
+		contents_widget.setLayout(contents_layout)
+		self._pattern_type = ProformerType.Circular
+
+		contents_layout.addWidget(QLabel("Pattern type"), 0, 0)
+		contents_layout.addWidget(QLabel("Center point"), 1, 0)
+
+		self._pattern_type_combo_box = QComboBox()
+		self._center_point_combo_box = QComboBox()
+		self._pattern_type_combo_box.currentIndexChanged.connect(self.on_pattern_type_selection_changed)
+
+		self._pattern_type_combo_box.addItem(ProformerType.Circular.name, ProformerType.Circular.value)
+		self._pattern_type_combo_box.addItem(ProformerType.Rectangular.name, ProformerType.Rectangular.value)
+		self._pattern_type_combo_box.addItem(ProformerType.Square.name, ProformerType.Square.value)
+		self._pattern_type_combo_box.addItem(ProformerType.Diamond.name, ProformerType.Diamond.value)
+		self._pattern_type_combo_box.setEditable(True)
+
+		self._center_point_combo_box.setEditable(True)
+
+		contents_layout.addWidget(self._pattern_type_combo_box, 0, 1)
+		contents_layout.addWidget(self._center_point_combo_box, 1, 1)
+
+		self.layout().addWidget(contents_widget)
+		self._sketch_view = SketchViewWidget(self, sketch, sketch.document)
+		self._sketch_view.set_change_listener(self)
+		self._sketch_view.edges_selectable = True
+
+		self.layout().addWidget(self._sketch_view)
+
+		dialog_buttons = QDialogButtonBox(QDialogButtonBox.Cancel | QDialogButtonBox.Ok)
+		dialog_buttons.accepted.connect(self.accept)
+		dialog_buttons.rejected.connect(self.reject)
+		self.layout().addWidget(dialog_buttons)
+
+	def on_pattern_type_selection_changed(self):
+		self._pattern_type = self._pattern_type_combo_box.current
+
 
 class CompositeAreaDialog(QDialog):
 	def __init__(self, parent, sketch):
