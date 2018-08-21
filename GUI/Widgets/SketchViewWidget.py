@@ -145,7 +145,7 @@ class SketchViewWidget(QWidget):
 			scale_y = self.height() / sketch_height
 			scale = min(scale_x, scale_y) * 0.9
 			offset = Vertex(-limits[0] - sketch_width / 2, -limits[1] - sketch_height / 2)
-			draw_sketch(qp, self._sketch, scale, 1, offset, center, 0, pens, {})
+			draw_sketch(qp, self._sketch, scale, 1/scale, offset, center, 0, pens, {})
 			for edge in self._selected_edges:
 				draw_edge(edge, qp, pens_select_high, None)
 			for edge in self._selected_edges:
