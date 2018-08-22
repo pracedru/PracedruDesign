@@ -15,8 +15,8 @@ from PyQt5.QtWidgets import QWidget
 from Business.DrawingActions import *
 from Data.Vertex import Vertex
 from GUI.init import is_dark_theme
-from GUI.Widgets.Drawers import draw_sketch, create_pens, draw_kp, draw_vertex
-import GUI.Widgets.NewDrawers
+from GUI.Widgets.NewDrawers import *
+import GUI.Widgets.Drawers
 
 class DrawingEditorViewWidget(QWidget):
 	def __init__(self, parent, document, main_window):
@@ -246,8 +246,7 @@ class DrawingEditorViewWidget(QWidget):
 	def draw_drawing(self, event, qp):
 		if self._drawing is not None:
 			sc = self._scale
-			border_pen = QPen(QtGui.QColor(0, 0, 0), 0.0005 * sc)
-			pens = create_pens(self._doc, sc)
+			pens = create_pens(self._doc, 1)
 			half_width = self.width() / 2
 			half_height = self.height() / 2
 			center = Vertex(half_width, half_height)
@@ -255,7 +254,7 @@ class DrawingEditorViewWidget(QWidget):
 			cy = -self._offset.y * sc + half_height
 			rect = QRectF(QPointF(cx, cy), QPointF(cx + self._drawing.size[0] * sc, cy - self._drawing.size[1] * sc))
 			qp.fillRect(rect, QColor(255, 255, 255))
-			self.draw_border(event, qp, cx, cy, border_pen)
+			self.draw_border(event, qp, cx, cy, pens)
 			self.draw_header(event, qp, cx, cy, center, pens)
 			self.draw_views(event, qp, center, pens)
 
@@ -267,13 +266,13 @@ class DrawingEditorViewWidget(QWidget):
 			pens = create_pens(self._doc, 1/view.scale)
 			offset = Vertex(self._offset.x / view.scale, self._offset.y / view.scale)
 			c = Vertex(center.x + view.offset.x * sc, center.y - view.offset.y * sc)
-			GUI.Widgets.NewDrawers.draw_sketch(qp, view.sketch, scale, 0.0002 * sc, offset, c, 0, pens, {})
+			draw_sketch(qp, view.sketch, scale, 0.0002 * sc, offset, c, 0, pens, {})
 		if self._view_hover is not None:
 			qp.setPen(self._kp_pen_hover)
-			draw_vertex(qp, self._view_hover.offset, self._scale, self._offset, center)
+			GUI.Widgets.Drawers.draw_vertex(qp, self._view_hover.offset, self._scale, self._offset, center)
 		for view in self._selected_views:
 			qp.setPen(self._kp_pen_hl)
-			draw_vertex(qp, view.offset, self._scale, self._offset, center)
+			GUI.Widgets.Drawers.draw_vertex(qp, view.offset, self._scale, self._offset, center)
 
 	def draw_header(self, event, qp, cx, cy, center, pens):
 		sketch = self._drawing.header_sketch
@@ -283,53 +282,13 @@ class DrawingEditorViewWidget(QWidget):
 		m = self._drawing.margins
 		sz = self._drawing.size
 		offset = Vertex(sz[0] - header_width - m[2] + self._offset.x, m[3] + self._offset.y)
-		draw_sketch(qp, sketch, self._scale, 0.0002 * self._scale, offset, center, pens, self._drawing.get_fields())
+		draw_sketch(qp, sketch, self._scale, 0.0002 * self._scale, offset, center,0 , pens, self._drawing.get_fields())
 
 	def draw_sketch_view(self, event, qp, cx, cy, contour_pen, hatch_pen, annotation_pen, sketch_view):
 		pass
 
-	def draw_border(self, event, qp, cx, cy, border_pen):
+	def draw_border(self, event, qp, cx, cy, pens):
 		sketch = self._drawing.border_sketch
-		pens = create_pens(self._doc, 1)
 		c = Vertex(cx, cy)
-		GUI.Widgets.NewDrawers.draw_sketch(qp, sketch, self._scale, 0.0002 * self._scale, Vertex(), c, 0, pens, {})
-
+		draw_sketch(qp, sketch, self._scale, 0.0002 * self._scale, Vertex(), c, 0, pens, {})
 		return
-
-		sc = self._scale
-		sz = self._drawing.size
-		shadow_pen = QPen(QtGui.QColor(150, 150, 150), 2)
-		rect = QRectF(QPointF(cx, cy), QPointF(cx + sz[0] * sc, cy - sz[1] * sc))
-		qp.setPen(shadow_pen)
-		qp.drawRect(rect)
-		qp.setPen(border_pen)
-		m = self._drawing.margins
-		rect = QRectF(QPointF(cx + m[0] * sc, cy - m[3] * sc), QPointF(cx + sz[0] * sc - m[2] * sc, cy - sz[1] * sc + m[1] * sc))
-		qp.drawRect(rect)
-		border_lines = []
-		border_width = sz[0] - m[0] - m[2]
-		max_len = 0.1
-		divisions = round(border_width / max_len)
-		length = border_width / divisions
-		for i in range(1, divisions):
-			pnt1 = QPointF(cx + m[0] * sc + i * length * sc, cy - m[3] * sc)
-			pnt2 = QPointF(cx + m[0] * sc + i * length * sc, cy - m[3] * sc / 2)
-			line = QLineF(pnt1, pnt2)
-			border_lines.append(line)
-			pnt1 = QPointF(cx + m[0] * sc + i * length * sc, cy - sz[1] * sc + m[1] * sc)
-			pnt2 = QPointF(cx + m[0] * sc + i * length * sc, cy - sz[1] * sc + m[1] * sc / 2)
-			line = QLineF(pnt1, pnt2)
-			border_lines.append(line)
-		border_height = sz[1] - m[1] - m[3]
-		divisions = round(border_height / max_len)
-		length = border_height / divisions
-		for i in range(1, divisions):
-			pnt1 = QPointF(cx + m[0] * sc, cy - m[3] * sc - i * length * sc)
-			pnt2 = QPointF(cx + m[0] * sc / 2, cy - m[3] * sc - i * length * sc)
-			line = QLineF(pnt1, pnt2)
-			border_lines.append(line)
-			pnt1 = QPointF(cx + sz[0] * sc - m[2] * sc, cy - m[3] * sc - i * length * sc)
-			pnt2 = QPointF(cx + sz[0] * sc - m[2] * sc / 2, cy - m[3] * sc - i * length * sc)
-			line = QLineF(pnt1, pnt2)
-			border_lines.append(line)
-		qp.drawLines(border_lines)

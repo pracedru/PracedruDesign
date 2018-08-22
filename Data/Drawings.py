@@ -251,7 +251,7 @@ class Drawing(Paper, Parameters):
 	def deserialize_data(self, data):
 		Paper.deserialize_data(self, data['paper'])
 		self._name = data.get('name', "No name")
-		self._border_sketch = data['border_sketch']
+
 		self._header_sketch = self._doc.get_geometries().get_geometry(data['header_sketch'])
 		for field_data_tuple in data.get('fields', {}).items():
 			field_data = field_data_tuple[1]
@@ -267,6 +267,7 @@ class Drawing(Paper, Parameters):
 				view = PartView.deserialize(view_data, self)
 				self._views.append(view)
 				view.add_change_handler(self.on_view_changed)
+		self.generate_border()
 
 
 class Field(NamedObservableObject):
