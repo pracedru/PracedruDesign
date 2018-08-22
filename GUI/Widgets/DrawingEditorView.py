@@ -189,9 +189,11 @@ class DrawingEditorViewWidget(QWidget):
 			mouse_move_x = 0
 			mouse_move_y = 0
 		self._mouse_position = position
+		dx = -mouse_move_x / self._scale
+		dy = mouse_move_y / self._scale
 		if self._states.middle_button_hold:
-			self._offset.x -= mouse_move_x / self._scale
-			self._offset.y += mouse_move_y / self._scale
+			self._offset.x += dx
+			self._offset.y += dy
 
 		if self._states.middle_button_hold:
 			self.update()
@@ -203,7 +205,7 @@ class DrawingEditorViewWidget(QWidget):
 		y = -((self._mouse_position.y() - half_height) / scale + self._offset.y)
 
 		for event_handler in self._mouse_move_event_handlers:
-			if event_handler(scale, x, y):
+			if event_handler(scale, x, y, dx, dy):
 				update_view = True
 
 		if update_view:
@@ -267,12 +269,25 @@ class DrawingEditorViewWidget(QWidget):
 			offset = Vertex(self._offset.x / view.scale, self._offset.y / view.scale)
 			c = Vertex(center.x + view.offset.x * sc, center.y - view.offset.y * sc)
 			draw_sketch(qp, view.sketch, scale, 0.0002 * sc, offset, c, 0, pens, {})
+
 		if self._view_hover is not None:
+			scale = sc * self._view_hover.scale
+			cx = self._offset.x * sc + self.width() / 2 + self._view_hover.offset.x * sc
+			cy = -self._offset.y * sc + self.height() / 2 - self._view_hover.offset.y * sc
 			qp.setPen(self._kp_pen_hover)
 			GUI.Widgets.Drawers.draw_vertex(qp, self._view_hover.offset, self._scale, self._offset, center)
+			l = self._view_hover.limits
+			rect = QRectF(QPointF(l[0]*scale + cx, -l[1]*scale + cy), QPointF(l[2]*scale + cx, -l[3]*scale + cy))
+			qp.drawRect(rect)
 		for view in self._selected_views:
+			scale = sc * view.scale
+			cx = self._offset.x * sc + self.width() / 2 + view.offset.x * sc
+			cy = -self._offset.y * sc + self.height() / 2 - view.offset.y * sc
 			qp.setPen(self._kp_pen_hl)
 			GUI.Widgets.Drawers.draw_vertex(qp, view.offset, self._scale, self._offset, center)
+			l = view.limits
+			rect = QRectF(QPointF(l[0] * scale + cx, -l[1] * scale + cy), QPointF(l[2] * scale + cx, -l[3] * scale + cy))
+			qp.drawRect(rect)
 
 	def draw_header(self, event, qp, cx, cy, center, pens):
 		sketch = self._drawing.header_sketch

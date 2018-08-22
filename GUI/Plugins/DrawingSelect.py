@@ -35,20 +35,25 @@ class DrawingSelect():
 		if q_mouse_event.button() == 1:
 			self._view_move = None
 
-	def on_mouse_move(self, scale, x, y):
+	def on_mouse_move(self, scale, x, y, dx, dy):
 		view = self._drawing_editor_view
 		drawing = view.drawing
 
 		update_view = self.clear_hover()
 
 		if self._states.left_button_hold:
-			if self._view_move is not None:
-				self._view_move.offset.x = x
-				self._view_move.offset.y = y
+			if self._states.multi_select:
+				for view_move in view.selected_views:
+					view_move.offset.x += dx
+					view_move.offset.y += dy
+			else:
+				if self._view_move is not None:
+					self._view_move.offset.x = x
+					self._view_move.offset.y = y
 
 		for dwg_view in drawing.get_views():
 			dist = dwg_view.offset.distance(Vertex(x, y))
-			if dist < 10 / scale:
+			if dist < 50 / scale:
 				view.view_hover = dwg_view
 				update_view = True
 

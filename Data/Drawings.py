@@ -321,6 +321,10 @@ class View(NamedObservableObject):
 		return self._view_type
 
 	@property
+	def limits(self):
+		return [0.0, 0.0, 0.0, 0.0]
+
+	@property
 	def scale(self):
 		return self._scale
 
@@ -377,6 +381,12 @@ class SketchView(View):
 	@property
 	def sketch(self):
 		return self._sketch
+
+	@property
+	def limits(self):
+		if self._sketch is not None:
+			return self._sketch.get_limits()
+		return super.limits
 
 	def delete(self):
 		self.changed(ChangeEvent(self, ChangeEvent.Deleted, self))

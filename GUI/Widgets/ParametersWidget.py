@@ -71,7 +71,10 @@ class ParametersWidget(QWidget):
 
 	def set_parameters(self, params):
 		self._ignore_type_standard_change = True
+		if self._parameters is not None:
+			self._parameters.remove_change_handler(self.on_parameters_changed)
 		self._parameters = params
+		self._parameters.add_change_handler(self.on_parameters_changed)
 		self.parameters_model.set_parameters(params)
 		self.parameters_table.resizeColumnsToContents()
 		self._standards_combobox.clear()
@@ -86,6 +89,10 @@ class ParametersWidget(QWidget):
 			self._type_combobox.setCurrentIndex(options.index(params.type))
 		self.update_hide_parameters()
 		self._ignore_type_standard_change = False
+
+	def on_parameters_changed(self, event):
+		if event.type == event.ObjectAdded or event.type == event.ObjectRemoved:
+			self.update_hide_parameters()
 
 	def on_add_type(self):
 		self._ignore_type_standard_change = True

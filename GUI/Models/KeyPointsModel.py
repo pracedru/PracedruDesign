@@ -108,7 +108,7 @@ class KeyPointsModel(QAbstractTableModel):
 		kps = []
 		for row in rows:
 			kps.append(self._sketch.get_keypoint(self._rows[row]))
-		remove_key_points(self._doc, self._sketch, kps)
+		remove_key_points(self._sketch, kps)
 
 	def on_sketch_changed(self, event: ChangeEvent):
 		if type(event.object) is KeyPoint:

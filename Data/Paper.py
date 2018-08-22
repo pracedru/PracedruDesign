@@ -36,7 +36,8 @@ class Paper(ObservableObject):
 	@size.setter
 	def size(self, value):
 		old_value = self._size
-		self._size = value
+		self._size[0] = value[0]
+		self._size[1] = value[1]
 		self.changed(ChangeEvent(self, ChangeEvent.ValueChanged,
 														 {
 															 "name": "size",
