@@ -96,10 +96,20 @@ class Drawing(Paper, Parameters):
 		Parameters.__init__(self, name, document.get_parameters())
 		self._doc = document
 		self._views = []
-		self._border_sketch = None
+		self._border_sketch = Sketch(self)
 		self._header_sketch = header
 		self._margins = [0.02, 0.02, 0.02, 0.02]
 		self._fields = {}
+		self.generate_border()
+		Paper.add_change_handler(self, self.on_paper_changed)
+
+	def on_paper_changed(self, event):
+		if event.object is not None:
+			if hasattr(event.object, '__iter__'):
+				if "name" in event.object:
+					if event.object['name'] == "margins" or event.object['name'] == "size":
+						print("paper changed")
+						self.generate_border()
 
 	@property
 	def document(self):
@@ -112,6 +122,61 @@ class Drawing(Paper, Parameters):
 	@property
 	def header(self):
 		return self._header_sketch.name
+
+	@property
+	def border_sketch(self):
+		return self._border_sketch
+
+	def generate_border(self):
+		alpha = "ABCDEFGHIJKLMNOP"
+		sketch = self._border_sketch
+		sketch.clear()
+		self._doc.styles.get_edge_style_by_name("border").thickness = 0.0005
+		m = self._margins
+		sz = self.size
+		border_width = sz[0] - m[0] - m[2]
+		max_len = 0.1
+		divisions = round(border_width / max_len)
+		length = border_width / divisions
+
+		pnt1 = sketch.create_keypoint(m[0], m[3], 0)
+		pnt2 = sketch.create_keypoint(sz[0] - m[2], m[3], 0)
+		pnt3 = sketch.create_keypoint(sz[0] - m[2], sz[1] - m[1], 0)
+		pnt4 = sketch.create_keypoint(m[0], sz[1] - m[1], 0)
+
+		sketch.create_line_edge(pnt1, pnt2).style_name = "border"
+		sketch.create_line_edge(pnt2, pnt3).style_name = "border"
+		sketch.create_line_edge(pnt3, pnt4).style_name = "border"
+		sketch.create_line_edge(pnt4, pnt1).style_name = "border"
+
+		for i in range(0, divisions):
+			tkp = sketch.create_keypoint(m[0] + (i + 0.5) * length , 2 * m[3] / 3, 0)
+			sketch.create_text(tkp, alpha[i], 0.005)
+			tkp = sketch.create_keypoint(m[0] + (i + 0.5) * length,sz[1] - 2 * m[1] / 3, 0)
+			sketch.create_text(tkp, alpha[i], 0.005)
+			if i > 0:
+				pnt1 = sketch.create_keypoint(m[0]  + i * length ,  m[3], 0)
+				pnt2 = sketch.create_keypoint(m[0] + i * length , m[3] / 2, 0)
+				sketch.create_line_edge(pnt1, pnt2).style_name = "border"
+				pnt1 = sketch.create_keypoint(m[0] + i * length , sz[1] - m[1], 0)
+				pnt2 = sketch.create_keypoint(m[0] + i * length , sz[1] - m[1] / 2, 0)
+				sketch.create_line_edge(pnt1, pnt2).style_name = "border"
+
+		border_height = sz[1] - m[1] - m[3]
+		divisions = round(border_height / max_len)
+		length = border_height / divisions
+		for i in range(0, divisions):
+			tkp = sketch.create_keypoint(2 * m[0] / 3, m[3] + (i + 0.5) * length, 0)
+			sketch.create_text(tkp, str(i+1), 0.005)
+			tkp = sketch.create_keypoint(sz[0] - 2 * m[2] / 3, m[3] + (i + 0.5) * length, 0)
+			sketch.create_text(tkp, str(i+1), 0.005)
+			if i > 0:
+				pnt1 = sketch.create_keypoint(m[0], m[3] + i * length, 0)
+				pnt2 = sketch.create_keypoint(m[0] / 2, m[3] + i * length, 0)
+				sketch.create_line_edge(pnt1, pnt2).style_name = "border"
+				pnt1 = sketch.create_keypoint(sz[0] - m[2], m[3] + i * length, 0)
+				pnt2 = sketch.create_keypoint(sz[0] - m[2] / 2, m[3] + i * length, 0)
+				sketch.create_line_edge(pnt1, pnt2).style_name = "border"
 
 	def create_sketch_view(self, sketch, scale, offset):
 		view = SketchView(self, sketch, scale, offset)

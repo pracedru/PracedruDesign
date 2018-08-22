@@ -73,7 +73,8 @@ class Document(IdObject, Parameters):
 	def get_axes(self):
 		return self._axes
 
-	def get_styles(self):
+	@property
+	def styles(self):
 		return self._styles
 
 	def get_materials_object(self):

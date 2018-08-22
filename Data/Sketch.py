@@ -29,6 +29,9 @@ class Sketch(Geometry):
 		edge.add_change_handler(self.on_edge_changed)
 
 	def clear(self):
+		kps = list(self._key_points.values())
+		for kp in kps:
+			kp.delete()
 		self._key_points.clear()
 		self._edges.clear()
 		self._areas.clear()
@@ -256,7 +259,10 @@ class Sketch(Geometry):
 		return nurbs_edge
 
 	def create_text(self, key_point, value, height):
-		text = Text(self, key_point, value, height)
+		text = Text(self)
+		text.key_point = key_point
+		text.value = value
+		text.height = height
 		self.changed(ChangeEvent(self, ChangeEvent.BeforeObjectAdded, text))
 		self._texts[text.uid] = text
 		self.changed(ChangeEvent(self, ChangeEvent.ObjectAdded, text))
@@ -264,7 +270,11 @@ class Sketch(Geometry):
 		return text
 
 	def create_attribute(self, kp, name, default_value, height):
-		attribute = Attribute(self, kp, name, default_value, height)
+		attribute = Attribute(self)
+		attribute.key_point = kp
+		attribute.name = name
+		attribute.value = default_value
+		attribute.height = height
 		self.changed(ChangeEvent(self, ChangeEvent.BeforeObjectAdded, attribute))
 		self._texts[attribute.uid] = attribute
 		self.changed(ChangeEvent(self, ChangeEvent.ObjectAdded, attribute))
@@ -479,17 +489,16 @@ class Text(IdObject, ObservableObject):
 	SimpleTextType = 0
 	AttributeType = 1
 
-	def __init__(self, sketch, key_point=None, value="", height=0.01, angle=0, vertical_alignment=Alignment.Center,
-							 horizontal_alignment=Alignment.Center):
+	def __init__(self, sketch):
 		IdObject.__init__(self)
 		ObservableObject.__init__(self)
 		self._sketch = sketch
-		self._vertical_alignment = vertical_alignment
-		self._horizontal_alignment = horizontal_alignment
-		self._value = value
-		self._height = height
-		self._angle = angle
-		self._key_point = key_point
+		self._vertical_alignment = Alignment.Center
+		self._horizontal_alignment = Alignment.Center
+		self._value = ""
+		self._height = 0.01
+		self._angle = 0
+		self._key_point = None
 
 	@property
 	def text_type(self):
@@ -502,6 +511,13 @@ class Text(IdObject, ObservableObject):
 	@property
 	def key_point(self):
 		return self._key_point
+
+	@key_point.setter
+	def key_point(self, value):
+		if self._key_point is not None:
+			self._key_point.remove_change_handler(self.on_kp_changed)
+		self._key_point = value
+		value.add_change_handler(self.on_kp_changed)
 
 	@property
 	def value(self):
@@ -545,6 +561,11 @@ class Text(IdObject, ObservableObject):
 	def angle(self):
 		return self._angle
 
+	def on_kp_changed(self, event):
+		if event.type == ChangeEvent.Deleted:
+			self.changed(ChangeEvent(self, ChangeEvent.Deleted, self))
+			event.object.remove_change_handler(self.on_kp_changed)
+
 	def delete(self):
 		self.changed(ChangeEvent(self, ChangeEvent.Deleted, self))
 
@@ -578,9 +599,10 @@ class Text(IdObject, ObservableObject):
 
 
 class Attribute(Text):
-	def __init__(self, sketch, key_point=None, name="Attribute name", default_value="Default value", height=0.01):
-		Text.__init__(self, sketch, key_point, default_value, height)
-		self._name = name
+	def __init__(self, sketch):
+		Text.__init__(self, sketch)
+		self._value = "Default value"
+		self._name = "Attribute name"
 
 	@property
 	def text_type(self):

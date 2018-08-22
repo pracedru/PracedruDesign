@@ -55,7 +55,7 @@ def create_pens(document, scale, color_override=None, fat=0):
 	"""
 	pens = {}
 	pens['default'] = QPen(QColor(0, 0, 0), 0.0002 * scale)
-	for style in document.get_styles().get_edge_styles():
+	for style in document.styles.get_edge_styles():
 		pens[style.uid] = get_pen_from_style(style, scale, color_override, fat)
 	return pens
 

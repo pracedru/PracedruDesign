@@ -60,6 +60,8 @@ def create_default_header(document):
 	valueTextHeight = 0.003
 	textDist = valueTextHeight * 2
 	rev_height = 0.01
+	document.styles.get_edge_style_by_name("thin").thickness = 0.00018
+	document.styles.get_edge_style_by_name("border").thickness = 0.0005
 
 	captionTextHeight = 0.002
 	pnt1 = header.create_keypoint(0, 0, 0)

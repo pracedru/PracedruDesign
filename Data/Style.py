@@ -169,9 +169,9 @@ class EdgeStyle(NamedObservableObject, IdObject):
 
 	@thickness.setter
 	def thickness(self, value):
-		old_value = value
-		self._thickness = value
-		self.changed(ValueChangeEvent(self, 'thickness', old_value, value))
+		old_value = self._thickness
+		self._thickness = float(value)
+		self.changed(ValueChangeEvent(self, 'thickness', old_value, self._thickness))
 
 	@property
 	def line_type(self):

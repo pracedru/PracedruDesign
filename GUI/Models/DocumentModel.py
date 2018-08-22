@@ -44,12 +44,12 @@ class DocumentItemModel(QAbstractItemModel):
 
 	def populate(self):
 		glocal_params_item = DocumentModelItem(self._doc.get_parameters(), self, self._root_item, "Parameters")
-		styles_item = DocumentModelItem(self._doc.get_styles(), self, self._root_item, "Styles")
+		styles_item = DocumentModelItem(self._doc.styles, self, self._root_item, "Styles")
 		pens_item = DocumentModelItem(None, self, styles_item, "Pens")
 		brushes_item = DocumentModelItem(None, self, styles_item, "Brushes")
-		for style in self._doc.get_styles().get_edge_styles():
+		for style in self._doc.styles.get_edge_styles():
 			DocumentModelItem(style, self, pens_item)
-		for style in self._doc.get_styles().get_brushes():
+		for style in self._doc.styles.get_brushes():
 			DocumentModelItem(style, self, brushes_item)
 		for param_tuple in self._doc.get_parameters().get_all_parameters():
 			DocumentModelItem(param_tuple[1], self, glocal_params_item)

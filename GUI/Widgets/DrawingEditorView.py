@@ -289,6 +289,13 @@ class DrawingEditorViewWidget(QWidget):
 		pass
 
 	def draw_border(self, event, qp, cx, cy, border_pen):
+		sketch = self._drawing.border_sketch
+		pens = create_pens(self._doc, 1)
+		c = Vertex(cx, cy)
+		GUI.Widgets.NewDrawers.draw_sketch(qp, sketch, self._scale, 0.0002 * self._scale, Vertex(), c, 0, pens, {})
+
+		return
+
 		sc = self._scale
 		sz = self._drawing.size
 		shadow_pen = QPen(QtGui.QColor(150, 150, 150), 2)

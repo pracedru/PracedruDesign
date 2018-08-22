@@ -31,7 +31,7 @@ class Edge(IdObject, NamedObservableObject):
 		self._key_points = []
 		self._meta_data = {}
 		self._meta_data_parameters = {}
-		self._style = geometry.document.get_styles().get_edge_style_by_name('default')
+		self._style = geometry.document.styles.get_edge_style_by_name('default')
 		self._plane = plane
 		self.editable = True
 		self._draw_data = None
@@ -58,7 +58,7 @@ class Edge(IdObject, NamedObservableObject):
 		if value == "" or value is None or value == "No style":
 			self._style = None
 			return
-		styles = self._geometry.document.get_styles()
+		styles = self._geometry.document.styles
 		edge_style = styles.get_edge_style_by_name(value)
 		self._style = edge_style
 
@@ -576,7 +576,7 @@ class Edge(IdObject, NamedObservableObject):
 		self._type = EdgeType(data['type'])
 		self._key_points = data['key_points']
 		self._plane = Plane.deserialize(data.get('plane', None))
-		self._style = self._geometry.document.get_styles().get_edge_style(data.get('style', None))
+		self._style = self._geometry.document.styles.get_edge_style(data.get('style', None))
 		self._geometry.document.add_late_init_object(self)
 		self._meta_data = data.get('meta_data')
 		self._meta_data_parameters = data.get('meta_data_parameters')

@@ -54,7 +54,7 @@ class Area(IdObject, NamedObservableObject):
 			self._brush = None
 			self.changed(ChangeEvent(self, ChangeEvent.ValueChanged, {'name': 'brush_name'}))
 			return
-		styles = self._sketch.document.get_styles()
+		styles = self._sketch.document.styles
 		brush = styles.get_brush_by_name(value)
 		self._brush = brush
 		self.changed(ChangeEvent(self, ChangeEvent.ValueChanged, {'name': 'brush_name'}))
@@ -87,7 +87,7 @@ class Area(IdObject, NamedObservableObject):
 		IdObject.deserialize_data(self, data['uid'])
 		NamedObservableObject.deserialize_data(self, data.get('no', None))
 		brush_uid = data.get('brush')
-		self._brush = self._sketch.document.get_styles().get_brush(brush_uid)
+		self._brush = self._sketch.document.styles.get_brush(brush_uid)
 		self._brush_rotation = data.get("brush_rot", 50)
 
 
