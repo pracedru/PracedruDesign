@@ -466,26 +466,25 @@ class SketchEditorViewWidget(QWidget):
 		if self._sketch is None:
 			return
 
-		for sketch_instance in self._sketch.sketch_instances:
-			si = sketch_instance.sketch
-			os = sketch_instance.offset/sketch_instance.scale
-			pens = create_pens(self._doc, 6000/(self._scale*sketch_instance.scale))
+		for sketch_inst in self._sketch.sketch_instances:
+			si = sketch_inst.sketch
+			os = sketch_inst.offset/sketch_inst.scale
+			pens = create_pens(self._doc, 6000/(self._scale*sketch_inst.scale))
 
-			draw_sketch(qp, si, sketch_instance.scale , 1/self._scale, os, Vertex(), sketch_instance.rotation, pens, {}, sketch_instance.uid)
+			draw_sketch(qp, si, sketch_inst.scale , 1/self._scale, os, Vertex(), sketch_inst.rotation, pens, {}, sketch_inst.uid)
 
 		if self._instance_hover is not None:
-			sketch_instance = self._instance_hover
-			si = sketch_instance.sketch
-			os = sketch_instance.offset / sketch_instance.scale
-			hover_pens = create_pens(self._doc, 6000 / (self._scale * sketch_instance.scale), QColor(100, 100, 200), 1)
-			draw_sketch(qp, si, sketch_instance.scale, 1 / self._scale, os, Vertex(), sketch_instance.rotation, hover_pens, {}, sketch_instance.uid)
+			sketch_inst = self._instance_hover
+			si = sketch_inst.sketch
+			os = sketch_inst.offset / sketch_inst.scale
+			hover_pens = create_pens(self._doc, 6000 / (self._scale * sketch_inst.scale), QColor(100, 100, 200), 1)
+			draw_sketch(qp, si, sketch_inst.scale, 1 / self._scale, os, Vertex(), sketch_inst.rotation, hover_pens, {}, sketch_inst.uid)
 
-		for sketch_instance in self._selected_instances:
-			si = sketch_instance.sketch
-			os = sketch_instance.offset / sketch_instance.scale
-			hover_pens = create_pens(self._doc, 6000 / (self._scale * sketch_instance.scale), QColor(255, 0, 0), 2)
-			draw_sketch(qp, si, sketch_instance.scale, 1 / self._scale, os, Vertex(), sketch_instance.rotation, hover_pens, {},
-									sketch_instance.uid)
+		for sketch_inst in self._selected_instances:
+			si = sketch_inst.sketch
+			os = sketch_inst.offset / sketch_inst.scale
+			hover_pens = create_pens(self._doc, 6000 / (self._scale * sketch_inst.scale), QColor(255, 0, 0), 2)
+			draw_sketch(qp, si, sketch_inst.scale, 1 / self._scale, os, Vertex(), sketch_inst.rotation, hover_pens, {},sketch_inst.uid)
 
 	def update_status(self):
 		self._doc.set_status("")

@@ -277,7 +277,7 @@ class DocumentItemModel(QAbstractItemModel):
 					planes_item = parent_item.children()[0]
 					new_item = DocumentModelItem(object, self, planes_item)
 				elif object.feature_type == FeatureType.SketchFeature:
-					sketch = object.get_objects()[0]
+					sketch = object.get_sketches()[0]
 					new_item = self.populate_sketch(sketch, parent_item)
 				else:
 					new_item = DocumentModelItem(object, self, parent_item)

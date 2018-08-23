@@ -33,6 +33,22 @@ class Geometries(ObservableObject):
 			return self._geometries[uid]
 		return None
 
+	def get_edge(self, uid):
+		for geometry in self._geometries:
+			if type(geometry) is Sketch:
+				edge = geometry.get_edge(uid)
+				if edge is not None:
+					return edge
+		return None
+
+	def get_area(self, uid):
+		for geometry in self._geometries.values():
+			if type(geometry) is Sketch:
+				area = geometry.get_area(uid)
+				if area is not None:
+					return area
+		return None
+
 	def get_sketches(self):
 		sketches = []
 		for geometry in self._geometries.values():
@@ -89,3 +105,4 @@ class Geometries(ObservableObject):
 		#     child = self._geometries[child_id]
 		#     self.add_child(child)
 		#     geometry.add_change_handler(self.child_geometry_changed)
+

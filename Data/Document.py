@@ -116,6 +116,12 @@ class Document(IdObject, Parameters):
 	def get_sketch(self, uid):
 		return self._geometries.get_geometry(uid)
 
+	def get_edge(self, uid):
+		return self._geometries.get_edge(uid)
+
+	def get_area(self, uid):
+		return self._geometries.get_area(uid)
+
 	def on_geometries_changed(self, event: ChangeEvent):
 		self.changed(ChangeEvent(self, ChangeEvent.ObjectChanged, event.sender))
 

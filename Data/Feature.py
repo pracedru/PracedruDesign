@@ -33,12 +33,13 @@ class Feature(NamedObservableObject, IdObject):
 			raise TypeError("feature type must be FeatureType")
 		self._feature_type = feature_type
 		self._vertexes = {}
-		self._edges = []
+		self._edge_uids = []
 		self._order_items = []
-		self._features = []
-		self._features_late_bind = []
-		self._feature_objects = []
-		self._feature_objects_late_bind = []
+		self._feature_uids = []
+		self._area_uids = []
+		self._sketch_uids = []
+		self._axis_uids = []
+
 		self._operation_type = Feature.AddOperation
 		self.add_change_handler(self.on_value_changed)
 
@@ -81,19 +82,6 @@ class Feature(NamedObservableObject, IdObject):
 	def delete(self):
 		self.changed(ChangeEvent(self, ChangeEvent.Deleted, self))
 
-	def add_object(self, feature_object: ObservableObject):
-		feature_object.add_change_handler(self.on_object_changed)
-		self._feature_objects.append(feature_object)
-
-	def on_object_changed(self, event):
-		self.changed(ChangeEvent(self, ChangeEvent.ObjectChanged, event.sender))
-		if event.type == ChangeEvent.Deleted:
-			self.changed(ChangeEvent(self, ChangeEvent.Deleted, self))
-
-	def get_objects(self):
-		feats = list(self._feature_objects)
-		return feats
-
 	def add_vertex(self, key, vertex):
 		self._vertexes[key] = vertex
 
@@ -102,18 +90,50 @@ class Feature(NamedObservableObject, IdObject):
 			return self._vertexes[key]
 		return None
 
+	def add_axis(self, axis):
+		self._axis_uids.append(axis.uid)
+		axis.add_change_handler(self.on_axis_changed)
+
+	def add_edge(self, edge):
+		self._edge_uids.append(edge.uid)
+		edge.add_change_handler(self.on_edge_changed)
+
+	def add_area(self, area):
+		self._area_uids.append(area.uid)
+		area.add_change_handler(self.on_area_changed)
+
+	def add_sketch(self, sketch):
+		self._sketch_uids.append(sketch.uid)
+		sketch.add_change_handler(self.on_sketch_changed)
+
 	def add_feature(self, feature):
-		self._features.append(feature)
+		self._feature_uids.append(feature.uid)
 		feature.add_change_handler(self.on_feature_changed)
 
 	def get_features(self):
-		if len(self._features_late_bind) > 0:
-			for feature_uid in self._features_late_bind:
-				feature = self._feature_parent.get_feature(feature_uid)
-				self._features.append(feature)
-				feature.add_change_handler(self.on_feature_changed)
-			self._features_late_bind.clear()
-		return list(self._features)
+		features = []
+		for uid in self._feature_uids:
+			feature = self._feature_parent.get_feature(uid)
+			features.append(feature)
+		return features
+
+	def get_sketches(self):
+		sketches = []
+		for uid in self._sketch_uids:
+			sketches.append(self._feature_parent.get_sketch(uid))
+		return sketches
+
+	def get_areas(self):
+		areas = []
+		for uid in self._area_uids:
+			areas.append(self._feature_parent.get_area(uid))
+		return areas
+
+	def get_axes(self):
+		axes = []
+		for uid in self._axis_uids:
+			axes.append(self._feature_parent.document.get_axes()[uid])
+		return axes
 
 	def add_order_item(self, item):
 		self._order_items.append(item)
@@ -122,45 +142,38 @@ class Feature(NamedObservableObject, IdObject):
 	def feature_type(self):
 		return self._feature_type
 
+	def on_axis_changed(self, event):
+		self.changed(ChangeEvent(self, ChangeEvent.ObjectChanged, event.sender))
+
 	def on_edge_changed(self, event):
+		self.changed(ChangeEvent(self, ChangeEvent.ObjectChanged, event.sender))
+
+	def on_area_changed(self, event):
+		self.changed(ChangeEvent(self, ChangeEvent.ObjectChanged, event.sender))
+
+	def on_sketch_changed(self, event):
 		self.changed(ChangeEvent(self, ChangeEvent.ObjectChanged, event.sender))
 
 	def on_feature_changed(self, event):
 		if event.type == ChangeEvent.Deleted:
 			self.changed(ChangeEvent(self, ChangeEvent.BeforeObjectRemoved, event.sender))
-			self._features.remove(event.sender)
+			self._feature_uids.remove(event.sender.uid)
 			self.changed(ChangeEvent(self, ChangeEvent.ObjectRemoved, event.sender))
 			self.changed(ChangeEvent(self, ChangeEvent.Deleted, self))
 		else:
 			self.changed(ChangeEvent(self, ChangeEvent.ObjectChanged, event.sender))
 
-	def _get_edge_uids(self):
-		uids = []
-		for edge in self._edges:
-			uids.append(edge.uid)
-		return uids
-
-	def _get_feature_uids(self):
-		uids = []
-		for feature in self._features:
-			uids.append(feature.uid)
-		return uids
-
-	def _get_object_uids(self):
-		uids = []
-		for obj in self._feature_objects:
-			uids.append(obj.uid)
-		return uids
-
 	def serialize_json(self):
 		return {
 			'uid': IdObject.serialize_json(self),
 			'name': NamedObservableObject.serialize_json(self),
-			'edges': self._get_edge_uids(),
+			'edges': self._edge_uids,
+			'areas': self._area_uids,
+			'sketches': self._sketch_uids,
 			'vertexes': self._vertexes,
+			'axes': self._axis_uids,
 			'type': self._feature_type.value,
-			'features': self._get_feature_uids(),
-			'objects': self._get_object_uids(),
+			'features': self._feature_uids,
 			'order_items': self._order_items
 		}
 
@@ -181,48 +194,56 @@ class Feature(NamedObservableObject, IdObject):
 			vertex = Vertex.deserialize(vertex_data)
 			self._vertexes[vertex_data_tuple[0]] = vertex
 
-		for edges_uid in data.get('edges', []):
-			edge = self._doc.get_geometries.get_edge(edges_uid)
-			self._edges.append(edge)
-			edge.add_change_handler(self.on_edge_changed)
-
-		for feature_uid in data.get('features', []):
-			self._features_late_bind.append(feature_uid)
-
-		for feature_object_uid in data.get('objects', []):
-			self._feature_objects_late_bind.append(feature_object_uid)
+		self._edge_uids = data.get('edges', [])
+		self._area_uids = data.get('areas', [])
+		self._sketch_uids = data.get('sketches', [])
+		self._feature_uids = data.get('features', [])
+		self._axis_uids = data.get('axes', [])
 
 		self._doc.add_late_init_object(self)
 
 	def late_init(self):
-		if len(self._feature_objects_late_bind) > 0:
-			if self._feature_type == FeatureType.RevolveFeature:
-				area_uid = self._feature_objects_late_bind[0]
-				axis_uid = self._feature_objects_late_bind[1]
-				area_object = None
-				axis_object = None
-				for sketch in self._feature_parent.get_sketches():  # self._doc.get_geometries().get_sketches():
-					area_object = sketch.get_area(area_uid)
-					if area_object is not None:
-						break
-				if area_object is not None:
-					self.add_object(area_object)
-				if axis_uid in self._doc.get_axes():
-					axis_object = self._doc.get_axes()[axis_uid]
-				if axis_object is not None:
-					self.add_object(axis_object)
-
-			for feature_object_uid in self._feature_objects_late_bind:
-				feature_object = None
-				if self._feature_type == FeatureType.SketchFeature:
-					feature_object = self._feature_parent.get_sketch(
-						feature_object_uid)  # self._doc.get_geometries().get_geometry(feature_object_uid)
-				if self._feature_type == FeatureType.ExtrudeFeature:
-					for sketch in self._doc.get_geometries().get_sketches():
-						feature_object = sketch.get_area(feature_object_uid)
-						if feature_object is not None:
-							break
-				if feature_object is not None:
-					self.add_object(feature_object)
-					feature_object.add_change_handler(self.on_object_changed)
-			self._feature_objects_late_bind.clear()
+		for edges_uid in self._edge_uids:
+			edge = self._feature_parent.get_edge(edges_uid)
+			edge.add_change_handler(self.on_edge_changed)
+		for area_uid in self._area_uids:
+			area = self._feature_parent.get_area(area_uid)
+			area.add_change_handler(self.on_area_changed)
+		for sketch_uid in self._sketch_uids:
+			sketch = self._feature_parent.get_sketch(sketch_uid)
+			sketch.add_change_handler(self.on_sketch_changed)
+		for feature_uid in self._feature_uids:
+			feature = self._feature_parent.get_feature(feature_uid)
+			feature.add_change_handler(self.on_feature_changed)
+		return
+		# if len(self._feature_objects_late_bind) > 0:
+		# 	if self._feature_type == FeatureType.RevolveFeature:
+		# 		area_uid = self._feature_objects_late_bind[0]
+		# 		axis_uid = self._feature_objects_late_bind[1]
+		# 		area_object = None
+		# 		axis_object = None
+		# 		for sketch in self._feature_parent.get_sketches():  # self._doc.get_geometries().get_sketches():
+		# 			area_object = sketch.get_area(area_uid)
+		# 			if area_object is not None:
+		# 				break
+		# 		if area_object is not None:
+		# 			self.add_object(area_object)
+		# 		if axis_uid in self._doc.get_axes():
+		# 			axis_object = self._doc.get_axes()[axis_uid]
+		# 		if axis_object is not None:
+		# 			self.add_object(axis_object)
+		#
+		# 	for feature_object_uid in self._feature_objects_late_bind:
+		# 		feature_object = None
+		# 		if self._feature_type == FeatureType.SketchFeature:
+		# 			feature_object = self._feature_parent.get_sketch(
+		# 				feature_object_uid)  # self._doc.get_geometries().get_geometry(feature_object_uid)
+		# 		if self._feature_type == FeatureType.ExtrudeFeature or self._feature_type == FeatureType.RevolveFeature:
+		# 			for sketch in self._doc.get_geometries().get_sketches():
+		# 				feature_object = sketch.get_area(feature_object_uid)
+		# 				if feature_object is not None:
+		# 					break
+		# 		if feature_object is not None:
+		# 			self.add_object(feature_object)
+		# 			feature_object.add_change_handler(self.on_object_changed)
+		# 	self._feature_objects_late_bind.clear()

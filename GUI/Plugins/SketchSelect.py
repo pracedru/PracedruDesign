@@ -99,7 +99,7 @@ class SketchSelect():
 					update_view = True
 					break
 
-		if self._states.select_instance:
+		if self._states.select_instance and view.text_hover is None and view.edge_hover is None and view.kp_hover is None and view.area_hover is None:
 			for instance in sketch.sketch_instances:
 				if instance.inside(Vertex(x, y, 0)):
 					view.instance_hover = instance
@@ -175,6 +175,7 @@ class SketchSelect():
 				view.selected_texts = []
 			self._main_window.on_text_selection_changed_in_view(view.selected_texts)
 
+		#                             ****  Instance select  ****
 		if self._states.select_instance:
 			if view.instance_hover is not None:
 				if self._states.multi_select:

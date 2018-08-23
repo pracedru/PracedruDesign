@@ -121,7 +121,7 @@ class ExtrudeDialog(QDialog):
 		self._sketch_combo_box.currentIndexChanged.connect(self.on_sketch_selection_changed)
 		self.on_sketch_selection_changed()
 		if self.sketch_feature is not None:
-			sketch = self.sketch_feature.get_objects()[0]
+			sketch = self.sketch_feature.get_sketches()[0]
 			self._sketch_view.set_sketch(sketch)
 
 	def on_area_selected(self, area):
@@ -132,7 +132,7 @@ class ExtrudeDialog(QDialog):
 		areas = []
 		for sketch_feature in self._part.get_sketch_features():
 			if sketch_feature.name == self._sketch_combo_box.currentText():
-				sketch = sketch_feature.get_objects()[0]
+				sketch = sketch_feature.get_sketches()[0]
 				self._sketch_view.set_sketch(sketch)
 				for area in sketch.get_areas():
 					areas.append(area.name)
@@ -157,7 +157,7 @@ class ExtrudeDialog(QDialog):
 	def area(self):
 		for sketch_feature in self._part.get_sketch_features():
 			if sketch_feature.name == self._sketch_combo_box.currentText():
-				sketch = sketch_feature.get_objects()[0]
+				sketch = sketch_feature.get_sketches()[0]
 				for area in sketch.get_areas():
 					if area.name == self._area_combo_box.currentText():
 						return area
@@ -216,7 +216,7 @@ class RevolveDialog(QDialog):
 
 		self._sketch_combo_box.currentIndexChanged.connect(self.on_sketch_selection_changed)
 		self.on_sketch_selection_changed()
-		sketch = self.sketch_feature.get_objects()[0]
+		sketch = self.sketch_feature.get_sketches()[0]
 		self._sketch_view.show_areas = True
 		self._sketch_view.areas_selectable = True
 		self._sketch_view.edges_selectable = True
@@ -237,7 +237,7 @@ class RevolveDialog(QDialog):
 		edge_names = []
 		for sketch_feature in self._part.get_sketch_features():
 			if sketch_feature.name == self._sketch_combo_box.currentText():
-				sketch = sketch_feature.get_objects()[0]
+				sketch = sketch_feature.get_sketches()[0]
 				self._sketch_view.set_sketch(sketch)
 				for area in sketch.get_areas():
 					areas.append(area.name)
@@ -267,7 +267,7 @@ class RevolveDialog(QDialog):
 	def area(self):
 		for sketch_feature in self._part.get_sketch_features():
 			if sketch_feature.name == self._sketch_combo_box.currentText():
-				sketch = sketch_feature.get_objects()[0]
+				sketch = sketch_feature.get_sketches()[0]
 				for a in sketch.get_areas():
 					if a.name == self._area_combo_box.currentText():
 						return a
@@ -287,7 +287,7 @@ class RevolveDialog(QDialog):
 			else:
 				axis.direction.z = 1
 		else:
-			sketch = self.sketch_feature.get_objects()[0]
+			sketch = self.sketch_feature.get_sketches()[0]
 			edge = sketch.get_edge_by_name(name)
 			axis.set_edge_governor(edge, sketch)
 		return axis

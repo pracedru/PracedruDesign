@@ -70,7 +70,19 @@ class Part(Geometry):
 		return surfaces
 
 	def get_edges(self):
-		return self._edges.items()
+		return self._edges.values()
+
+	def get_edge(self, uid):
+		if uid in self._edges:
+			return self._edges[uid]
+		return self._parent.get_edge(uid)
+
+	def get_area(self, uid):
+		for sketch in self._sketches.values():
+			area = sketch.get_area(uid)
+			if area is not None:
+				return area
+		return self._parent.get_area(uid)
 
 	def get_texts(self):
 		return {}
@@ -126,7 +138,7 @@ class Part(Geometry):
 		name = self.get_new_unique_feature_name(sketch.name)
 		sketch_feature = Feature(self.document, self, FeatureType.SketchFeature, name)
 		sketch_feature.add_feature(plane_feature)
-		sketch_feature.add_object(sketch)
+		sketch_feature.add_sketch(sketch)
 		self._features[sketch_feature.uid] = sketch_feature
 		self._add_feature(sketch_feature)
 		sketch_feature.add_change_handler(self.on_sketch_feature_changed)
@@ -137,7 +149,7 @@ class Part(Geometry):
 		name = self.get_new_unique_feature_name(name)
 		extrude_feature = Feature(self.document, self, FeatureType.ExtrudeFeature, name)
 		extrude_feature.add_feature(sketch_feature)
-		extrude_feature.add_object(area)
+		extrude_feature.add_area(area)
 		extrude_feature.add_vertex('ex_ls', Vertex(length[0], length[1]))
 		self._features[extrude_feature.uid] = extrude_feature
 		self._add_feature(extrude_feature)
@@ -149,8 +161,8 @@ class Part(Geometry):
 		name = self.get_new_unique_feature_name(name)
 		revolve_feature = Feature(self.document, self, FeatureType.RevolveFeature, name)
 		revolve_feature.add_feature(sketch_feature)
-		revolve_feature.add_object(area)
-		revolve_feature.add_object(revolve_axis)
+		revolve_feature.add_area(area)
+		revolve_feature.add_axis(revolve_axis)
 		revolve_feature.add_vertex('ex_ls', Vertex(length[0], length[1]))
 		self._features[revolve_feature.uid] = revolve_feature
 		self._add_feature(revolve_feature)
@@ -199,13 +211,13 @@ class Part(Geometry):
 		surfaces = []
 		extrusion_lengths = feature.get_vertex('ex_ls')
 		sketch_feature = feature.get_features()[0]
-		sketch = sketch_feature.get_objects()[0]
+		sketch = sketch_feature.get_sketches()[0]
 		plane_feature = sketch_feature.get_features()[0]
 		p = plane_feature.get_vertex('p')
 		xd = plane_feature.get_vertex('xd')
 		yd = plane_feature.get_vertex('yd')
-		area = feature.get_objects()[0]
-		axis = feature.get_objects()[1]
+		area = feature.get_areas()[0]
+		axis = feature.get_axes()[0]
 		cp = np.cross(xd.xyz, yd.xyz)
 		n = cp / np.linalg.norm(cp)
 		pm = np.array([xd.xyz, yd.xyz, n]).transpose()
@@ -328,8 +340,8 @@ class Part(Geometry):
 		cp = np.cross(xd.xyz, yd.xyz)
 		n = cp / np.linalg.norm(cp)
 		pm = np.array([xd.xyz, yd.xyz, n]).transpose()
-		sketch = sketch_feature.get_objects()[0]
-		area = feature.get_objects()[0]
+		sketch = sketch_feature.get_sketches()[0]
+		area = feature.get_areas()[0]
 		p1 = p.xyz + n * extrusion_lengths.x
 		p2 = p.xyz + n * extrusion_lengths.y
 
@@ -417,7 +429,7 @@ class Part(Geometry):
 		cp = np.cross(xd.xyz, yd.xyz)
 		n = cp / np.linalg.norm(cp)
 		pm = np.array([xd.xyz, yd.xyz, n]).transpose()
-		sketch = sketch_feature.get_objects()[0]
+		sketch = sketch_feature.get_sketches()[0]
 		order_items = nurbs_surface_feature.get_order_items()
 		edges = []
 		for order_item in order_items:
@@ -457,17 +469,17 @@ class Part(Geometry):
 		self._update_needed = False
 
 	def get_sketch(self, uid):
-		if self._sketches:
+		if uid in self._sketches:
 			return self._sketches[uid]
-		return self.document.get_geometries().get_geometry(uid)
+		return self._parent.get_sketch(uid)
 
 	def get_sketches(self):
 		sketches = list(self._sketches.values())
-		sketches.extend(self.parent.get_sketches())
+		sketches.extend(self._parent.get_sketches())
 		return sketches
 
 	def get_sketch_by_name(self, name):
-		for item in self._sketches:
+		for item in self.get_sketches():
 			if item.name == name:
 				return item
 		return self.parent.get_sketch_by_name(name)
@@ -528,7 +540,7 @@ class Part(Geometry):
 			cp = np.cross(xd.xyz, yd.xyz)
 			n = cp / np.linalg.norm(cp)
 			pm = np.array([xd.xyz, yd.xyz, n]).transpose()
-			sketch = sketch_feature.get_objects()[0]
+			sketch = sketch_feature.get_sketches()[0]
 			for edge in sketch.get_edges():
 				draw_data = edge.get_draw_data()
 				if draw_data['type'] == 1:

@@ -46,8 +46,9 @@ def add_extrude_in_part(document, part: Part, sketch_feature, area, length):
 
 def create_add_sketch_to_part(part, plane_feature):
 	sketch = Sketch(part)
-	sketch_feature = part.create_sketch_feature(sketch, plane_feature)
 	part.add_sketch(sketch)
+	sketch_feature = part.create_sketch_feature(sketch, plane_feature)
+
 	part.document.undo_stack.append(PartCreateSketchDoObject(sketch, part))
 	return sketch_feature
 
