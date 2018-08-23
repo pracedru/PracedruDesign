@@ -31,11 +31,13 @@ class SketchEditorViewWidget(QWidget):
 		self._selected_key_points = []
 		self._selected_texts = []
 		self._selected_areas = []
-		self._kp_hover = None
+		self._selected_instances = []
 		self._kp_move = None
+		self._kp_hover = None
 		self._edge_hover = None
 		self._text_hover = None
 		self._area_hover = None
+		self._instance_hover = None
 		self._mouse_press_event_handlers = []
 		self._mouse_move_event_handlers = []
 		self._escape_event_handlers = []
@@ -78,6 +80,14 @@ class SketchEditorViewWidget(QWidget):
 		self._area_hover = value
 
 	@property
+	def instance_hover(self):
+		return self._instance_hover
+
+	@instance_hover.setter
+	def instance_hover(self, value):
+		self._instance_hover = value
+
+	@property
 	def text_hover(self):
 		return self._text_hover
 
@@ -92,6 +102,7 @@ class SketchEditorViewWidget(QWidget):
 	@selected_texts.setter
 	def selected_texts(self, value):
 		self._selected_texts = value
+		self.update()
 
 	@property
 	def selected_key_points(self):
@@ -100,6 +111,7 @@ class SketchEditorViewWidget(QWidget):
 	@selected_key_points.setter
 	def selected_key_points(self, value):
 		self._selected_key_points = value
+		self.update()
 
 	@property
 	def selected_edges(self):
@@ -108,6 +120,7 @@ class SketchEditorViewWidget(QWidget):
 	@selected_edges.setter
 	def selected_edges(self, value):
 		self._selected_edges = value
+		self.update()
 
 	@property
 	def selected_areas(self):
@@ -116,6 +129,17 @@ class SketchEditorViewWidget(QWidget):
 	@selected_areas.setter
 	def selected_areas(self, value):
 		self._selected_areas = value
+		self.update()
+
+	@property
+	def selected_instances(self):
+		return self._selected_instances
+
+	@selected_instances.setter
+	def selected_instances(self, value):
+		self._selected_instances = value
+		self.update()
+
 
 	def eventFilter(self, obj, event):
 		if event.type() == QEvent.KeyPress:
@@ -173,17 +197,17 @@ class SketchEditorViewWidget(QWidget):
 			self._selected_key_points.clear()
 			self._selected_edges.clear()
 
-	def set_selected_areas(self, selected_areas):
-		self._selected_areas = selected_areas
-		self.update()
-
-	def set_selected_key_points(self, selected_key_points):
-		self._selected_key_points = selected_key_points
-		self.update()
-
-	def set_selected_edges(self, selected_edges):
-		self._selected_edges = selected_edges
-		self.update()
+	# def set_selected_areas(self, selected_areas):
+	# 	self._selected_areas = selected_areas
+	# 	self.update()
+	#
+	# def set_selected_key_points(self, selected_key_points):
+	# 	self._selected_key_points = selected_key_points
+	# 	self.update()
+	#
+	# def set_selected_edges(self, selected_edges):
+	# 	self._selected_edges = selected_edges
+	# 	self.update()
 
 	def on_escape(self):
 		self._states.select_edge = True
@@ -446,7 +470,23 @@ class SketchEditorViewWidget(QWidget):
 			si = sketch_instance.sketch
 			os = sketch_instance.offset/sketch_instance.scale
 			pens = create_pens(self._doc, 6000/(self._scale*sketch_instance.scale))
+
 			draw_sketch(qp, si, sketch_instance.scale , 1/self._scale, os, Vertex(), sketch_instance.rotation, pens, {}, sketch_instance.uid)
+
+		if self._instance_hover is not None:
+			sketch_instance = self._instance_hover
+			si = sketch_instance.sketch
+			os = sketch_instance.offset / sketch_instance.scale
+			hover_pens = create_pens(self._doc, 6000 / (self._scale * sketch_instance.scale), QColor(100, 100, 200), 1)
+			draw_sketch(qp, si, sketch_instance.scale, 1 / self._scale, os, Vertex(), sketch_instance.rotation, hover_pens, {}, sketch_instance.uid)
+
+		for sketch_instance in self._selected_instances:
+			si = sketch_instance.sketch
+			os = sketch_instance.offset / sketch_instance.scale
+			hover_pens = create_pens(self._doc, 6000 / (self._scale * sketch_instance.scale), QColor(255, 0, 0), 2)
+			draw_sketch(qp, si, sketch_instance.scale, 1 / self._scale, os, Vertex(), sketch_instance.rotation, hover_pens, {},
+									sketch_instance.uid)
 
 	def update_status(self):
 		self._doc.set_status("")
+

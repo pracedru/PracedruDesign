@@ -314,6 +314,7 @@ class View(NamedObservableObject):
 		self._drawing = drawing
 		self._offset = offset
 		self._scale = float(scale)
+		self._rotation = 0.0
 		self._view_type = ViewType.SketchView
 
 	@property
@@ -355,11 +356,20 @@ class View(NamedObservableObject):
 	def offset_values(self):
 		return self._offset.xyz
 
+	@property
+	def rotation(self):
+		return self._rotation
+
+	@rotation.setter
+	def rotation(self, value):
+		self._rotation = float(value)
+
 	def serialize_json(self):
 		return {
 			'no': NamedObservableObject.serialize_json(self),
 			'scale': self._scale,
 			'offset': self._offset,
+			'rot': self._rotation,
 			'type': self._view_type.value
 		}
 
@@ -367,6 +377,7 @@ class View(NamedObservableObject):
 		NamedObservableObject.deserialize_data(self, data['no'])
 		self._scale = data['scale']
 		self._offset = Vertex.deserialize(data['offset'])
+		self._rotation = data.get('rot', 0.0)
 
 
 class SketchView(View):

@@ -90,11 +90,13 @@ rows_by_type = {
 	"SketchView": [
 		['Name', 'name'],
 		['Scale', 'scale_name'],
-		['Position', 'offset_values']],
+		['Position', 'offset_values'],
+		['Rotation', 'rotation']],
 	"PartView": [
 		['Name', 'name'],
 		['Scale', 'scale'],
-		['Position', 'offset_values']],
+		['Position', 'offset_values'],
+		['Rotation', 'rotation']],
 	"Parameter": [
 		['Name', 'name'],
 		['Value', 'value_view'],

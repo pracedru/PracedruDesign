@@ -22,6 +22,7 @@ class SketchSelect():
 		self._states.select_area = True
 		self._states.select_text = True
 		self._states.multi_select = False
+		self._states.select_instance = True
 		self.init_ribbon()
 
 	def init_ribbon(self):
@@ -33,10 +34,21 @@ class SketchSelect():
 		sketch = view.sketch
 		key_points = sketch.get_keypoints()
 
-		view.kp_hover = None
-		view.edge_hover = None
-		view.text_hover = None
-		view.area_hover = None
+		if view.kp_hover is not None:
+			view.kp_hover = None
+			update_view = True
+		if view.edge_hover is not None:
+			view.edge_hover = None
+			update_view = True
+		if view.text_hover is not None:
+			view.text_hover = None
+			update_view = True
+		if view.area_hover is not None:
+			view.area_hover = None
+			update_view = True
+		if view.instance_hover is not None:
+			view.instance_hover = None
+			update_view = True
 
 		#                             ****    Keypoint Hover    ****
 		if self._states.select_kp:
@@ -86,6 +98,12 @@ class SketchSelect():
 					view.text_hover = text
 					update_view = True
 					break
+
+		if self._states.select_instance:
+			for instance in sketch.sketch_instances:
+				if instance.inside(Vertex(x, y, 0)):
+					view.instance_hover = instance
+					update_view = True
 
 		return update_view
 
@@ -156,6 +174,16 @@ class SketchSelect():
 			else:
 				view.selected_texts = []
 			self._main_window.on_text_selection_changed_in_view(view.selected_texts)
+
+		if self._states.select_instance:
+			if view.instance_hover is not None:
+				if self._states.multi_select:
+					view.selected_instances.append(view.instance_hover)
+					view.update()
+				else:
+					view.selected_instances = [view.instance_hover]
+			else:
+				view.selected_instances = []
 
 	def on_escape(self):
 		view = self._sketch_editor_view

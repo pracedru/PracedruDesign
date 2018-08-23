@@ -702,6 +702,15 @@ class SketchInstance(ParametersInstance):
 	def scale(self, value):
 		self._scale = value
 
+	def inside(self, vertex):
+		delta = vertex - self._offset
+		angle = delta.angle - self._rotation
+
+		lim = self._sketch.get_limits()
+		if self._offset.distance(vertex)<abs(lim[2]-lim[0]):
+			return True
+		return False
+
 	def serialize_json(self):
 		return {
 			'uid': IdObject.serialize_json(self),

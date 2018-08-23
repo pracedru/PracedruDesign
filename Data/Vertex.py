@@ -8,8 +8,16 @@ class Vertex(object):
 	def __init__(self, x=0.0, y=0.0, z=0.0):
 		self.xyz = np.array([float(x), float(y), float(z)])
 
+	@property
+	def length(self):
+		return np.linalg.norm(self.xyz)
+
 	def distance(self, other):
 		return np.linalg.norm(self.xyz - other.xyz)
+
+	@property
+	def angle(self):
+		return Vertex().angle_between3d_p(self, Vertex(1.0))
 
 	def angle2d(self, other):
 		diff = other.xyz - self.xyz
@@ -33,6 +41,9 @@ class Vertex(object):
 			return Vertex(self.x * other, self.y * other, self.z * other)
 		else:
 			raise TypeError("Vertex can not be multiplied by: " + str(other))
+
+	def __sub__(self, other):
+		return Vertex(self.x-other.x, self.y-other.y, self.y-other.y)
 
 	def equals(self, other):
 		return self.x == other.x and self.y == other.y and self.z == other.z
