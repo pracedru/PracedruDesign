@@ -101,7 +101,8 @@ class SketchSelect():
 
 		if self._states.select_instance and view.text_hover is None and view.edge_hover is None and view.kp_hover is None and view.area_hover is None:
 			for instance in sketch.sketch_instances:
-				if instance.inside(Vertex(x, y, 0)):
+				#if instance.inside(Vertex(x, y, 0)):
+				if instance.offset.distance(Vertex(x,y)) < 100/view.scale:
 					view.instance_hover = instance
 					update_view = True
 
@@ -193,9 +194,19 @@ class SketchSelect():
 		self._states.select_kp = True
 		self._states.select_edge = True
 		self._states.select_area = True
+		self._states.select_text = True
+		self._states.select_instance = True
+		self._states.allow_move = True
 		view.selected_key_points.clear()
 		view.selected_edges.clear()
 		view.selected_areas.clear()
+		view.selected_instances.clear()
+		view.selected_texts.clear()
+		view.kp_hover = None
+		view.edge_hover = None
+		view.area_hover = None
+		view.text_hover = None
+		view.instance_hover = None
 
 	def update_ribbon_state(self):
 		pass

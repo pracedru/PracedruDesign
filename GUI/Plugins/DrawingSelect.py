@@ -1,4 +1,5 @@
 from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import QMessageBox
 
 from Data.Vertex import Vertex
 
@@ -15,6 +16,7 @@ class DrawingSelect():
 		self._drawing_editor_view.add_mouse_move_event_handler(self.on_mouse_move)
 		self._drawing_editor_view.add_mouse_release_event_handler(self.on_mouse_release)
 		self._drawing_editor_view.add_escape_event_handler(self.on_escape)
+		self._drawing_editor_view.add_delete_event_handler(self.on_delete)
 		self._states.select_view = True
 		self._states.multi_select = False
 		self._view_move = None
@@ -76,6 +78,14 @@ class DrawingSelect():
 			else:
 				view.selected_views.clear()
 				view.update()
+
+	def on_delete(self):
+		editor_view = self._drawing_editor_view
+		txt = "Are you sure you want to delete these geometries?"
+		ret = QMessageBox.warning(self._main_window, "Delete geometries?", txt, QMessageBox.Yes | QMessageBox.Cancel)
+		if ret == QMessageBox.Yes:
+			for view in editor_view.selected_views:
+				view.delete()
 
 	def on_escape(self):
 		view = self._drawing_editor_view

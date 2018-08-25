@@ -377,7 +377,7 @@ class Edge(IdObject, NamedObservableObject):
 			cy = kp.get_instance_y(instance)
 			cz = kp.get_instance_z(instance)
 			radius = self.get_meta_data("r", instance)
-			rect = [cx - radius, cy - 1 * radius, radius * 2, radius * 2]
+			rect = [cx - radius, cy + radius, radius * 2, radius * 2]
 			start_angle = self.get_meta_data("sa", instance)
 			end_angle = self.get_meta_data("ea", instance)
 			span = end_angle - start_angle
@@ -414,9 +414,9 @@ class Edge(IdObject, NamedObservableObject):
 					angle = edge1.angle(kp) + angle_between / 2
 				if dist < 0:
 					angle += pi
-				cx = (kp.get_instance_x(instance) + dist * cos(angle))
-				cy = -(kp.get_instance_y(instance) + dist * sin(angle))
-				rect = [cx - radius, cy - radius, radius * 2, radius * 2]
+				cx = kp.get_instance_x(instance) + dist * cos(angle)
+				cy = kp.get_instance_y(instance) + dist * sin(angle)
+				rect = [cx - radius, cy + radius, radius * 2, radius * 2]
 
 				if angle_between < 0:
 					if angle_larger:
@@ -446,7 +446,7 @@ class Edge(IdObject, NamedObservableObject):
 			cx = kp.get_instance_x(instance)
 			cy = kp.get_instance_y(instance)
 			radius = self.get_meta_data("r", instance)
-			rect = [cx - radius, cy - radius, radius * 2, radius * 2]
+			rect = [cx - radius, cy + radius, radius * 2, radius * 2]
 			edge_data["type"] = EdgeDrawDataType.Circle
 			edge_data["rect"] = rect
 			edge_data["r"] = radius

@@ -91,10 +91,14 @@ class SketchViewInstance:
 				span = draw_data["span"]
 				radius = draw_data["r"]
 				c = draw_data["c"]
-				rect = QRectF(rect[0], rect[1], rect[2], rect[3])
+				rect = QRectF(rect[0], -rect[1], rect[2], rect[3])
 				path.moveTo(c.x, -c.y)
 				path.arcMoveTo(rect, start_angle*180/pi)
 				path.arcTo(rect, start_angle*180/pi, span*180/pi)
+			elif draw_data['type'] == EdgeDrawDataType.Circle:
+				rect = draw_data["rect"]
+				rect = QRectF(rect[0], -rect[1], rect[2], rect[3])
+				path.addEllipse(rect)
 		for area in self._sketch.get_areas():
 			limits = Limits()
 			if type(area) == CompositeArea:
@@ -218,16 +222,13 @@ def get_area_path(area, limits, instance):
 					if sweep_length < 0:
 						sweep_length += 360
 
-					path.arcTo(cx - radius, cy - radius, radius * 2,radius * 2, start_angle,
-										 sweep_length)
+					path.arcTo(cx - radius, cy - radius, radius * 2,radius * 2, start_angle, sweep_length)
 				elif is_fillet_kp:
 					center_kp = Vertex(kp.get_instance_x(instance), kp.get_instance_y(instance), kp.get_instance_z(instance))
 					fillet_offset_x = fillet_dist * cos(angle)
 					fillet_offset_y = fillet_dist * sin(angle)
 					center_kp.x += fillet_offset_x
 					center_kp.y += fillet_offset_y
-
-					angle1 = kp_next.angle2d(kp)
 
 					angle_between = kp.angle_between(kp_prev, kp_next)
 					if angle_between < 0 or angle_between < pi:
@@ -237,8 +238,8 @@ def get_area_path(area, limits, instance):
 					center_kp.x += r * cos(angle_perp)
 					center_kp.y += r * sin(angle_perp)
 
-					cx = (center_kp.x)
-					cy = -(center_kp.y)
+					cx = center_kp.x
+					cy = -center_kp.y
 
 					if angle_between < 0 or angle_between < pi:
 						start_angle = (angle * 180 / pi) + 270
@@ -260,8 +261,8 @@ def get_area_path(area, limits, instance):
 						coords = reversed(coords)
 
 					for coord in coords:
-						x2 = (coord.x)
-						y2 = -(coord.y)
+						x2 = coord.x
+						y2 = -coord.y
 						path.lineTo(QPointF(x2, y2))
 
 				else:

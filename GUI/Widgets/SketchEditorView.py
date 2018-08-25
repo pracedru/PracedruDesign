@@ -52,6 +52,10 @@ class SketchEditorViewWidget(QWidget):
 			self._gradient_color_bottom = QColor(170, 170, 180)
 
 	@property
+	def scale(self):
+		return self._scale
+
+	@property
 	def sketch(self):
 		return self._sketch
 
@@ -197,23 +201,8 @@ class SketchEditorViewWidget(QWidget):
 			self._selected_key_points.clear()
 			self._selected_edges.clear()
 
-	# def set_selected_areas(self, selected_areas):
-	# 	self._selected_areas = selected_areas
-	# 	self.update()
-	#
-	# def set_selected_key_points(self, selected_key_points):
-	# 	self._selected_key_points = selected_key_points
-	# 	self.update()
-	#
-	# def set_selected_edges(self, selected_edges):
-	# 	self._selected_edges = selected_edges
-	# 	self.update()
-
 	def on_escape(self):
-		self._states.select_edge = True
-		self._states.allow_move = True
-		self._selected_key_points.clear()
-		self._selected_edges.clear()
+
 		self.setCursor(Qt.ArrowCursor)
 		self._doc.set_status("", 0, True)
 		for event_handler in self._escape_event_handlers:

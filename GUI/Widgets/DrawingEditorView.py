@@ -37,6 +37,7 @@ class DrawingEditorViewWidget(QWidget):
 		self._mouse_move_event_handlers = []
 		self._mouse_release_event_handlers = []
 		self._escape_event_handlers = []
+		self._delete_event_handlers = []
 		if self._is_dark_theme:
 			self._kp_pen = QPen(QColor(0, 200, 200), 1)
 			self._kp_pen_hl = QPen(QColor(190, 0, 0), 3)
@@ -80,6 +81,9 @@ class DrawingEditorViewWidget(QWidget):
 	def add_escape_event_handler(self, event_handler):
 		self._escape_event_handlers.append(event_handler)
 
+	def add_delete_event_handler(self, event_handler):
+		self._delete_event_handlers.append(event_handler)
+
 	def on_zoom_fit(self):
 		if self._drawing is None:
 			return
@@ -102,6 +106,11 @@ class DrawingEditorViewWidget(QWidget):
 
 	def on_add_field(self):
 		add_field_to_drawing(self._doc, self._drawing)
+
+	def on_delete(self):
+		for event_handler in self._delete_event_handlers:
+			event_handler()
+		self.update()
 
 	def on_escape(self):
 		self._states.add_part = False
