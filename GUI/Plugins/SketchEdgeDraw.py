@@ -244,6 +244,7 @@ class SketchLineDraw():
 		self._states.draw_spline_edge = False
 		self._states.draw_arc_edge = False
 		self._states.draw_circle_edge = False
+		self._last_kp = None
 
 	def update_ribbon_state(self):
 		self._add_line_action.setChecked(self._states.draw_line_edge)

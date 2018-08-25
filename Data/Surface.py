@@ -375,7 +375,7 @@ class Surface(ObservableObject, IdObject):
 					ea = sa
 					sa = dum
 				span = ea - sa
-				divisions = int(abs(span * 10))
+				divisions = max(int(abs(span * 10)),1)
 				increment = span / divisions
 				for i in range(1, divisions + 1):
 					x = cos(sa + increment * i) * r

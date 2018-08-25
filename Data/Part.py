@@ -291,8 +291,8 @@ class Part(Geometry):
 			elif edge.type == EdgeType.ArcEdge or edge.type == EdgeType.FilletLineEdge:
 				c = draw_data['c'].xyz - local_axis_origo.xyz
 				r = draw_data['r']
-				sa = draw_data['sa'] * pi / (180 * 16)
-				sp = draw_data['span'] * pi / (180 * 16)
+				sa = draw_data['sa']
+				sp = draw_data['span']
 				gc = global_axis_origo + plane1.get_global_xyz_array(c)
 				kp = self.create_keypoint(gc[0], gc[1], gc[2])
 				edge1 = self.create_arc_edge(kp, r, sa, sp, plane1)
@@ -392,8 +392,8 @@ class Part(Geometry):
 				plane = Plane(xd, yd)
 				c = draw_data['c']
 				r = draw_data['r']
-				sa = draw_data['sa'] * pi / (180 * 16)
-				span = draw_data['span'] * pi / (180 * 16)
+				sa = draw_data['sa']
+				span = draw_data['span']
 				center1 = p1 + pm.dot(c.xyz)
 				center_kp = self.create_keypoint(center1[0], center1[1], center1[2])
 				edge1 = self.create_arc_edge(center_kp, r, sa, span, plane)

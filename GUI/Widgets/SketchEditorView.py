@@ -6,6 +6,7 @@ from PyQt5.QtWidgets import QDialog, QInputDialog, QMessageBox, QWidget
 
 from Business.SketchActions import *
 from Data.Style import BrushType
+from GUI.GeometryViews.SketchView import get_sketch_view
 
 from GUI.init import is_dark_theme
 from GUI.Widgets.NewDrawers import *
@@ -314,37 +315,40 @@ class SketchEditorViewWidget(QWidget):
 		qp = QPainter()
 		qp.begin(self)
 
+		try:
+			p1 = QPoint(0, 0)
+			p2 = QPoint(self.width(), self.height())
+			p3 = QPoint(0, self.height())
+			gradient = QLinearGradient(p1, p3)
 
-		p1 = QPoint(0, 0)
-		p2 = QPoint(self.width(), self.height())
-		p3 = QPoint(0, self.height())
-		gradient = QLinearGradient(p1, p3)
+			gradient.setColorAt(0, self._gradient_color_top)
+			gradient.setColorAt(1, self._gradient_color_bottom)
 
-		gradient.setColorAt(0, self._gradient_color_top)
-		gradient.setColorAt(1, self._gradient_color_bottom)
+			qp.fillRect(event.rect(), gradient)
+			qp.setRenderHint(QPainter.HighQualityAntialiasing)
 
-		qp.fillRect(event.rect(), gradient)
-		qp.setRenderHint(QPainter.HighQualityAntialiasing)
+			cx = self._offset.x * self._scale + self.width() / 2
+			cy = -self._offset.y * self._scale + self.height() / 2
 
-		cx = self._offset.x * self._scale + self.width() / 2
-		cy = -self._offset.y * self._scale + self.height() / 2
+			qp.setPen(self._axis_pen)
+			if self.width() > cx > 0:
+				qp.drawLine(QPointF(cx, 0), QPointF(cx, self.height()))
+			if self.height() > cy > 0:
+				qp.drawLine(QPointF(0, cy), QPointF(self.width(), cy))
 
-		qp.setPen(self._axis_pen)
-		if self.width() > cx > 0:
-			qp.drawLine(QPointF(cx, 0), QPointF(cx, self.height()))
-		if self.height() > cy > 0:
-			qp.drawLine(QPointF(0, cy), QPointF(self.width(), cy))
+			qp.save()
+			qp.translate(self.width()/2, self.height()/2)
+			qp.scale(self._scale, self._scale)
+			qp.translate(self._offset.x, -self._offset.y)
 
-		qp.save()
-		qp.translate(self.width()/2, self.height()/2)
-		qp.scale(self._scale, self._scale)
-		qp.translate(self._offset.x, -self._offset.y)
+			self.draw_instances(event, qp)
+			self.draw_areas(event, qp)
+			self.draw_edges(event, qp)
+			self.draw_texts(event, qp)
 
-		self.draw_areas(event, qp)
-		self.draw_edges(event, qp)
-		self.draw_texts(event, qp)
-		self.draw_instances(event, qp)
-		qp.restore()
+			qp.restore()
+		except Exception as e:
+			print(str(e))
 		qp.end()
 
 	def draw_texts(self, event, qp: QPainter):
@@ -460,20 +464,26 @@ class SketchEditorViewWidget(QWidget):
 			os = sketch_inst.offset/sketch_inst.scale
 			pens = create_pens(self._doc, 6000/(self._scale*sketch_inst.scale))
 
-			draw_sketch(qp, si, sketch_inst.scale , 1/self._scale, os, Vertex(), sketch_inst.rotation, pens, {}, sketch_inst.uid)
+			sketch_view = get_sketch_view(si)
+			sketch_view.draw_instance(qp, pens, sketch_inst.scale, 1 / self._scale, os, Vertex(), sketch_inst.rotation, sketch_inst.uid)
+			#draw_sketch(qp, si, sketch_inst.scale , 1/self._scale, os, Vertex(), sketch_inst.rotation, pens, {}, sketch_inst.uid)
 
 		if self._instance_hover is not None:
 			sketch_inst = self._instance_hover
 			si = sketch_inst.sketch
 			os = sketch_inst.offset / sketch_inst.scale
 			hover_pens = create_pens(self._doc, 6000 / (self._scale * sketch_inst.scale), QColor(100, 100, 200), 1)
-			draw_sketch(qp, si, sketch_inst.scale, 1 / self._scale, os, Vertex(), sketch_inst.rotation, hover_pens, {}, sketch_inst.uid)
+			sketch_view = get_sketch_view(si)
+			sketch_view.draw_instance(qp, hover_pens, sketch_inst.scale, 1 / self._scale, os, Vertex(), sketch_inst.rotation, sketch_inst.uid)
+			#draw_sketch(qp, si, sketch_inst.scale, 1 / self._scale, os, Vertex(), sketch_inst.rotation, hover_pens, {}, sketch_inst.uid)
 
 		for sketch_inst in self._selected_instances:
 			si = sketch_inst.sketch
 			os = sketch_inst.offset / sketch_inst.scale
-			hover_pens = create_pens(self._doc, 6000 / (self._scale * sketch_inst.scale), QColor(255, 0, 0), 2)
-			draw_sketch(qp, si, sketch_inst.scale, 1 / self._scale, os, Vertex(), sketch_inst.rotation, hover_pens, {},sketch_inst.uid)
+			sel_pens = create_pens(self._doc, 6000 / (self._scale * sketch_inst.scale), QColor(255, 0, 0), 2)
+			sketch_view = get_sketch_view(si)
+			sketch_view.draw_instance(qp, sel_pens, sketch_inst.scale, 1/self._scale, os, Vertex(), sketch_inst.rotation, sketch_inst.uid)
+			#draw_sketch(qp, si, sketch_inst.scale, 1 / self._scale, os, Vertex(), sketch_inst.rotation, sel_pens, {},sketch_inst.uid)
 
 	def update_status(self):
 		self._doc.set_status("")

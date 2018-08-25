@@ -32,11 +32,7 @@ class SketchViewInstance:
 	def draw(self, qp: QPainter, pens, annotation_scale, show_area_names, show_keypoints):
 		if self._invalidated:
 			self.regenerate_paths()
-		qp.setBrush(QBrush())
-		for pen_name in self._edges:
-			pen = pens[pen_name]
-			qp.setPen(pen)
-			qp.drawPath(self._edges[pen_name])
+
 		for area_uid in self._areas:
 			area = self._sketch.get_area(area_uid)
 			if area.brush is not None:
@@ -48,6 +44,13 @@ class SketchViewInstance:
 				brush.setTransform(transform)
 
 				qp.fillPath(self._areas[area_uid], brush)
+
+		qp.setBrush(QBrush())
+		for pen_name in self._edges:
+			pen = pens[pen_name]
+			qp.setPen(pen)
+			qp.drawPath(self._edges[pen_name])
+
 		if show_keypoints:
 			qp.drawPath(self._kps)
 
