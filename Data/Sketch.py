@@ -49,10 +49,10 @@ class Sketch(Geometry):
 
 		for instance in self._sketch_instances.values():
 			in_lim = instance.sketch.get_limits()
-			limits[0] = min(in_lim[0], limits[0])
-			limits[1] = min(in_lim[1], limits[1])
-			limits[2] = max(in_lim[2], limits[2])
-			limits[3] = max(in_lim[3], limits[3])
+			limits[0] = min(in_lim[0] + instance.offset.x, limits[0])
+			limits[1] = min(in_lim[1] + instance.offset.y, limits[1])
+			limits[2] = max(in_lim[2] + instance.offset.x, limits[2])
+			limits[3] = max(in_lim[3] + instance.offset.y, limits[3])
 		return limits
 
 	@property
@@ -542,7 +542,7 @@ class Text(IdObject, ObservableObject):
 
 	@vertical_alignment.setter
 	def vertical_alignment(self, value):
-		self._vertical_alignment = value
+		self._vertical_alignment = Alignment(value)
 		self.changed(ValueChangeEvent(self, 'vertical_alignment', 0, value))
 
 	@property
@@ -551,7 +551,7 @@ class Text(IdObject, ObservableObject):
 
 	@horizontal_alignment.setter
 	def horizontal_alignment(self, value):
-		self._horizontal_alignment = value
+		self._horizontal_alignment = Alignment(value)
 		self.changed(ValueChangeEvent(self, 'horizontal_alignment', 0, value))
 
 	@property

@@ -70,6 +70,8 @@ class ParametersWidget(QWidget):
 		self.parameters_table.selectionModel().selectionChanged.connect(self.on_param_selection_changed)
 
 	def set_parameters(self, params):
+		if params == self._parameters:
+			return
 		self._ignore_type_standard_change = True
 		if self._parameters is not None:
 			self._parameters.remove_change_handler(self.on_parameters_changed)

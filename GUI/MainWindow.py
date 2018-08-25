@@ -340,15 +340,24 @@ class MainWindow(QMainWindow):
 		self._geometry_dock.on_edge_selection_changed(selected_edges)
 		if len(selected_edges) > 0:
 			self._properties_dock.set_item(selected_edges[0])
+			self.parameters_widget.set_parameters(selected_edges[0].geometry)
+
 
 	def on_kp_selection_changed_in_view(self, selected_key_points):
 		self._geometry_dock.on_kp_selection_changed(selected_key_points)
 		if len(selected_key_points) > 0:
-			self._properties_dock.set_item(selected_key_points[0])
+			kp = selected_key_points[0]
+			self._properties_dock.set_item(kp)
+			self.parameters_widget.set_parameters(kp.parameters)
 
 	def on_text_selection_changed_in_view(self, selected_texts):
 		if len(selected_texts) > 0:
 			self._properties_dock.set_item(selected_texts[0])
+
+	def on_instance_selection_changed_in_view(self, selected_instances):
+		if len(selected_instances) > 0:
+			self._properties_dock.set_item(selected_instances[0])
+			self.parameters_widget.set_parameters(selected_instances[0])
 
 	def on_param_selection_changed_in_parameters_widget(self, parameters):
 		if len(parameters) > 0:

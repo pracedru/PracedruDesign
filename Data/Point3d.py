@@ -51,6 +51,10 @@ class KeyPoint(Point3d, NamedObservableObject):
 	def instances(self):
 		return self._instances.items()
 
+	@property
+	def parameters(self):
+		return self._parameters
+
 	def delete(self):
 		self.changed(ChangeEvent(self, ChangeEvent.Deleted, self))
 
@@ -140,6 +144,16 @@ class KeyPoint(Point3d, NamedObservableObject):
 	def get_instance_z(self, instance_uid):
 		return self.get_instance_generic(instance_uid, 2)
 
+	def get_instance_xyz(self, instance_uid):
+		if instance_uid in self._instances:
+			return self._instances[instance_uid].xyz
+		return self.xyz
+
+	def get_instance(self, instance_uid):
+		if instance_uid in self._instances:
+			return self._instances[instance_uid]
+		return self
+
 	@property
 	def x(self):
 		return self.xyz[0]
@@ -188,7 +202,9 @@ class KeyPoint(Point3d, NamedObservableObject):
 		self.set_parameter_generic(param_uid, 2)
 
 	def on_param_changed_generic(self, event, component):
-		instance = event.object['instance']
+		instance = None
+		if 'instance' in event.object:
+			instance = event.object['instance']
 		old_value = self.get_instance_generic(instance, component)
 		new_value = float(self._component_parameters[component].evaluate(instance))
 		self.set_instance_generic(instance, new_value, component)

@@ -185,6 +185,8 @@ class SketchSelect():
 					view.selected_instances = [view.instance_hover]
 			else:
 				view.selected_instances = []
+				self._main_window.parameters_widget.set_parameters(sketch)
+			self._main_window.on_instance_selection_changed_in_view(view.selected_instances)
 
 	def on_escape(self):
 		view = self._sketch_editor_view

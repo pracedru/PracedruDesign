@@ -120,11 +120,6 @@ def draw_vertex(qp, vertex, scale):
 
 def draw_attribute(text, qp, instance=None, show_value=False, value=None):
 	key_point = text.key_point
-	factor = 10 / text.height
-	font = QFont()
-	font.setPointSizeF(text.height * factor)
-	fm = QFontMetrics(font)
-	qp.setFont(font)
 	if show_value:
 		if value is None:
 			txt = text.value
@@ -132,49 +127,40 @@ def draw_attribute(text, qp, instance=None, show_value=False, value=None):
 			txt = value
 	else:
 		txt = "<" + text.name + ">"
-	width = fm.width(txt) / factor
-	qp.save()
 	x1 = key_point.get_instance_x(instance)
 	y1 = -key_point.get_instance_y(instance)
-	if text.horizontal_alignment == Alignment.Left:
-		x1 -= width
-	elif text.horizontal_alignment == Alignment.Center:
-		x1 -= width / 2
-	if text.vertical_alignment == Alignment.Top:
-		y1 -= text.height * 2
-	elif text.vertical_alignment == Alignment.Center:
-		y1 -= text.height
-	qp.translate(x1, y1)
-	qp.scale(1/factor, 1/factor)
-	qp.rotate(text.angle * 180 / pi)
-	qp.drawText(QRectF(0, 0, width * factor, text.height * 2 * factor), Qt.AlignHCenter | Qt.AlignVCenter, txt)
-	#qp.drawRect(QRectF(0, 0, width * factor, text.height * 2 * factor))
-	qp.restore()
+	draw_sized_text(qp, txt, x1, y1, text.height, text.angle, text.vertical_alignment, text.horizontal_alignment)
 
 
-def draw_text(text, qp, instance=None):
+def draw_text(text, qp: QPainter, instance=None):
 	key_point = text.key_point
-	factor = 10 / text.height  # Factor takes care of wierd bug in Qt with fonts that are smaller than 1 in height
+	x1 = key_point.get_instance_x(instance)
+	y1 = -key_point.get_instance_y(instance)
+	draw_sized_text(qp, text.value, x1, y1, text.height, text.angle, text.vertical_alignment, text.horizontal_alignment)
+
+
+def draw_sized_text(qp, value, x, y, height, angle, vert_align, hor_align):
+	# Factor takes care of wierd bug in Qt with fonts sizing.
+	# This makes all fonts 10 pts heigh and resizes them correctly with transforming in QPainter
+	factor = 10 / height
 	font = QFont()
-	font.setPointSizeF(text.height * factor)
+	font.setPointSizeF(height * factor)
 	fm = QFontMetrics(font)
 	qp.setFont(font)
-	width = fm.width(text.value) / factor
+	width = fm.width(value) / factor
 	qp.save()
-	x1 = key_point.get_instance_x(instance)
-	y1 = -key_point.get_instance_y(instance)
-	if text.horizontal_alignment == Alignment.Left:
-		x1 -= width
-	elif text.horizontal_alignment == Alignment.Center:
-		x1 -= width / 2
-	if text.vertical_alignment == Alignment.Top:
-		y1 -= text.height * 2
-	elif text.vertical_alignment == Alignment.Center:
-		y1 -= text.height
-	qp.translate(x1, y1)
+	if hor_align == Alignment.Left:
+		x -= width
+	elif hor_align == Alignment.Center:
+		x -= width / 2
+	if vert_align == Alignment.Top:
+		y -= height * 2
+	elif vert_align == Alignment.Center:
+		y -= height
+	qp.translate(x, y)
 	qp.scale(1 / factor, 1 / factor)
-	qp.rotate(text.angle * 180 / pi)
-	qp.drawText(QRectF(0, 0, width * factor, text.height * 2 * factor), Qt.AlignHCenter | Qt.AlignVCenter, text.value)
+	qp.rotate(angle * 180 / pi)
+	qp.drawText(QRectF(0, 0, width * factor, height * 2 * factor), Qt.AlignHCenter | Qt.AlignVCenter, value)
 	# qp.drawRect(QRectF(0, 0, width*factor, text.height*2*factor))
 	qp.restore()
 
@@ -268,7 +254,6 @@ def draw_edge(edge: Edge, qp, pens, instance):
 				angle_between = kp.angle_between_untouched(kp1, kp2)
 				radius = edge.get_meta_data("r", instance)
 				dist = radius / sin(angle_between / 2)
-				# radius *= scale
 				angle_larger = False
 				while angle_between < -2 * pi:
 					angle_between += 2 * pi
@@ -281,8 +266,8 @@ def draw_edge(edge: Edge, qp, pens, instance):
 					angle = edge1.angle(kp) + angle_between / 2
 				if dist < 0:
 					angle += pi
-				cx = (key_points[0].get_instance_x(instance) + dist * cos(angle))
-				cy = -(key_points[0].get_instance_y(instance) + dist * sin(angle))
+				cx = (kp.get_instance_x(instance) + dist * cos(angle))
+				cy = -(kp.get_instance_y(instance) + dist * sin(angle))
 				rect = QRectF(cx - radius, cy - radius, radius * 2, radius * 2)
 
 				if angle_between < 0:
@@ -309,14 +294,14 @@ def draw_edge(edge: Edge, qp, pens, instance):
 			x1 = None
 			y1 = None
 			for coord in coords:
-				x2 = (coord.x )
-				y2 = -(coord.y )
+				x2 = coord.x
+				y2 = -coord.y
 				if x1 is not None:
 					qp.drawLine(QPointF(x1, y1), QPointF(x2, y2))
 				x1 = x2
 				y1 = y2
 
-class Limits():
+class Limits:
 	def __init__(self):
 		self.x_max = 0
 		self.y_max = 0
@@ -349,10 +334,9 @@ def draw_area(area, qp, show_names, brush, annotation_scale, instance):
 			sub_area_path = get_area_path(subarea, other_limits, instance)
 			limits.check_limits(other_limits)
 			path = path.subtracted(sub_area_path)
-		qp.fillPath(path, brush)
 	else:
 		path = get_area_path(area, limits, instance)
-		qp.fillPath(path, brush)
+	qp.fillPath(path, brush)
 
 	if show_names:
 		qp.save()

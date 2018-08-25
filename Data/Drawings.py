@@ -430,7 +430,7 @@ class PartView(View):
 		View.__init__(self, drawing, "New View", scale, offset)
 		self._part = part
 		self._view_type = ViewType.PartView
-		self._sketch = Sketch(None, drawing.document)
+		self._sketch = Sketch(drawing)
 		if part is not None:
 			self._name = part.name
 			self._part.add_change_handler(self.on_part_changed)
@@ -458,9 +458,9 @@ class PartView(View):
 			for section_data in section_datas:
 				coords = section_data['coords']
 				if len(coords) > 2:
-					kp1 = self._sketch.create_key_point(coords[0][0], coords[0][1], coords[0][2])
+					kp1 = self._sketch.create_keypoint(coords[0][0], coords[0][1], coords[0][2])
 					for i in range(1, len(coords)):
-						kp2 = self._sketch.create_key_point(coords[i][0], coords[i][1], coords[i][2])
+						kp2 = self._sketch.create_keypoint(coords[i][0], coords[i][1], coords[i][2])
 						self._sketch.create_line_edge(kp1, kp2)
 						kp1 = kp2
 			self.changed(ChangeEvent(self, ChangeEvent.ObjectChanged, self))
@@ -479,10 +479,10 @@ class PartView(View):
 		}
 
 	@staticmethod
-	def deserialize(data, document):
-		part_view = PartView()
+	def deserialize(data, drawing):
+		part_view = PartView(drawing)
 		if data is not None:
-			part_view.deserialize_data(data, document)
+			part_view.deserialize_data(data)
 		return part_view
 
 	def deserialize_data(self, data):

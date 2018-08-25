@@ -14,6 +14,7 @@ from PyQt5.QtWidgets import QWidget
 
 from Business.DrawingActions import *
 from Data.Vertex import Vertex
+from GUI.GeometryViews.SketchView import get_sketch_view
 from GUI.init import is_dark_theme
 from GUI.Widgets.NewDrawers import *
 import GUI.Widgets.Drawers
@@ -26,7 +27,7 @@ class DrawingEditorViewWidget(QWidget):
 		self._doc = document
 		self._drawing = None
 		self._is_dark_theme = is_dark_theme()
-		self._scale = 100
+		self._scale = 1000
 		self._offset = Vertex()
 		self._mouse_position = None
 		self.setMouseTracking(True)
@@ -173,7 +174,8 @@ class DrawingEditorViewWidget(QWidget):
 				parts.append(part.name)
 			value = QInputDialog.getItem(self, "Select part", "parts:", parts, 0, True)
 			part = self._doc.get_geometries().get_part_by_name(value[0])
-			add_part_to_drawing(self._doc, self._drawing, part, scale, offset)
+			if part is not None:
+				add_part_to_drawing(self._doc, self._drawing, part, scale, offset)
 			self.on_escape()
 
 		for event_handler in self._mouse_press_event_handlers:
@@ -262,20 +264,20 @@ class DrawingEditorViewWidget(QWidget):
 
 	def draw_views(self, event, qp, center, pens):
 		sc = self._scale
-
 		for view in self._drawing.get_views():
 			scale = sc * view.scale
 			pens = create_pens(self._doc, 1/view.scale)
 			offset = Vertex(self._offset.x / view.scale, self._offset.y / view.scale)
 			c = Vertex(center.x + view.offset.x * sc, center.y - view.offset.y * sc)
-			draw_sketch(qp, view.sketch, scale, 0.0002 * sc, offset, c, 0, pens, {})
-
+			#draw_sketch(qp, view.sketch, scale, 0.0002 * sc, offset, c, 0, pens, {})
+			sketch_view = get_sketch_view(view.sketch)
+			sketch_view.draw_instance(qp, pens, scale, 0.0002 * sc, offset, c, 0)
 		if self._view_hover is not None:
 			scale = sc * self._view_hover.scale
 			cx = self._offset.x * sc + self.width() / 2 + self._view_hover.offset.x * sc
 			cy = -self._offset.y * sc + self.height() / 2 - self._view_hover.offset.y * sc
 			qp.setPen(self._kp_pen_hover)
-			GUI.Widgets.Drawers.draw_vertex(qp, self._view_hover.offset, self._scale, self._offset, center)
+			GUI.Widgets.Drawers.draw_vertex(qp, self._view_hover.offset, sc, self._offset, center)
 			l = self._view_hover.limits
 			rect = QRectF(QPointF(l[0]*scale + cx, -l[1]*scale + cy), QPointF(l[2]*scale + cx, -l[3]*scale + cy))
 			qp.drawRect(rect)
@@ -284,7 +286,7 @@ class DrawingEditorViewWidget(QWidget):
 			cx = self._offset.x * sc + self.width() / 2 + view.offset.x * sc
 			cy = -self._offset.y * sc + self.height() / 2 - view.offset.y * sc
 			qp.setPen(self._kp_pen_hl)
-			GUI.Widgets.Drawers.draw_vertex(qp, view.offset, self._scale, self._offset, center)
+			GUI.Widgets.Drawers.draw_vertex(qp, view.offset, sc, self._offset, center)
 			l = view.limits
 			rect = QRectF(QPointF(l[0] * scale + cx, -l[1] * scale + cy), QPointF(l[2] * scale + cx, -l[3] * scale + cy))
 			qp.drawRect(rect)

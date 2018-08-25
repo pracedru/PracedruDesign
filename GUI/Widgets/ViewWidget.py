@@ -75,10 +75,10 @@ class ViewWidget(QStackedWidget):
 		self._current_view = self._calcSheetView
 
 	def on_area_selection_changed_in_table(self, selected_areas):
-		self.sketch_view.set_selected_areas(selected_areas)
+		self.sketch_view.selected_areas = selected_areas
 
 	def on_kp_selection_changed_in_table(self, selected_key_points):
 		self._sketchView.selected_key_points = selected_key_points
 
 	def on_edge_selection_changed_in_table(self, selected_edges):
-		self._sketchView.set_selected_edges(selected_edges)
+		self._sketchView.selected_edges = selected_edges
