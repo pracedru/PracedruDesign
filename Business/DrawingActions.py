@@ -90,6 +90,11 @@ def create_default_header(document):
 	pnt24 = header.create_keypoint(7 * width / 8, height, 0)
 	pnt25 = header.create_keypoint(width / 2 + textDist / 2, textDist * 2, 0)
 	pnt26 = header.create_keypoint(4 * width / 5 + textDist / 2, textDist * 2, 0)
+
+	pnt27 = header.create_keypoint(9 * width / 10, textDist, 0)
+	pnt28 = header.create_keypoint(9 * width / 10 - textDist*1.5, textDist*4.5, 0)
+	pnt29 = header.create_keypoint(9 * width / 10 + textDist*1.5, textDist*4.5, 0)
+
 	# pnt26 = header.create_keypoint(4 * width / 5 + textDist / 2, textDist * 2, 0)
 	header.create_line_edge(pnt1, pnt2).style_name = "border"
 	header.create_line_edge(pnt2, pnt3).style_name = "border"
@@ -106,6 +111,10 @@ def create_default_header(document):
 	header.create_line_edge(pnt21, pnt22)
 	header.create_line_edge(pnt23, pnt24)
 	header.create_line_edge(pnt25, pnt26).style_name = "thin"
+	header.create_line_edge(pnt27, pnt28).style_name = "thin"
+	header.create_line_edge(pnt28, pnt29).style_name = "thin"
+	header.create_line_edge(pnt27, pnt29).style_name = "thin"
+
 	for i in range(6):
 		pnta = header.create_keypoint(width, height / 2 + i * rev_height, 0)
 		pntb = header.create_keypoint(0, height / 2 + i * rev_height, 0)
@@ -134,17 +143,37 @@ def create_default_header(document):
 			header.create_attribute(pntapp, "RevApprover" + str(i), "", valueTextHeight).horizontal_alignment = Alignment.Center
 		header.create_line_edge(pnta, pntb)
 
-	header.create_attribute(header.create_keypoint(textDist / 2, textDist * 1, 0), "DocTitle3", "Document Title 3",
+	header.create_attribute(header.create_keypoint(textDist / 2, textDist * 1, 0), "DocTitle4", "Document Title 4",
 													valueTextHeight).horizontal_alignment = Alignment.Right
-	header.create_attribute(header.create_keypoint(textDist / 2, textDist * 2, 0), "DocTitle2", "Document Title 2",
+	header.create_attribute(header.create_keypoint(textDist / 2, textDist * 2, 0), "DocTitle3", "Document Title 3",
 													valueTextHeight).horizontal_alignment = Alignment.Right
-	header.create_attribute(header.create_keypoint(textDist / 2, textDist * 3, 0), "DocTitle1", "Document Title 1",
+	header.create_attribute(header.create_keypoint(textDist / 2, textDist * 3, 0), "DocTitle2", "Document Title 2",
+													valueTextHeight).horizontal_alignment = Alignment.Right
+	header.create_attribute(header.create_keypoint(textDist / 2, textDist * 4, 0), "DocTitle1", "Document Title 1",
+													valueTextHeight).horizontal_alignment = Alignment.Right
+
+	header.create_attribute(header.create_keypoint(textDist / 2, textDist * 7, 0), "JobTitle3", "Job Title 3",
+													valueTextHeight).horizontal_alignment = Alignment.Right
+	header.create_attribute(header.create_keypoint(textDist / 2, textDist * 8, 0), "JobTitle2", "Job Title 2",
+													valueTextHeight).horizontal_alignment = Alignment.Right
+	header.create_attribute(header.create_keypoint(textDist / 2, textDist * 9, 0), "JobTitle1", "Job Title 1",
 													valueTextHeight).horizontal_alignment = Alignment.Right
 
 	header.create_text(header.create_keypoint(width / 2 + textDist / 2, textDist * 1, 0), "Document number",
 										 valueTextHeight).horizontal_alignment = Alignment.Right
 	header.create_attribute(header.create_keypoint(width / 2 + textDist / 2, textDist * 3, 0), "DocNumber", "123456",
 													valueTextHeight * 1.5).horizontal_alignment = Alignment.Right
+
+	header.create_attribute(header.create_keypoint(width * 5 / 8, height * 5/16, 0), "Scale", "1 : 1",
+													valueTextHeight).horizontal_alignment = Alignment.Center
+
+	scale_text = header.create_text(header.create_keypoint(width * 1 / 2 + textDist / 2, height / 4 + textDist /2,  0), "Scale",
+										 valueTextHeight/2).horizontal_alignment = Alignment.Right
+	size_text = header.create_text(header.create_keypoint(width * 1 / 2 + textDist / 2, height * 3 / 8+ textDist / 2, 0), "Size",
+																	valueTextHeight / 2).horizontal_alignment = Alignment.Right
+
+	item_text = header.create_text(header.create_keypoint(width * 3 / 4 + textDist / 2, height * 3 / 8 + textDist / 2, 0), "Item",
+																	valueTextHeight / 2).horizontal_alignment = Alignment.Right
 
 	return header
 

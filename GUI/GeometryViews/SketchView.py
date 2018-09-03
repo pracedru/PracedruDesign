@@ -42,7 +42,6 @@ class SketchViewInstance:
 					brush = QBrush(QColor(0, 0, 0), Qt.HorPattern)
 				transform = QTransform().scale(annotation_scale, annotation_scale).rotate(area.brush_rotation)
 				brush.setTransform(transform)
-
 				qp.fillPath(self._areas[area_uid], brush)
 
 		qp.setBrush(QBrush())

@@ -75,7 +75,7 @@ class EdgesModel(QAbstractTableModel):
 		edges = []
 		for row in rows:
 			edges.append(self._sketch.get_edge(self._rows[row]))
-		remove_edges(self._doc, self._sketch, edges)
+		remove_edges(self._sketch, edges)
 
 	def on_sketch_changed(self, event: ChangeEvent):
 		if type(event.object) is Edge:

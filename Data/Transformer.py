@@ -11,6 +11,7 @@ from Data.Point3d import KeyPoint
 
 class TransformerType(Enum):
 	Overlap = 0
+	Evolvente = 1
 
 
 class Transformer(IdObject, Parameters):

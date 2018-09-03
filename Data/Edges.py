@@ -548,6 +548,7 @@ class Edge(IdObject, NamedObservableObject):
 		kps = self.get_keypoints()
 		second_key_point = kps[1]
 		second_key_point.remove_change_handler(self.on_key_point_changed)
+		second_key_point.remove_edge(self)
 		self._key_points.remove(second_key_point.uid)
 		self._key_points.append(key_point.uid)
 		key_point.add_change_handler(self.on_key_point_changed)

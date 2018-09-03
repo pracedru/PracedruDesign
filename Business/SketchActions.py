@@ -64,6 +64,9 @@ def get_create_keypoint(sketch, x, y, coincident_threshold):
 				edge_to_split = edge
 		if edge_to_split is not None:
 			new_edge = edge_to_split.split(kp)
+			for area in sketch.get_areas():
+				if edge_to_split in area.get_edges():
+					area.insert_edge(new_edge, edge_to_split)
 		sketch.document.undo_stack.append(CreateKeypointDoObject(sketch, kp, edge_to_split, new_edge))
 	return kp
 
