@@ -53,6 +53,7 @@ class GenericView():
 		ribbon = self._main_window.ribbon
 		sketch_tab = ribbon.get_ribbon_tab("Sketch")
 		drawing_tab = ribbon.get_ribbon_tab("Drawing")
+		part_tab = ribbon.get_ribbon_tab("Part")
 		sketch_view_pane = sketch_tab.get_ribbon_pane("View")
 		sketch_view_pane.add_ribbon_widget(RibbonButton(sketch_view_pane, self._zoom_fit_action, True))
 		sketch_view_pane.add_ribbon_widget(RibbonButton(sketch_view_pane, self._show_area_names_action, True))
@@ -61,6 +62,9 @@ class GenericView():
 
 		drawing_view_pane = drawing_tab.get_ribbon_pane("View")
 		drawing_view_pane.add_ribbon_widget(RibbonButton(drawing_view_pane, self._zoom_fit_action, True))
+
+		part_view_pane = part_tab.get_ribbon_pane("View")
+		part_view_pane.add_ribbon_widget(RibbonButton(drawing_view_pane, self._zoom_fit_action, True))
 
 	def on_zoom_fit(self):
 		self._main_window.on_zoom_fit()

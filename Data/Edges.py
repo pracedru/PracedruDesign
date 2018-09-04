@@ -317,8 +317,20 @@ class Edge(IdObject, NamedObservableObject):
 			draw_data = self.get_draw_data(instance)
 			if 'rect' in draw_data:
 				rect = draw_data['rect']
-				center = Vertex(rect[0] + rect[2] / 2, rect[1] + rect[3] / 2)
+				center = Vertex(rect[0] + rect[2] / 2, rect[1] - rect[3] / 2)
 				dist = abs(center.distance(point) - radius)
+				sa = draw_data['sa']
+				ea = sa + draw_data['span']
+				diff = ea - sa
+				if diff < 0:
+					diff += 2 * pi
+				angle = center.angle2d(point)
+				diff2 = angle - sa
+				if diff2 < 0:
+					diff2 += 2 * pi
+				if diff2 > diff:
+					dist = kp.distance(point)
+
 			else:
 				dist = kp.distance(point)
 			return dist
@@ -355,7 +367,7 @@ class Edge(IdObject, NamedObservableObject):
 				fillet_offset_y = dist * sin(a1)
 
 			x1 = (key_points[0].get_instance_x(instance) + fillet_offset_x )
-			y1 = -(key_points[0].get_instance_y(instance) + fillet_offset_y )
+			y1 = (key_points[0].get_instance_y(instance) + fillet_offset_y )
 
 			fillet_offset_x = 0
 			fillet_offset_y = 0
@@ -368,7 +380,7 @@ class Edge(IdObject, NamedObservableObject):
 				fillet_offset_y = dist * sin(a1)
 
 			x2 = (key_points[1].get_instance_x(instance) + fillet_offset_x)
-			y2 = -(key_points[1].get_instance_y(instance) + fillet_offset_y)
+			y2 = (key_points[1].get_instance_y(instance) + fillet_offset_y)
 			edge_data["type"] = EdgeDrawDataType.Line
 			edge_data["coords"] = [Vertex(x1, y1), Vertex(x2, y2)]
 		elif self.type == EdgeType.ArcEdge:

@@ -296,6 +296,7 @@ class DocumentItemModel(QAbstractItemModel):
 				DocumentModelItem(None, self, new_item, "Annotation")
 				DocumentModelItem(None, self, new_item, "Areas")
 				DocumentModelItem(None, self, new_item, "Proformers")
+				DocumentModelItem(None, self, new_item, "Transformers")
 				DocumentModelItem(None, self, new_item, "Sketch instances")
 
 			if type(object) is Drawing:

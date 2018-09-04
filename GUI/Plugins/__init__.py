@@ -3,8 +3,8 @@ import GUI.Plugins.SketchEdgeDraw
 # import GUI.Plugins.SketchSplineDraw
 # import GUI.Plugins.SketchArcDraw
 # import GUI.Plugins.SketchCircleDraw
-import GUI.Plugins.SketchFilletDraw
-import GUI.Plugins.SketchTextDraw
+# import GUI.Plugins.SketchFilletDraw
+# import GUI.Plugins.SketchTextDraw
 import GUI.Plugins.SketchAttributeDraw
 import GUI.Plugins.SketchGenerateAreas
 import GUI.Plugins.SketchCreateArea

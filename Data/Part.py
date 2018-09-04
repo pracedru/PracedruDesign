@@ -3,7 +3,7 @@ from math import *
 import numpy as np
 
 from Data.Axis import Axis
-from Data.Edges import Edge, EdgeType
+from Data.Edges import Edge, EdgeType, EdgeDrawDataType
 from Data.Events import ChangeEvent, ValueChangeEvent
 from Data.Feature import *
 from Data.Geometry import Geometry
@@ -543,13 +543,13 @@ class Part(Geometry):
 			sketch = sketch_feature.get_sketches()[0]
 			for edge in sketch.get_edges():
 				draw_data = edge.get_draw_data()
-				if draw_data['type'] == 1:
+				if draw_data['type'] == EdgeDrawDataType.Line:
 					c = draw_data['coords']
 					c1 = p.xyz + pm.dot(c[0].xyz)
 					c2 = p.xyz + pm.dot(c[1].xyz)
 					lines.append(c1)
 					lines.append(c2)
-				elif draw_data['type'] == 2:
+				elif draw_data['type'] == EdgeDrawDataType.Arc:
 					start_angle = draw_data["sa"] * pi / (180 * 16)
 					span = draw_data["span"] * pi / (180 * 16)
 					radius = draw_data["r"]
@@ -562,7 +562,7 @@ class Part(Geometry):
 						cx = c.x + cos(start_angle + span * (i + 1) / divisions) * radius
 						cy = c.y + sin(start_angle + span * (i + 1) / divisions) * radius
 						lines.append(p.xyz + pm.dot(np.array([cx, cy, 0])))
-				elif draw_data['type'] == 3:
+				elif draw_data['type'] == EdgeDrawDataType.Circle:
 					radius = draw_data["r"]
 					c = draw_data["c"]
 					divisions = int(2 * pi * 10)
@@ -573,7 +573,7 @@ class Part(Geometry):
 						cx = c.x + cos(2 * pi * (i + 1) / divisions) * radius
 						cy = c.y + sin(2 * pi * (i + 1) / divisions) * radius
 						lines.append(p.xyz + pm.dot(np.array([cx, cy, 0])))
-				elif draw_data['type'] == 4:
+				elif draw_data['type'] == EdgeDrawDataType.Lines:
 					coords = draw_data['coords']
 					c1 = None
 					for c in coords:

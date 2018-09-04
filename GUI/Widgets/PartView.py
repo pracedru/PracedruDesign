@@ -167,6 +167,11 @@ class PartViewWidget(QOpenGLWidget):
 		self._part_edges_index = len(self._vertices) - 1
 		self._new_verts = True
 
+	def on_zoom_fit(self):
+		self.redraw_drawables()
+		self.scale_to_content()
+		self.update()
+
 	def scale_to_content(self):
 		limits = self._part.get_limits()
 		size = max(limits[1].x - limits[0].x, limits[1].y - limits[0].y)

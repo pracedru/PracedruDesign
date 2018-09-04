@@ -56,6 +56,8 @@ class ViewWidget(QStackedWidget):
 	def on_zoom_fit(self):
 		if self.currentIndex() == 0:
 			self._sketchView.on_zoom_fit()
+		elif self.currentIndex() == 1:
+			self._partView.on_zoom_fit()
 		elif self.currentIndex() == 2:
 			self._drawingView.on_zoom_fit()
 
