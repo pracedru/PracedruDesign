@@ -88,9 +88,9 @@ class MainWindow(QMainWindow):
 		self._add_extrude_action = self.add_action("Extrude\nArea", "addextrude", "Extrude an area on this part", True, self.on_extrude_area)
 		self._add_nurbs_surface_action = self.add_action("Create\nNurbs Srf.", "nurbssurf", "Create nurbs surface", True,
 																										 self.on_create_nurbs_surface)
-		self._show_surfs_action = self.add_action("Show\nSurfs", "showsurfs", "Show surfaces", True, self.on_show_surfs, checkable=True)
-		self._show_lines_action = self.add_action("Show\nLines", "showlines", "Show Lines", True, self.on_show_lines, checkable=True)
-		self._show_planes_action = self.add_action("Show\nPlanes", "showplanes", "Show Planes", True, self.on_show_planes, checkable=True)
+		self._show_surfs_action = self.add_action("Show\nSurfs", "partfaces", "Show surfaces", True, self.on_show_surfs, checkable=True)
+		self._show_lines_action = self.add_action("Show\nLines", "partedges", "Show Lines", True, self.on_show_lines, checkable=True)
+		self._show_planes_action = self.add_action("Show\nPlanes", "planes", "Show Planes", True, self.on_show_planes, checkable=True)
 		self._add_field_action = self.add_action("Insert\nfield", "addfield", "Insert field on drawing", True, self.on_add_field)
 		self._about_action = self.add_action("About", "about", "About this programme", True, self.on_about)
 		self._write_language_action = self.add_action("Write\nlang", "writelang", "Write language translation file", True, self.on_write_lang)
