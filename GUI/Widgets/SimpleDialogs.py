@@ -12,6 +12,7 @@ from PyQt5.QtWidgets import QWidget
 from Data.Axis import Axis
 from Data.Proformer import ProformerType
 from GUI.Widgets.SketchViewWidget import SketchViewWidget
+from GUI.init import formula_from_locale
 
 
 class SketchDialog(QDialog):
@@ -457,7 +458,7 @@ class ParameterSelectWidget():
 
 	def on_parameter_combobox_changed(self):
 		param = self._parameters.get_parameter_by_name(self._parameter_combobox.currentText())
-		self._value_textbox.setText(str(param.value))
+		self._value_textbox.setText(QLocale().toString(param.value))
 
 	@property
 	def parameter(self):
@@ -473,7 +474,24 @@ class ParameterSelectWidget():
 
 	@property
 	def value(self):
-		return self._value_textbox.text()
+		value = 0
+		parsed = QLocale().toDouble(self._value_textbox.text())
+		if parsed[1]:
+			# param.value = parsed[0]
+			try:
+				value = parsed[0]
+			except Exception as e:
+				self._parameters.document.set_status(str(e))
+		else:
+			try:
+				if value == "":
+					value = 0.0
+
+				else:
+					value = formula_from_locale(self._value_textbox.text())
+			except Exception as ex:
+				self._parameters.document.set_status(str(ex))
+		return value
 
 	@property
 	def visible(self):
@@ -585,8 +603,12 @@ class SketchPatternDialog(QDialog):
 		elif self._pattern_type == ProformerType.Rectangular:
 			self._count_widget_1.visible = True
 			self._dim_widget_1.visible = True
+			self._dim_widget_1.caption = "Pattern Length"
 			self._count_widget_2.visible = True
 			self._dim_widget_2.visible = True
+			self._dim_widget_2.caption = ""
+			self._dim_widget_3.visible = True
+			self._dim_widget_3.caption = "Pattern Angle"
 		elif self._pattern_type == ProformerType.Diamond:
 			self._count_widget_1.visible = True
 			self._dim_widget_1.visible = True

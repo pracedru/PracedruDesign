@@ -437,6 +437,7 @@ def create_pattern(sketch, pattern_type, kps, edges, areas, count, dimensions, c
 
 		if count_param is None:
 			count_param = sketch.create_parameter(count['param_1_name'], count_value)
+
 		if dim_param is None:
 			dim_param = sketch.create_parameter(dimensions['param_1_name'], dim_value)
 
