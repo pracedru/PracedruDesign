@@ -1,12 +1,14 @@
 from enum import Enum
+from math import cos, sin, pi
 
 from Data import get_uids
 from Data.Areas import CompositeArea, EdgeLoopArea, AreaType, Edge
 from Data.Edges import EdgeType
 from Data.Events import ChangeEvent
-from Data.Objects import IdObject, NamedObservableObject
+from Data.Objects import IdObject, NamedObservableObject, MetaDataObject
 from Data.Parameters import Parameters
 from Data.Point3d import KeyPoint
+from Data.Vertex import Vertex
 
 
 class ProformerType(Enum):
@@ -21,10 +23,12 @@ class ProformerType(Enum):
 	MirrorXY = 8
 
 
-class Proformer(IdObject, Parameters):
+class Proformer(IdObject, Parameters, MetaDataObject):
 	def __init__(self, sketch, type=ProformerType.Circular, name="New proformation"):
 		IdObject.__init__(self)
 		Parameters.__init__(self, name)
+		MetaDataObject.__init__(self, sketch)
+		self.add_change_handler(self.on_meta_param_changed)
 		self._sketch = sketch
 		self._type = type
 		self._control_kps = []
@@ -37,10 +41,11 @@ class Proformer(IdObject, Parameters):
 		self._lookups_kps = []
 		self._lookups_edges = []
 		self._lookups_areas = []
-		self._meta_data = {}
-		self._meta_data_parameters = {}
+
 
 	def remove_change_handlers(self):
+		for kp in self._control_kps:
+			kp.remove_change_handler(self.on_control_kp_changed)
 		for kp in self._kps:
 			kp.remove_change_handler(self.kp_changed)
 		for edge in self._edges:
@@ -49,12 +54,14 @@ class Proformer(IdObject, Parameters):
 			area.remove_change_handler(self.area_changed)
 
 	def delete(self):
-		self.remove_change_handlers()
 		self.clear_all()
+		self.remove_change_handlers()
+		MetaDataObject.clear(self)
 		self.changed(ChangeEvent(self, ChangeEvent.Deleted, self))
 
 	def add_control_kp(self, kp):
 		self._control_kps.append(kp)
+		kp.add_change_handler(self.on_control_kp_changed)
 
 	@property
 	def base_keypoints(self):
@@ -113,6 +120,20 @@ class Proformer(IdObject, Parameters):
 	def result_areas(self):
 		return self._result_areas.values()
 
+	def on_meta_param_changed(self, event: ChangeEvent):
+		if event.type == ChangeEvent.ValueChanged:
+			if 'param_change_event' in event.object:
+				if event.object['name'] == 'count':
+					self.resolve()
+				else:
+					if 'param_change_event' in event.object:
+						for kp in self._kps:
+							self.update_kp(kp, event.object['param_change_event'])
+
+	def on_control_kp_changed(self, event: ChangeEvent):
+		for kp in self._kps:
+			self.update_kp(kp, event)
+
 	def kp_changed(self, event: ChangeEvent):
 		self.update_kp(event.sender, event)
 
@@ -124,11 +145,17 @@ class Proformer(IdObject, Parameters):
 
 	def clear_all(self):
 		for area in self._result_areas.values():
+			self._sketch.changed(ChangeEvent(self._sketch, ChangeEvent.BeforeObjectRemoved, area))
 			area.delete()
+			self._sketch.changed(ChangeEvent(self._sketch, ChangeEvent.ObjectRemoved, area))
 		for edge in self._result_edges.values():
+			self._sketch.changed(ChangeEvent(self._sketch, ChangeEvent.BeforeObjectRemoved, edge))
 			edge.delete()
+			self._sketch.changed(ChangeEvent(self._sketch, ChangeEvent.ObjectRemoved, edge))
 		for kp in self._result_kps.values():
+			self._sketch.changed(ChangeEvent(self._sketch, ChangeEvent.BeforeObjectRemoved, kp))
 			kp.delete()
+			self._sketch.changed(ChangeEvent(self._sketch, ChangeEvent.ObjectRemoved, kp))
 		self._result_kps = {}
 		self._result_edges = {}
 		self._result_areas = {}
@@ -156,20 +183,23 @@ class Proformer(IdObject, Parameters):
 						self._sketch.changed(ChangeEvent(self._sketch, ChangeEvent.ObjectRemoved, new_kp))
 				return
 		if self._type == ProformerType.MirrorX or self._type == ProformerType.MirrorY or self._type == ProformerType.Mirror:
-			self.update_kp_mirror(kp, event, 0)
+			self.update_kp_index(kp, event, 0)
 		elif self._type == ProformerType.MirrorXY:
-			self.update_kp_mirror(kp, event, 0)
-			self.update_kp_mirror(kp, event, 1)
-			self.update_kp_mirror(kp, event, 2)
+			self.update_kp_index(kp, event, 0)
+			self.update_kp_index(kp, event, 1)
+			self.update_kp_index(kp, event, 2)
 		else:
 			if self._type == ProformerType.Circular:
-				count = self._meta_data['count']
+				count = int(self._meta_data['count']-1)
+				for i in range(count):
+					self.update_kp_index(kp, event, i)
+
 			elif self._type == ProformerType.Rectangular:
 				counts = self._meta_data['count']
 				count = counts[0] * counts[1]
 
 
-	def update_kp_mirror(self, kp, event, p_index):
+	def update_kp_index(self, kp, event, p_index):
 		if event is None:
 			new_kp = self._lookups_kps[p_index][kp.uid]
 			coord = self.get_coordinate(kp.x, kp.y, p_index)
@@ -185,6 +215,7 @@ class Proformer(IdObject, Parameters):
 			coord = self.get_coordinate(kp.get_instance_x(instance), kp.get_instance_y(instance), p_index)
 			new_kp.set_instance_x(instance, coord[0])
 			new_kp.set_instance_y(instance, coord[1])
+
 
 	def get_coordinate(self, x, y, p_index):
 		coord = [0.0, 0.0]
@@ -204,6 +235,15 @@ class Proformer(IdObject, Parameters):
 			elif p_index == 2:
 				coord[0] = -x
 				coord[1] = -y
+		elif self._type == ProformerType.Circular:
+			angle_increment = float(self._meta_data["dim"])
+			angle = (1+p_index)*angle_increment
+			c_kp = self._control_kps[0]
+			v = Vertex(x, y)
+			dist = c_kp.distance(v)
+			new_angle = c_kp.angle2d(v) + angle
+			coord[0] = c_kp.x + cos(new_angle)*dist
+			coord[1] = c_kp.y + sin(new_angle)*dist
 		else:
 			# todo: line mirror needs implementation
 			coord[0] = x
@@ -260,7 +300,7 @@ class Proformer(IdObject, Parameters):
 		elif self._type == ProformerType.MirrorXY:
 			count = 3
 		elif self._type == ProformerType.Circular:
-			count = self._meta_data['count']
+			count = int(self._meta_data['count']-1)
 		else:
 			counts = self._meta_data['count']
 			count = counts[0]*counts[1]
@@ -280,7 +320,7 @@ class Proformer(IdObject, Parameters):
 		elif self._type == ProformerType.MirrorXY:
 			count = 3
 		elif self._type == ProformerType.Circular:
-			count = self._meta_data['count']
+			count = int(self._meta_data['count']-1)
 		elif self._type == ProformerType.Rectangular :
 			counts = self._meta_data['count']
 			count = counts[0]*counts[1]
@@ -308,7 +348,7 @@ class Proformer(IdObject, Parameters):
 		elif self._type == ProformerType.MirrorXY:
 			count = 3
 		elif self._type == ProformerType.Circular:
-			count = self._meta_data['count']
+			count = int(self._meta_data['count']-1)
 		elif self._type == ProformerType.Rectangular :
 			counts = self._meta_data['count']
 			count = counts[0]*counts[1]
@@ -371,7 +411,12 @@ class Proformer(IdObject, Parameters):
 				self._lookups_kps.append({})
 				self._lookups_edges.append({})
 				self._lookups_areas.append({})
-
+		elif self._type == ProformerType.Circular:
+			count = int(self._meta_data['count'])
+			for i in range(count):
+				self._lookups_kps.append({})
+				self._lookups_edges.append({})
+				self._lookups_areas.append({})
 		for kp in self._kps:
 			self.generate_kp(kp)
 			self.update_kp(kp)
@@ -386,22 +431,17 @@ class Proformer(IdObject, Parameters):
 		self.clear_all()
 		self.generate_all()
 
-	def on_parameter_change(self, event: ChangeEvent):
-		param = event.sender
-		uid = param.uid
-		meta_name = self._meta_data_parameters[uid]
-		self._meta_data[meta_name] = param.value
 
 	def serialize_json(self):
 		return {
 			'uid': IdObject.serialize_json(self),
 			'no': NamedObservableObject.serialize_json(self),
+			'mdo': MetaDataObject.serialize_json(self),
 			'type': self._type.value,
 			'kps': get_uids(self._kps),
 			'edges': get_uids(self._edges),
 			'areas': get_uids(self._areas),
-			'meta_data': self._meta_data,
-			'meta_data_parameters': self._meta_data_parameters
+			'ckps': get_uids(self._control_kps)
 		}
 
 	@staticmethod
@@ -414,6 +454,7 @@ class Proformer(IdObject, Parameters):
 	def deserialize_data(self, data):
 		IdObject.deserialize_data(self, data['uid'])
 		NamedObservableObject.deserialize_data(self, data['no'])
+		MetaDataObject.deserialize_data(self, data.get('mdo', None))
 		self._type = ProformerType(data['type'])
 		for kp_uid in data['kps']:
 			kp = self._sketch.get_keypoint(kp_uid)
@@ -427,10 +468,9 @@ class Proformer(IdObject, Parameters):
 			area = self._sketch.get_area(area_uid)
 			self._areas.add(area)
 			area.add_change_handler(self.area_changed)
-		self._meta_data = data.get('meta_data')
-		self._meta_data_parameters = data.get('meta_data_parameters')
-		for parameter_uid in self._meta_data_parameters:
-			param = self._sketch.get_parameter_by_uid(parameter_uid)
-			if param is not None:
-				param.add_change_handler(self.on_parameter_change)
+		for kp_uid in data.get('ckps', []):
+			kp = self._sketch.get_keypoint(kp_uid)
+			self._control_kps.append(kp)
+			kp.add_change_handler(self.on_control_kp_changed)
+
 

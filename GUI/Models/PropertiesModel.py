@@ -19,6 +19,7 @@ rows_by_type = {
 		['Name', 'name'],
 		['Style', 'style_name'],
 		['Type', 'type_name'],
+		['Length', 'length'],
 		['Radius', {'name': 'get_meta_data', 'args': ['r', None], 'setName': 'set_meta_data'}, {'condition': ['type', EdgeType.CircleEdge]}],
 		['Radius', {'name': 'get_meta_data', 'args': ['r', None], 'setName': 'set_meta_data'}, {'condition': ['type', EdgeType.ArcEdge]}],
 		['Start angle', {'name': 'get_meta_data', 'args': ['sa', None], 'setName': 'set_meta_data'}, {'condition': ['type', EdgeType.ArcEdge]}],
@@ -148,6 +149,9 @@ class PropertiesModel(QAbstractTableModel):
 
 	def on_item_changed(self, event):
 		self.layoutAboutToBeChanged.emit()
+		if event.type == ChangeEvent.Deleted:
+			event.object.remove_change_handler(self.on_item_changed)
+			self._item = None
 		self.layoutChanged.emit()
 
 	def rowCount(self, model_index=None, *args, **kwargs):

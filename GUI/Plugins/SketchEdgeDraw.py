@@ -4,7 +4,7 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QInputDialog, QDialog
 
 from Business.SketchActions import get_create_keypoint, create_line, add_sketch_instance_to_sketch, create_nurbs_edge, add_arc, \
-	create_circle, create_fillet, create_text
+	create_circle, create_fillet, create_text, create_attribute
 from GUI.Widgets.SimpleDialogs import AddArcDialog
 from GUI.init import plugin_initializers
 
@@ -21,6 +21,7 @@ class SketchLineDraw():
 		self._add_circle_action = None
 		self._add_fillet_action = None
 		self._add_text_action = None
+		self._add_attribute_action = None
 		self._states = main_window.states
 		self._sketch_editor_view = main_window.sketch_editor_view
 		self._sketch_editor_view.add_mouse_press_event_handler(self.on_mouse_press)
@@ -33,6 +34,7 @@ class SketchLineDraw():
 		self._states.draw_circle_edge = False
 		self._states.add_fillet_edge = False
 		self._states.add_text = False
+		self._states.add_attribute = False
 		self._last_kp = None
 		self.init_ribbon()
 
@@ -80,6 +82,12 @@ class SketchLineDraw():
 																												 True,
 																												 self.on_add_text,
 																												 checkable=True)
+		self._add_attribute_action = self._main_window.add_action("Add\nattribute",
+																															"addattribute",
+																															"Add attribute to sketch",
+																															True,
+																															self.on_add_attribute,
+																															checkable=True)
 		ribbon = self._main_window.ribbon
 		sketch_tab = ribbon.get_ribbon_tab("Sketch")
 		insert_pane = sketch_tab.get_ribbon_pane("Insert")
@@ -89,6 +97,7 @@ class SketchLineDraw():
 		insert_pane.add_ribbon_widget(RibbonButton(insert_pane, self._add_circle_action, True))
 		insert_pane.add_ribbon_widget(RibbonButton(insert_pane, self._add_fillet_action, True))
 		insert_pane.add_ribbon_widget(RibbonButton(insert_pane, self._add_text_action, True))
+		insert_pane.add_ribbon_widget(RibbonButton(insert_pane, self._add_attribute_action, True))
 		insert_pane.add_ribbon_widget(RibbonButton(insert_pane, self._add_sketch_instance_action, True))
 
 	def on_add_line(self):
@@ -157,6 +166,15 @@ class SketchLineDraw():
 		self._sketch_editor_view.setCursor(Qt.CrossCursor)
 		self._states.select_kp = True
 		self._states.add_text = True
+		self._main_window.update_ribbon_state()
+
+	def on_add_attribute(self):
+		self._sketch_editor_view.on_escape()
+		if self._sketch_editor_view.sketch is None:
+			return
+		self._sketch_editor_view.setCursor(Qt.CrossCursor)
+		self._states.select_kp = True
+		self._states.add_attribute = True
 		self._main_window.update_ribbon_state()
 
 	def on_mouse_move(self, scale, x, y):
@@ -237,8 +255,8 @@ class SketchLineDraw():
 			kp = get_create_keypoint(sketch, x, y, coincident_threshold)
 			params = []
 			params.sort()
-			for param_tuple in sketch.get_all_parameters():
-				params.append(param_tuple[1].name)
+			for param in sketch.get_all_parameters():
+				params.append(param.name)
 			value = QInputDialog.getItem(self._main_window, "Set radius parameter", "Parameter:", params, 0, True)
 			if value[1] == QDialog.Accepted:
 				radius_param = sketch.get_parameter_by_name(value[0])
@@ -286,8 +304,8 @@ class SketchLineDraw():
 				if not self._states.multi_select:
 					params = []
 					params.sort()
-					for param_tuple in sketch.get_all_parameters():
-						params.append(param_tuple[1].name)
+					for param in sketch.get_all_parameters():
+						params.append(param.name)
 					value = QInputDialog.getItem(self._main_window, "Set radius parameter", "Parameter:", params, 0, True)
 					if value[1] == QDialog.Accepted:
 						radius_param = sketch.get_parameter_by_name(value[0])
@@ -309,6 +327,16 @@ class SketchLineDraw():
 			create_text(doc, sketch, kp, "New Text", 0.003)
 			view.on_escape()
 
+		#                                     *** Add Attribute ***
+		if self._states.add_attribute:
+			view = self._sketch_editor_view
+			doc = self._main_window.document
+			sketch = view.sketch
+			coincident_threshold = 5 / scale
+			kp = get_create_keypoint(sketch, x, y, coincident_threshold)
+			create_attribute(doc, sketch, kp, "Attribute name", "Default value", 0.007)
+			self.on_escape()
+
 	def on_escape(self):
 		self._states.draw_line_edge = False
 		self._states.add_sketch_instance = False
@@ -317,6 +345,7 @@ class SketchLineDraw():
 		self._states.draw_circle_edge = False
 		self._states.add_fillet_edge = False
 		self._states.add_text = False
+		self._states.add_attribute = False
 		self._last_kp = None
 
 	def update_ribbon_state(self):
@@ -327,6 +356,7 @@ class SketchLineDraw():
 		self._add_circle_action.setChecked(self._states.draw_circle_edge)
 		self._add_fillet_action.setChecked(self._states.add_fillet_edge)
 		self._add_text_action.setChecked(self._states.add_text)
+		self._add_attribute_action.setChecked(self._states.add_attribute)
 
 	@staticmethod
 	def initializer(main_window):

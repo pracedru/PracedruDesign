@@ -1,7 +1,7 @@
 from math import pi
 
 from PyQt5.QtCore import QLocale
-from PyQt5.QtWidgets import QComboBox, QLineEdit
+from PyQt5.QtWidgets import QComboBox, QLineEdit, QHBoxLayout
 from PyQt5.QtWidgets import QDialog
 from PyQt5.QtWidgets import QDialogButtonBox
 from PyQt5.QtWidgets import QGridLayout
@@ -303,8 +303,8 @@ class AddArcDialog(QDialog):
 		self._sketch = sketch
 		self.setWindowTitle("Select parameters for arc.")
 		self._params = []
-		for param_tuple in self._sketch.get_all_parameters():
-			self._params.append(param_tuple[1].name)
+		for param in self._sketch.get_all_parameters():
+			self._params.append(param.name)
 		self._params.sort()
 		self.setLayout(QVBoxLayout())
 		contents_widget = QWidget(self)
@@ -438,6 +438,62 @@ class SketchMirrorDialog(QDialog):
 		edge_names.sort()
 		self._mirror_line_combo_box.addItems(edge_names)
 
+class ParameterSelectWidget():
+	def __init__(self, parent, parameters, layout, row, caption=""):
+		self._parameters = parameters
+
+		self._caption_label = QLabel(caption)
+		self._parameter_combobox = QComboBox()
+		self._parameter_combobox.setEditable(True)
+		self._parameter_combobox.currentIndexChanged.connect(self.on_parameter_combobox_changed)
+		self._value_textbox = QLineEdit()
+		layout.addWidget(self._caption_label, row, 0)
+		layout.addWidget(self._parameter_combobox, row, 1)
+		layout.addWidget(self._value_textbox, row, 2)
+		params = []
+		for param in parameters.get_all_parameters():
+			params.append(param.name)
+		self._parameter_combobox.addItems(params)
+
+	def on_parameter_combobox_changed(self):
+		param = self._parameters.get_parameter_by_name(self._parameter_combobox.currentText())
+		self._value_textbox.setText(str(param.value))
+
+	@property
+	def parameter(self):
+		return self._parameters.get_parameter_by_name(self._parameter_combobox.currentText())
+
+	@property
+	def parameter_name(self):
+		return self._parameter_combobox.currentText()
+
+	@parameter_name.setter
+	def parameter_name(self, value):
+		self._parameter_combobox.setCurrentText(value)
+
+	@property
+	def value(self):
+		return self._value_textbox.text()
+
+	@property
+	def visible(self):
+		return self._value_textbox.isVisible()
+
+	@visible.setter
+	def visible(self, value):
+		self._caption_label.setVisible(value)
+		self._value_textbox.setVisible(value)
+		self._parameter_combobox.setVisible(value)
+
+	@property
+	def caption(self):
+		return self._caption_label.text()
+
+	@caption.setter
+	def caption(self, value):
+		self._caption_label.setText(value)
+
+
 class SketchPatternDialog(QDialog):
 	def __init__(self, parent, sketch):
 		QDialog.__init__(self, parent)
@@ -450,27 +506,42 @@ class SketchPatternDialog(QDialog):
 		self._pattern_type = ProformerType.Circular
 
 		contents_layout.addWidget(QLabel("Pattern type"), 0, 0)
-		contents_layout.addWidget(QLabel("Center point"), 1, 0)
+		self._center_point_label = QLabel("Center point")
+		contents_layout.addWidget(self._center_point_label, 1, 0)
 
 		self._pattern_type_combo_box = QComboBox()
 		self._center_point_combo_box = QComboBox()
-		self._pattern_type_combo_box.currentIndexChanged.connect(self.on_pattern_type_selection_changed)
+		kp_names = []
+		for kp in self._sketch.get_keypoints():
+			kp_names.append(kp.name)
+		self._center_point_combo_box.addItems(kp_names)
+
 
 		self._pattern_type_combo_box.addItem(ProformerType.Circular.name, ProformerType.Circular.value)
-		self._pattern_type_combo_box.addItem(ProformerType.Rectangular.name, ProformerType.Rectangular.value)
-		self._pattern_type_combo_box.addItem(ProformerType.Square.name, ProformerType.Square.value)
 		self._pattern_type_combo_box.addItem(ProformerType.Diamond.name, ProformerType.Diamond.value)
+		self._pattern_type_combo_box.addItem(ProformerType.Triangular.name, ProformerType.Triangular.value)
+		self._pattern_type_combo_box.addItem(ProformerType.Square.name, ProformerType.Square.value)
+		self._pattern_type_combo_box.addItem(ProformerType.Rectangular.name, ProformerType.Rectangular.value)
 		self._pattern_type_combo_box.setEditable(True)
 
 		self._center_point_combo_box.setEditable(True)
+
+		self._count_widget_1 = ParameterSelectWidget(self, self._sketch, contents_layout, 2, "Count")
+		self._count_widget_2 = ParameterSelectWidget(self, self._sketch, contents_layout, 3)
+
+		self._dim_widget_1 = ParameterSelectWidget(self, self._sketch, contents_layout, 4, "Dimension")
+		self._dim_widget_2 = ParameterSelectWidget(self, self._sketch, contents_layout, 5)
+		self._dim_widget_3 = ParameterSelectWidget(self, self._sketch, contents_layout, 6)
 
 		contents_layout.addWidget(self._pattern_type_combo_box, 0, 1)
 		contents_layout.addWidget(self._center_point_combo_box, 1, 1)
 
 		self.layout().addWidget(contents_widget)
+
 		self._sketch_view = SketchViewWidget(self, sketch, sketch.document)
 		self._sketch_view.set_change_listener(self)
-		self._sketch_view.edges_selectable = True
+
+		self._sketch_view.keypoints_selectable = True
 
 		self.layout().addWidget(self._sketch_view)
 
@@ -478,10 +549,83 @@ class SketchPatternDialog(QDialog):
 		dialog_buttons.accepted.connect(self.accept)
 		dialog_buttons.rejected.connect(self.reject)
 		self.layout().addWidget(dialog_buttons)
+		self._pattern_type_combo_box.currentIndexChanged.connect(self.on_pattern_type_selection_changed)
+		self._center_point_combo_box.currentIndexChanged.connect(self.on_center_point_combo_box_changed)
+		self.on_pattern_type_selection_changed()
 
 	def on_pattern_type_selection_changed(self):
-		self._pattern_type = self._pattern_type_combo_box.current
+		self._pattern_type = ProformerType(self._pattern_type_combo_box.currentData())
+		self._center_point_combo_box.setVisible(False)
+		self._center_point_label.setVisible(False)
+		self._count_widget_1.visible = False
+		self._count_widget_2.visible = False
+		self._dim_widget_1.visible = False
+		self._dim_widget_2.visible = False
+		self._dim_widget_3.visible = False
+		if self._pattern_type == ProformerType.Circular:
+			self._center_point_combo_box.setVisible(True)
+			self._center_point_label.setVisible(True)
+			self._count_widget_1.visible = True
+			self._dim_widget_1.visible = True
+			self._dim_widget_1.caption = "Pattern Angle"
+		elif self._pattern_type == ProformerType.Square:
+			self._count_widget_1.visible = True
+			self._count_widget_2.visible = True
+			self._dim_widget_1.visible = True
+			self._dim_widget_1.caption = "Pattern Length"
+			self._dim_widget_2.visible = True
+			self._dim_widget_2.caption = "Pattern Angle"
+		elif self._pattern_type == ProformerType.Triangular:
+			self._count_widget_1.visible = True
+			self._count_widget_2.visible = True
+			self._dim_widget_1.visible = True
+			self._dim_widget_1.caption = "Pattern Length"
+			self._dim_widget_2.visible = True
+			self._dim_widget_2.caption = "Pattern Angle"
+		elif self._pattern_type == ProformerType.Rectangular:
+			self._count_widget_1.visible = True
+			self._dim_widget_1.visible = True
+			self._count_widget_2.visible = True
+			self._dim_widget_2.visible = True
+		elif self._pattern_type == ProformerType.Diamond:
+			self._count_widget_1.visible = True
+			self._dim_widget_1.visible = True
+			self._count_widget_2.visible = True
+			self._dim_widget_2.visible = True
 
+	@property
+	def pattern_type(self):
+		return self._pattern_type
+
+	def on_kp_selected(self, kp):
+		self._center_point_combo_box.setCurrentText(kp.name)
+
+	def on_center_point_combo_box_changed(self):
+		self._sketch_view.selected_kps = [self._sketch.get_keypoints()[self._center_point_combo_box.currentIndex()]]
+
+	@property
+	def dimensions(self):
+		dims = {
+			'param_1_name': self._dim_widget_1.parameter_name,
+			'param_2_name': self._dim_widget_2.parameter_name,
+			'param_1_value': self._dim_widget_1.value,
+			'param_2_value': self._dim_widget_2.value
+		}
+		return dims
+
+	@property
+	def center_kp(self):
+		return self._sketch.get_keypoints()[self._center_point_combo_box.currentIndex()]
+
+	@property
+	def count(self):
+		count = {
+			'param_1_name': self._count_widget_1.parameter_name,
+			'param_2_name': self._count_widget_2.parameter_name,
+			'param_1_value': self._count_widget_1.value,
+			'param_2_value': self._count_widget_2.value
+		}
+		return count
 
 class CompositeAreaDialog(QDialog):
 	def __init__(self, parent, sketch):

@@ -17,8 +17,6 @@ from PyQt5.QtWidgets import QWidget
 
 from Data import Paper
 from Data.Document import Document
-from Data.Vertex import Vertex
-from GUI.Widgets.Drawers import draw_sketch, create_pens
 from GUI.Widgets.SketchViewWidget import SketchViewWidget
 
 

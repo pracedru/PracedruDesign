@@ -27,26 +27,26 @@ def get_pen_from_style(style, scale, color_override, fat):
 	pen = None
 
 	if style.line_type == EdgeLineType.Continous:
-		pen = QPen(color, style.thickness * scale + style.thickness * scale * fat, Qt.SolidLine, Qt.RoundCap)
+		pen = QPen(color, style.thickness * scale * fat, Qt.SolidLine, Qt.RoundCap)
 	elif style.line_type == EdgeLineType.DashDot:
-		pen = QPen(color, style.thickness * scale + style.thickness * scale * fat)
+		pen = QPen(color, style.thickness * scale * fat)
 		pen.setDashPattern(scale_dash_pattern([10.0, 4.0, 1.0, 4.0], fat))
 	elif style.line_type == EdgeLineType.DashDotDot:
-		pen = QPen(color, style.thickness * scale + style.thickness * scale * fat)
+		pen = QPen(color, style.thickness * scale * fat)
 		pen.setDashPattern(scale_dash_pattern([10.0, 4.0, 1.0, 4.0, 1.0, 4.0], fat))
 	elif style.line_type == EdgeLineType.Dashed:
-		pen = QPen(color, style.thickness * scale + style.thickness * scale * fat)
+		pen = QPen(color, style.thickness * scale * fat)
 		pen.setDashPattern(scale_dash_pattern([10.0, 4.0], fat))
 	elif style.line_type == EdgeLineType.DotDot:
-		pen = QPen(color, style.thickness * scale + style.thickness * scale * fat, Qt.DotLine)
+		pen = QPen(color, style.thickness * scale * fat, Qt.DotLine)
 		pen.setDashPattern(scale_dash_pattern([2.0, 4.0], fat))
 	else:
-		pen = QPen(color, style.thickness * scale + style.thickness * scale * fat, Qt.SolidLine, Qt.RoundCap)
+		pen = QPen(color, style.thickness * scale * fat, Qt.SolidLine, Qt.RoundCap)
 
 	return pen
 
 
-def create_pens(document, scale, color_override=None, fat=0):
+def create_pens(document, scale, color_override=None, fat=1):
 	"""
 	Creates pens for all edge styles that are defined in the document
 	:param document:
@@ -55,7 +55,7 @@ def create_pens(document, scale, color_override=None, fat=0):
 	:return:
 	"""
 	pens = {}
-	pens['default'] = QPen(QColor(0, 0, 0), 0.0002 * scale)
+	pens['default'] = QPen(QColor(0, 0, 0), 0.0002 * scale * fat)
 	for style in document.styles.get_edge_styles():
 		pens[style.uid] = get_pen_from_style(style, scale, color_override, fat)
 	return pens

@@ -187,8 +187,7 @@ class Parameter(IdObject, ObservableObject):
 			if isinstance(value, str):
 				formula = " " + insert_spaces(value) + " "
 				params = self._parent.get_all_parameters()
-				for param_tuple in params:
-					param = param_tuple[1]
+				for param in params:
 					if " " + param.name + " " in formula:
 						if param is self:
 							raise Exception("Formula may not reference it self.")
@@ -561,7 +560,7 @@ class Parameters(ParametersBase):
 		return params
 
 	def get_all_parameters(self):
-		params = list(self._params.items())
+		params = list(self._params.values())
 		if self._parent is not None:
 			params.extend(self._parent.get_all_parameters())
 		return params

@@ -1,6 +1,6 @@
 import uuid
 
-from Data.Events import ValueChangeEvent
+from Data.Events import ValueChangeEvent, ChangeEvent
 
 __author__ = 'mamj'
 
@@ -74,3 +74,71 @@ class NamedObservableObject(ObservableObject):
 
 	def deserialize_data(self, data):
 		self._name = data['name']
+
+
+class MetaDataObject(ObservableObject):
+	def __init__(self, parameters):
+		ObservableObject.__init__(self)
+		self._parameters = parameters
+		self._meta_data = {}
+		self._meta_data_parameters = {}
+
+	def clear(self):
+		for uid in self._meta_data_parameters:
+			param = self._parameters.get_parameter_by_uid(uid)
+			param.remove_change_handler(self.on_parameter_change)
+		self._meta_data_parameters = {}
+		self._meta_data = {}
+
+	def set_meta_data(self, name, value):
+		for param_tuple in self._meta_data_parameters.items():
+			if param_tuple[1] == name:
+				param = self._parameters.get_parameter_by_uid(param_tuple[0])
+				param.value = value
+				return
+		self._meta_data[name] = value
+
+	def get_meta_data(self, name, instance=None):
+		if instance is None:
+			return self._meta_data[name]
+		else:
+			param = self.get_meta_data_parameter(name)
+			if param is None:
+				return self._meta_data[name]
+			else:
+				return param.get_instance_value(instance)
+
+	def get_meta_data_parameter(self, name):
+		for param_tuple in self._meta_data_parameters.items():
+			if param_tuple[1] == name:
+				return self._parameters.get_parameter_by_uid(param_tuple[0])
+		return None
+
+	def set_meta_data_parameter(self, name, parameter):
+		self._meta_data_parameters[parameter.uid] = name
+		param = self._parameters.get_parameter_by_uid(parameter.uid)
+		self._meta_data[name] = param.value
+		param.add_change_handler(self.on_parameter_change)
+
+	def on_parameter_change(self, event):
+		param = event.sender
+		uid = param.uid
+		meta_name = self._meta_data_parameters[uid]
+		self._meta_data[meta_name] = param.value
+		self.changed(ChangeEvent(self, ChangeEvent.ValueChanged, {'name': meta_name, 'parameter': param, 'param_change_event': event}))
+
+	def serialize_json(self):
+		return {
+			'meta_data': self._meta_data,
+			'meta_data_parameters': self._meta_data_parameters
+		}
+
+	def deserialize_data(self, data):
+		if data is None:
+			return
+		self._meta_data = data.get('meta_data')
+		self._meta_data_parameters = data.get('meta_data_parameters')
+		for parameter_uid in self._meta_data_parameters:
+			param = self._parameters.get_parameter_by_uid(parameter_uid)
+			if param is not None:
+				param.add_change_handler(self.on_parameter_change)

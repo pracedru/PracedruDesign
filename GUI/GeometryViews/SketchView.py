@@ -7,7 +7,7 @@ from Data.Areas import CompositeArea
 from Data.Edges import EdgeDrawDataType, EdgeType, get_fillet_offset_distance
 from Data.Style import BrushType
 from Data.Vertex import Vertex
-from GUI.Widgets.NewDrawers import Limits
+from GUI.Widgets.NewDrawers import Limits, create_pens
 
 sketch_views = {}
 
@@ -56,7 +56,8 @@ class SketchViewInstance:
 		for sketch_instance in self._sketch.sketch_instances:
 			sketch_view = get_sketch_view(sketch_instance.sketch)
 			sioffset = sketch_instance.offset / sketch_instance.scale
-			sketch_view.draw_instance(qp, pens, sketch_instance.scale, annotation_scale/sketch_instance.scale, sioffset, Vertex(), sketch_instance.rotation, sketch_instance.uid, show_area_names, show_keypoints)
+			instance_pens = create_pens(sketch_instance.sketch.document, annotation_scale * 5000 / sketch_instance.scale)
+			sketch_view.draw_instance(qp, instance_pens, sketch_instance.scale, annotation_scale, sioffset, Vertex(), sketch_instance.rotation, sketch_instance.uid, show_area_names, show_keypoints)
 
 	def get_edge_path(self, pen_name):
 		if pen_name in self._edges:

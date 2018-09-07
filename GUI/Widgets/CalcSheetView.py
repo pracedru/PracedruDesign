@@ -6,7 +6,7 @@ from PyQt5.QtWidgets import QWidget
 
 from Data.Vertex import Vertex
 from GUI.init import is_dark_theme
-from GUI.Widgets.Drawers import create_pens
+from GUI.Widgets.NewDrawers import create_pens
 
 
 class CalcSheetView(QWidget):

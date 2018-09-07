@@ -51,8 +51,8 @@ class DocumentItemModel(QAbstractItemModel):
 			DocumentModelItem(style, self, pens_item)
 		for style in self._doc.styles.get_brushes():
 			DocumentModelItem(style, self, brushes_item)
-		for param_tuple in self._doc.get_parameters().get_all_parameters():
-			DocumentModelItem(param_tuple[1], self, glocal_params_item)
+		for param in self._doc.get_parameters().get_all_parameters():
+			DocumentModelItem(param, self, glocal_params_item)
 		geoms_item = DocumentModelItem(self._doc.get_geometries(), self, self._root_item)
 		for geom in self._doc.get_geometries().items():
 			if type(geom) is Sketch:
@@ -119,19 +119,26 @@ class DocumentItemModel(QAbstractItemModel):
 		if not index.isValid():
 			return QModelIndex()
 		model_item = index.internalPointer()
-		if model_item is None:
-			return QModelIndex()
-		elif model_item == self._root_item:
-			return QModelIndex()
-		else:
-			parent_item = model_item.parent()
-			if parent_item is not None:
-				elder_item = parent_item.parent()
-				if elder_item is not None:
-					row = elder_item.children().index(parent_item)
-				else:
-					row = 0
-				return self.createIndex(row, 0, model_item.parent())
+		try:
+			if model_item is None:
+				return QModelIndex()
+			elif model_item == self._root_item:
+				return QModelIndex()
+			else:
+				parent_item = model_item.parent()
+				if parent_item is not None:
+					elder_item = parent_item.parent()
+					if elder_item is not None:
+						row = elder_item.children().index(parent_item)
+					else:
+						row = 0
+					return self.createIndex(row, 0, parent_item)
+		except Exception as e:
+			col = index.column()
+			row = index.row()
+			print("DocumentModel::parent")
+			print(str(e))
+			print("Col: " + str(col) + " Row: " + str(row))
 		return QModelIndex()
 
 	def index(self, row, col, parent: QModelIndex = None, *args, **kwargs):
@@ -142,6 +149,7 @@ class DocumentItemModel(QAbstractItemModel):
 		else:
 			parent_model_item = parent.internalPointer()
 			model_item = parent_model_item.children()[row]
+			data = model_item.parent()
 			return self.createIndex(row, 0, model_item)
 
 	def columnCount(self, parent=None, *args, **kwargs):
@@ -151,7 +159,8 @@ class DocumentItemModel(QAbstractItemModel):
 		if parent is None:
 			return 1
 		if parent.internalPointer() is None:
-			return 1
+			print("HESJA")
+			return 0
 		else:
 			return len(parent.internalPointer().children())
 
@@ -186,28 +195,47 @@ class DocumentItemModel(QAbstractItemModel):
 		row = index.row()
 		model_item = index.internalPointer()
 		default_flags = Qt.ItemIsSelectable | Qt.ItemIsEnabled
-		if isinstance(model_item.data, Geometry):
-			default_flags = default_flags | Qt.ItemIsEditable
-		if isinstance(model_item.data, Parameter):
-			default_flags = default_flags | Qt.ItemIsEditable
-		if isinstance(model_item.data, Drawing):
-			default_flags = default_flags | Qt.ItemIsEditable
-		if isinstance(model_item.data, Feature):
-			default_flags = default_flags | Qt.ItemIsEditable
-		if isinstance(model_item.data, Analysis):
-			default_flags = default_flags | Qt.ItemIsEditable
-		if isinstance(model_item.data, Area):
-			default_flags = default_flags | Qt.ItemIsEditable
-		if isinstance(model_item.data, Edge):
-			default_flags = default_flags | Qt.ItemIsEditable
+		try:
+			if isinstance(model_item.data, Geometry):
+				default_flags = default_flags | Qt.ItemIsEditable
+			if isinstance(model_item.data, Parameter):
+				default_flags = default_flags | Qt.ItemIsEditable
+			if isinstance(model_item.data, Drawing):
+				default_flags = default_flags | Qt.ItemIsEditable
+			if isinstance(model_item.data, Feature):
+				default_flags = default_flags | Qt.ItemIsEditable
+			if isinstance(model_item.data, Analysis):
+				default_flags = default_flags | Qt.ItemIsEditable
+			if isinstance(model_item.data, Area):
+				default_flags = default_flags | Qt.ItemIsEditable
+			if isinstance(model_item.data, Edge):
+				default_flags = default_flags | Qt.ItemIsEditable
+			if isinstance(model_item.data, KeyPoint):
+				default_flags = default_flags | Qt.ItemIsEditable
+		except RuntimeError as e:
+			print("DocumentModel::flags")
+			print(str(e))
+			print("Col: " + str(col) + " Row: " + str(row))
 		return default_flags
 
 	def on_object_deleted(self, item):
-		item.setParent(None)
+		self.remove_item(item)
+
+	def remove_item(self, item):
+		parent = item.parent()
+		if parent:
+			if parent.parent():
+				parent_row = parent.parent().children().index(parent)
+			else:
+				parent_row = 0
+			index = parent.children().index(item)
+			if index != -1:
+				parent_model_index = self.createIndex(parent_row, 0, parent)
+				self.beginRemoveRows(parent_model_index, index, index)
+				item.setParent(None)
+				self.endRemoveRows()
 
 	def on_object_changed(self, item):
-		# index =
-		# self.dataChanged(index, index)
 		self.layoutAboutToBeChanged.emit()
 		self.layoutChanged.emit()
 
@@ -216,16 +244,10 @@ class DocumentItemModel(QAbstractItemModel):
 		self.layoutChanged.emit()
 
 	def on_before_object_removed(self, parent_item, event):
-		self.layoutAboutToBeChanged.emit()
+		pass
 
-	def on_object_removed(self, parent_item, event):
-		for child in parent_item.children():
-			if child.data == event.object:
-				child.setParent(None)
-			for childschild in child.children():
-				if childschild.data == event.object:
-					childschild.setParent(None)
-		self.layoutChanged.emit()
+	def on_object_removed(self, parent_item, item):
+		self.remove_item(item)
 
 	def on_before_object_added(self, parent_item, object):
 		self.layoutAboutToBeChanged.emit()
@@ -247,7 +269,7 @@ class DocumentItemModel(QAbstractItemModel):
 				new_item = DocumentModelItem(object, self, parameters_item)
 			elif type(object) is KeyPoint:
 				kps_item = parent_item.children()[1]
-				new_item = DocumentModelItem(object, self, kps_item, "Key point")
+				new_item = DocumentModelItem(object, self, kps_item)
 			elif type(object) is Edge:
 				edges_item = parent_item.children()[2]
 				new_item = DocumentModelItem(object, self, edges_item)
@@ -365,8 +387,17 @@ class DocumentModelItem(QObject):
 			self._model.on_before_object_removed(self, event)
 		elif event.type == ChangeEvent.ObjectRemoved:
 			event.object.remove_change_handler(self.data_changed)
-			self._model.on_object_removed(self, event)
+			for child in self.children():
+				if child.data == event.object:
+					self._model.on_object_removed(self, child)
+					return
+				for child_child in child.children():
+					if child_child.data == event.object:
+						self._model.on_object_removed(self, child_child)
+						return
 		elif event.type == ChangeEvent.Deleted:
+			self._data.remove_change_handler(self.data_changed)
+			self._data = None
 			self._model.on_object_deleted(self)
 		elif event.type == ChangeEvent.ValueChanged:
 			self._model.on_object_changed(self)
@@ -397,7 +428,7 @@ class DocumentModelItem(QObject):
 			return get_icon("sketchview")
 		elif type(obj) is PartView:
 			return get_icon("partview")
-		elif type(obj) is Area:
+		elif issubclass(type(obj), Area):
 			return get_icon("area")
 		elif type(obj) is Part:
 			return get_icon("part")

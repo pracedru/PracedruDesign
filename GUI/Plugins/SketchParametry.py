@@ -132,8 +132,8 @@ class SketchParametry():
 			doc = self._main_window.document
 			sketch = view.sketch
 			params = []
-			for param_tuple in sketch.get_all_parameters():
-				params.append(param_tuple[1].name)
+			for param in sketch.get_all_parameters():
+				params.append(param.name)
 			value = QInputDialog.getItem(self._main_window, "Set parameter", "Parameter:", params, 0, True)
 			if self._states.set_similar_x and value[1] == QDialog.Accepted:
 				set_similar_x(doc, sketch, self._similar_coords, value[0])

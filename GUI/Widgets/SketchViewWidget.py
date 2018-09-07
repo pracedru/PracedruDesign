@@ -3,7 +3,7 @@ from PyQt5.QtGui import QPainter
 from PyQt5.QtWidgets import QWidget
 
 from Data.Vertex import Vertex
-from GUI.Widgets.NewDrawers import create_pens, draw_sketch, draw_area, draw_edge
+from GUI.Widgets.NewDrawers import create_pens, draw_sketch, draw_area, draw_edge, draw_kp
 
 
 class SketchViewWidget(QWidget):
@@ -17,12 +17,24 @@ class SketchViewWidget(QWidget):
 		self._show_areas = False
 		self._areas_selectable = False
 		self._edges_selectable = False
+		self._keypoints_selectable = False
 		self._change_listener = None
 		self._selected_areas = []
 		self._selected_edges = []
+		self._selected_kps = []
 		self._area_hover = None
 		self._edge_hover = None
+		self._kp_hover = None
 		self._mouse_position = None
+
+	@property
+	def selected_kps(self):
+	    return self._selected_kps
+
+	@selected_kps.setter
+	def selected_kps(self, value):
+		self._selected_kps = value
+		self.update()
 
 	def mouseMoveEvent(self, q_mouse_event):
 		position = q_mouse_event.pos()
@@ -52,6 +64,15 @@ class SketchViewWidget(QWidget):
 		x = (self._mouse_position.x() - width) / scale - offset.x
 		y = -((self._mouse_position.y() - height) / scale + offset.y)
 
+
+		if self._keypoints_selectable:
+			for key_point in self._sketch.get_keypoints():
+				x1 = key_point.x
+				y1 = key_point.y
+				if abs(x1 - x) < 5 / scale and abs(y1 - y) < 5 / scale:
+					self._kp_hover = key_point
+					update_view = True
+					break
 		if self._edges_selectable:
 			smallest_dist = 10e10
 			closest_edge = None
@@ -79,6 +100,14 @@ class SketchViewWidget(QWidget):
 			return
 		if q_mouse_event.button() == 1:
 			pass
+
+		if self._kp_hover is not None and self._keypoints_selectable:
+			self._selected_kps.clear()
+			self._selected_kps.append(self._kp_hover)
+			if self._change_listener is not None:
+				self._change_listener.on_kp_selected(self._kp_hover)
+			self.update()
+
 		if self._edge_hover is not None and self._edges_selectable:
 			self._selected_edges.clear()
 			self._selected_edges.append(self._edge_hover)
@@ -122,6 +151,14 @@ class SketchViewWidget(QWidget):
 	def edges_selectable(self, value):
 		self._edges_selectable = value
 
+	@property
+	def keypoints_selectable(self):
+	  return self._keypoints_selectable
+
+	@keypoints_selectable.setter
+	def keypoints_selectable(self, value):
+		self._keypoints_selectable = value
+
 	def set_change_listener(self, change_listener):
 		self._change_listener = change_listener
 
@@ -142,17 +179,33 @@ class SketchViewWidget(QWidget):
 			scale_y = self.height() / sketch_height
 			scale = min(scale_x, scale_y) * 0.9
 
-			pens = create_pens(self._doc, 3000/scale, QColor(0, 0, 0))
-			pens_hover = create_pens(self._doc, 12000/scale, QColor(100, 100, 200))
-			pens_select_high = create_pens(self._doc, 18000/scale, QColor(255, 0, 0))
+			pens = create_pens(self._doc, 6000/scale, QColor(0, 0, 0))
+			pens_hover = create_pens(self._doc, 6000/scale, QColor(100, 100, 200), 1)
+			pens_select_high = create_pens(self._doc, 6000/scale, QColor(255, 0, 0), 2)
 			pens_select = create_pens(self._doc, 6000/scale, QColor(255, 255, 255))
 
 			offset = Vertex(-limits[0] - sketch_width / 2, -limits[1] - sketch_height / 2)
 			draw_sketch(qp, self._sketch, scale, 1/scale, offset, center, 0, pens, {})
+
+			qp.save()
+			qp.translate(center.x, center.y)
+			qp.scale(scale, scale)
+			qp.translate(offset.x, -offset.y)
 			for edge in self._selected_edges:
 				draw_edge(edge, qp, pens_select_high, None)
 			for edge in self._selected_edges:
 				draw_edge(edge, qp, pens_select, None)
+			if self._keypoints_selectable:
+				qp.setPen(pens['default'])
+				for kp in self._sketch.get_keypoints():
+					draw_kp(qp, kp, scale)
+				if self._kp_hover:
+					qp.setPen(pens_hover['default'])
+					draw_kp(qp, self._kp_hover, scale)
+			if len(self._selected_kps) > 0:
+				qp.setPen(pens_select_high['default'])
+				for kp in self._selected_kps:
+					draw_kp(qp, kp, scale)
 			if self._edge_hover is not None:
 				draw_edge(self._edge_hover, qp, pens_hover, None)
 			if self._show_areas:
@@ -163,4 +216,6 @@ class SketchViewWidget(QWidget):
 					draw_area(area, qp, True, QBrush(QColor(150, 150, 200, 150)), 1/scale, None)
 				if self._area_hover is not None:
 					draw_area(self._area_hover, qp, True, QBrush(QColor(150, 150, 200, 80)), 1/scale, None)
+			qp.restore()
+
 		qp.end()

@@ -3,6 +3,7 @@ from math import pi
 
 from Business.Undo import DoObject
 from Data.Document import Document
+from Data.Proformer import ProformerType
 from Data.Sketch import *
 
 
@@ -420,13 +421,31 @@ def create_mirror(sketch, type, kps, edges, areas):
 	proformer.resolve()
 	return proformer
 
-def create_pattern(sketch, pattern_type, kps, edges, areas, count, circular_kp=None):
+
+def create_pattern(sketch, pattern_type, kps, edges, areas, count, dimensions, circular_kp=None):
 	proformer = sketch.create_proformer(pattern_type, "New Pattern")
 	proformer.base_keypoints = kps
 	proformer.base_edges = edges
 	proformer.base_areas = areas
-	proformer.add_meta_data("count", count)
-	if circular_kp is not None:
+	if pattern_type == ProformerType.Circular:
+		proformer.name = "Circular Pattern"
+		count_param = sketch.get_parameter_by_name(count['param_1_name'])
+		count_value = int(float(count['param_1_value']))
+
+		dim_param = sketch.get_parameter_by_name(dimensions['param_1_name'])
+		dim_value = float(dimensions['param_1_value'])
+
+		if count_param is None:
+			count_param = sketch.create_parameter(count['param_1_name'], count_value)
+		if dim_param is None:
+			dim_param = sketch.create_parameter(dimensions['param_1_name'], dim_value)
+
+		proformer.set_meta_data("count", count_value)
+		proformer.set_meta_data_parameter("count", count_param)
+		proformer.set_meta_data("dim", dim_value)
+		proformer.set_meta_data_parameter("dim", dim_param)
 		proformer.add_control_kp(circular_kp)
+
+
 	proformer.resolve()
 	return proformer

@@ -18,48 +18,6 @@ def scale_dash_pattern(dash_pattern, fat):
 	return new_dash_pattern
 
 
-def get_pen_from_style(style, scale, color_override, fat):
-	color = color_override
-	if color_override is None:
-		c = style.color
-		color = QColor(c[0], c[1], c[2])
-	pen = None
-
-	if style.line_type == EdgeLineType.Continous:
-		pen = QPen(color, style.thickness * scale + style.thickness * scale * fat, Qt.SolidLine)
-	elif style.line_type == EdgeLineType.DashDot:
-		pen = QPen(color, style.thickness * scale + style.thickness * scale * fat)
-		pen.setDashPattern(scale_dash_pattern([10.0, 4.0, 1.0, 4.0], fat))
-	elif style.line_type == EdgeLineType.DashDotDot:
-		pen = QPen(color, style.thickness * scale + style.thickness * scale * fat)
-		pen.setDashPattern(scale_dash_pattern([10.0, 4.0, 1.0, 4.0, 1.0, 4.0], fat))
-	elif style.line_type == EdgeLineType.Dashed:
-		pen = QPen(color, style.thickness * scale + style.thickness * scale * fat)
-		pen.setDashPattern(scale_dash_pattern([10.0, 4.0], fat))
-	elif style.line_type == EdgeLineType.DotDot:
-		pen = QPen(color, style.thickness * scale + style.thickness * scale * fat, Qt.DotLine)
-		pen.setDashPattern(scale_dash_pattern([2.0, 4.0], fat))
-	else:
-		pen = QPen(color, style.thickness * scale + style.thickness * scale * fat, Qt.SolidLine)
-
-	return pen
-
-
-def create_pens(document, scale, color_override=None, fat=0):
-	"""
-	Creates pens for all edge styles that are defined in the document
-	:param document:
-	:param scale: The pen thickness scale to be used
-	:param color_override: Overrides the color defined in the style
-	:return:
-	"""
-	pens = {}
-	pens['default'] = QPen(QColor(0, 0, 0), 0.0002 * scale)
-	for style in document.styles.get_edge_styles():
-		pens[style.uid] = get_pen_from_style(style, scale, color_override, fat)
-	return pens
-
-
 def draw_sketch(qp: QPainter, sketch, scale, brush_scale, offset, center, pens, fields, instance=None):
 	edges = sketch.get_edges()
 	areas = sketch.get_areas()

@@ -1,6 +1,6 @@
 from PyQt5.QtCore import Qt
 
-from Data.Sketch import Text, Alignment
+from Data.Sketch import Text, Alignment, Attribute
 from Data.Vertex import Vertex
 # from GUI import plugin_initializers
 
@@ -94,7 +94,7 @@ class SketchSelect():
 					y1 += text.height / 2
 				elif text.vertical_alignment == Alignment.Bottom:
 					y1 -= text.height / 2
-				if abs(y1 - y) < text.height and abs(x1 - x) < text.height * len(text.value) / 2:
+				if abs(y1 - y) < text.height and abs(x1 - x) < text.height * len(text.name) / 2:
 					view.text_hover = text
 					update_view = True
 					break

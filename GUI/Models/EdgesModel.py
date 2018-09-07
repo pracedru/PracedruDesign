@@ -40,6 +40,8 @@ class EdgesModel(QAbstractTableModel):
 		col = model_index.column()
 		row = model_index.row()
 		data = None
+		if row >= len(self._rows):
+			return data
 		if int_role == Qt.DisplayRole:
 			edge_item = self._sketch.get_edge(self._rows[row])
 			if edge_item is None:

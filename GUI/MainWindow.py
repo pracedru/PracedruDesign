@@ -292,11 +292,11 @@ class MainWindow(QMainWindow):
 				self._geometry_dock.set_sketch(selection[0])
 				self._ribbon_widget.setCurrentIndex(1)
 			if type(selection[0]) is KeyPoint:
-				self._viewWidget.sketch_view.set_selected_key_points([selection[0]])
+				self._viewWidget.sketch_view.selected_key_points = [selection[0]]
 			if type(selection[0]) is Edge:
-				self._viewWidget.sketch_view.set_selected_edges([selection[0]])
-			if type(selection[0]) is Area:
-				self._viewWidget.sketch_view.set_selected_areas([selection[0]])
+				self._viewWidget.sketch_view.selected_edges = [selection[0]]
+			if issubclass(type(selection[0]), Area):
+				self._viewWidget.sketch_view.selected_areas = [selection[0]]
 			if type(selection[0]) is Drawing:
 				self._viewWidget.set_drawing_view(selection[0])
 				self._ribbon_widget.setCurrentIndex(3)

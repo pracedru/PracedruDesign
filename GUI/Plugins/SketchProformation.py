@@ -69,8 +69,11 @@ class SketchPattern():
 		value = spd.exec_()
 		if value == QDialog.Accepted:
 			count = spd.count
+			dimensions = spd.dimensions
+			center_kp = spd.center_kp
 			pattern_type = spd.pattern_type
-			create_pattern(sketch, pattern_type, self._kps_to_proform, self._edges_to_proform, self._areas_to_proform, count)
+
+			create_pattern(sketch, pattern_type, self._kps_to_proform, self._edges_to_proform, self._areas_to_proform, count, dimensions, center_kp)
 		view.on_escape()
 
 	def on_mirror(self):

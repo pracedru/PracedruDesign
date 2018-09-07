@@ -127,8 +127,8 @@ class ParametersWidget(QWidget):
 	def on_set_governor(self):
 		rows = self.parameters_table.selectionModel().selectedRows()
 		params = []
-		for param_tuple in self._parameters.get_all_parameters():
-			params.append(param_tuple[1].name)
+		for param in self._parameters.get_all_parameters():
+			params.append(param.name)
 		params.sort()
 		value = QInputDialog.getItem(self, "Set parameter", "Parameter:", params, 0, False)
 		governor_parameter = self._parameters.get_parameter_by_name(value[0])

@@ -533,6 +533,14 @@ class Edge(IdObject, NamedObservableObject):
 			if diff < -2 * pi:
 				diff += 2 * pi
 			return abs(diff * r)
+		elif self.type == EdgeType.FilletLineEdge:
+			data = self.get_draw_data()
+			span = data['span']
+			r = data['r']
+			return r*span
+		elif self.type == EdgeType.CircleEdge:
+			r = self._meta_data['r']
+			return 2*pi*r
 
 	def coincident(self, key_point, coin_thress=None):
 		kps = self.get_keypoints()

@@ -49,10 +49,11 @@ class Sketch(Geometry):
 
 		for instance in self._sketch_instances.values():
 			in_lim = instance.sketch.get_limits()
-			limits[0] = min(in_lim[0] + instance.offset.x, limits[0])
-			limits[1] = min(in_lim[1] + instance.offset.y, limits[1])
-			limits[2] = max(in_lim[2] + instance.offset.x, limits[2])
-			limits[3] = max(in_lim[3] + instance.offset.y, limits[3])
+			sc = instance.scale
+			limits[0] = min(in_lim[0]*sc + instance.offset.x, limits[0])
+			limits[1] = min(in_lim[1]*sc + instance.offset.y, limits[1])
+			limits[2] = max(in_lim[2]*sc + instance.offset.x, limits[2])
+			limits[3] = max(in_lim[3]*sc + instance.offset.y, limits[3])
 		return limits
 
 	@property
