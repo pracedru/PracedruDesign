@@ -359,11 +359,22 @@ class CompositeArea(Area):
 	def deserialize_data(self, data, sketch):
 		Area.deserialize_data(self, data['area'])
 		self._base_area = sketch.get_area(data['base_area'])
+		sketch.document.add_late_init_object(self)
+		self._subtracted_areas = data['subtracted_areas']
+		self._added_areas = data['added_areas']
+
+
+	def late_init(self):
+		data = {}
+		data['subtracted_areas'] = self._subtracted_areas
+		data['added_areas'] = self._added_areas
+		self._subtracted_areas = []
+		self._added_areas = []
 		for area_uid in data['subtracted_areas']:
-			area = sketch.get_area(area_uid)
+			area = self._sketch.get_area(area_uid)
 			self._subtracted_areas.append(area)
 			area.add_change_handler(self.on_area_changed)
 		for area_uid in data['added_areas']:
-			area = sketch.get_area(area_uid)
+			area = self._sketch.get_area(area_uid)
 			self._added_areas.append(area)
 			area.add_change_handler(self.on_area_changed)
