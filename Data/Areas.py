@@ -315,31 +315,34 @@ class CompositeArea(Area):
 
 	@property
 	def subtracted_areas(self):
-		return self._subtracted_areas
+		areas = []
+		for area_uid in self._subtracted_areas:
+			areas.append(self._sketch.get_area(area_uid))
+		return areas
 
 	def delete(self):
 		self.changed(ChangeEvent(self, ChangeEvent.Deleted, self))
 
 	def add_subtract_area(self, area):
 		if area not in self._subtracted_areas:
-			self._subtracted_areas.append(area)
+			self._subtracted_areas.append(area.uid)
 			area.add_change_handler(self.on_area_changed)
 
 	def add_added_area(self, area):
 		if area not in self._added_areas:
-			self._added_areas.append(area)
+			self._added_areas.append(area.uid)
 			area.add_change_handler(self.on_area_changed)
 
 	def inside(self, vertex):
 		if self._base_area.inside(vertex):
-			for area in self._subtracted_areas:
+			for area in self.subtracted_areas:
 				if area.inside(vertex):
 					return False
 			return True
 
 	def get_edges(self):
 		edges = list(self.base_area.get_edges())
-		for area in self._subtracted_areas:
+		for area in self.subtracted_areas:
 			edges.extend(area.get_edges())
 		return edges
 
@@ -352,8 +355,8 @@ class CompositeArea(Area):
 			{
 				'area': Area.serialize_json(self),
 				'base_area': self._base_area.uid,
-				'subtracted_areas': get_uids(self._subtracted_areas),
-				'added_areas': get_uids(self._added_areas)
+				'subtracted_areas': self._subtracted_areas,
+				'added_areas': self._added_areas
 			}
 
 	def deserialize_data(self, data, sketch):
@@ -368,13 +371,13 @@ class CompositeArea(Area):
 		data = {}
 		data['subtracted_areas'] = self._subtracted_areas
 		data['added_areas'] = self._added_areas
-		self._subtracted_areas = []
-		self._added_areas = []
-		for area_uid in data['subtracted_areas']:
-			area = self._sketch.get_area(area_uid)
-			self._subtracted_areas.append(area)
-			area.add_change_handler(self.on_area_changed)
-		for area_uid in data['added_areas']:
-			area = self._sketch.get_area(area_uid)
-			self._added_areas.append(area)
-			area.add_change_handler(self.on_area_changed)
+		#self._subtracted_areas = []
+		#self._added_areas = []
+		#for area_uid in data['subtracted_areas']:
+		#	area = self._sketch.get_area(area_uid)
+		#	self._subtracted_areas.append(area)
+		#	area.add_change_handler(self.on_area_changed)
+		#for area_uid in data['added_areas']:
+		#	area = self._sketch.get_area(area_uid)
+		#	self._added_areas.append(area)
+		#	area.add_change_handler(self.on_area_changed)

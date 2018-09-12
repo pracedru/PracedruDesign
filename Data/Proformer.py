@@ -395,8 +395,9 @@ class Proformer(IdObject, Parameters, MetaDataObject):
 			if area not in base_areas:
 				base_areas.append(area)
 		for area in base_areas:
-			for edge in area.get_edges():
-				self._edges.add(edge)
+			if area:
+				for edge in area.get_edges():
+					self._edges.add(edge)
 		for edge in self._edges:
 			for kp in edge.get_keypoints():
 				if kp not in self._kps:
@@ -456,6 +457,7 @@ class Proformer(IdObject, Parameters, MetaDataObject):
 		NamedObservableObject.deserialize_data(self, data['no'])
 		MetaDataObject.deserialize_data(self, data.get('mdo', None))
 		self._type = ProformerType(data['type'])
+		self._sketch.document.add_late_init_object(self)
 		for kp_uid in data['kps']:
 			kp = self._sketch.get_keypoint(kp_uid)
 			self._kps.add(kp)
@@ -472,5 +474,7 @@ class Proformer(IdObject, Parameters, MetaDataObject):
 			kp = self._sketch.get_keypoint(kp_uid)
 			self._control_kps.append(kp)
 			kp.add_change_handler(self.on_control_kp_changed)
+		self.resolve()
 
-
+	def late_init(self):
+		pass

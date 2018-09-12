@@ -4,12 +4,12 @@ import numpy as np
 
 from enum import Enum
 from Data.Events import ChangeEvent
-from Data.Nurbs import Nurbs
+#from Data.Nurbs import Nurbs
 from Data.Objects import IdObject
 from Data.Objects import NamedObservableObject
 from Data.Plane import Plane
 from Data.Vertex import Vertex
-
+import NurbSurfer as ns
 
 class EdgeType(Enum):
 	LineEdge = 1
@@ -471,21 +471,23 @@ class Edge(IdObject, NamedObservableObject):
 				edge_data = self._draw_datas[instance_name]
 			else:
 				kps = self.get_keypoints()
-				nurbs = Nurbs()
+				nurbs = ns.Nurbs()
 				controls = []
 				coords = []
 				for i in range(0, len(kps)):
 					kp = kps[i]
-					controls.append(kp.get_instance_xyz(instance))
-
+					#controls.append(kp.get_instance_xyz(instance))
+					v = kp.get_instance_xyz(instance)
+					controls.append(ns.Vertex(v[0], v[1], v[2]))
 				if len(controls) > 2:
-					nurbs.set_controls(controls)
+					nurbs.setControls(controls)
 					divs = len(controls) * 20
-					for i in range(0, divs):
-						p = nurbs.C(i / divs)
-						coords.append(Vertex.from_xyz(p))
+
+					for vert in nurbs.range(divs):
+
+						coords.append(Vertex.from_xyz(vert.xyz()))
 					p = controls[len(controls) - 1]
-					coords.append(Vertex.from_xyz(p))
+					coords.append(Vertex.from_xyz(p.xyz()))
 				else:
 					for kp in kps:
 						coords.append(Vertex.from_xyz(kp.get_instance_xyz(instance)))

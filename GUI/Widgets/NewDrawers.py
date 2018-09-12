@@ -1,6 +1,6 @@
 from math import cos, sin, pi, tan
 
-from PyQt5.QtCore import Qt, QPointF, QRectF
+from PyQt5.QtCore import Qt, QPointF, QRectF, QLineF
 from PyQt5.QtGui import QPainter, QBrush, QColor, QPen, QPainterPath, QTransform, QFont, QFontMetrics
 
 from Data.Areas import CompositeArea
@@ -293,13 +293,15 @@ def draw_edge(edge: Edge, qp, pens, instance):
 			coords = draw_data['coords']
 			x1 = None
 			y1 = None
+			points = []
 			for coord in coords:
 				x2 = coord.x
 				y2 = -coord.y
-				if x1 is not None:
-					qp.drawLine(QPointF(x1, y1), QPointF(x2, y2))
+				if x1:
+					points.append	(QLineF(QPointF(x1, y1), QPointF(x2, y2)))
 				x1 = x2
 				y1 = y2
+			qp.drawLines(points)
 
 class Limits:
 	def __init__(self):

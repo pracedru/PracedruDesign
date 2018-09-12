@@ -1,8 +1,20 @@
-// Define the SIP wrapper to the hellosip library.
+//SIP wrapper to the NurbSurfer library.
 
 %Module NurbSurfer
 
 %Import QtCore/QtCoremod.sip
+
+struct Vertex {
+
+%TypeHeaderCode
+#include <vertex.h>
+%End
+
+    double x;
+    double y;
+	  double z;
+};
+
 
 class Nurbs {
 
@@ -11,9 +23,10 @@ class Nurbs {
 %End
 
 public:
-    Nurbs(QObject *parent /TransferThis/ = nullptr);
+    Nurbs();
     void setControls(QList<Vertex> controls);
     Vertex C(double u);
     QList<Vertex> range(int divisions);
+private:
+		Nurbs(const Nurbs &);
 };
-

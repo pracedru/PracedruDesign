@@ -470,7 +470,6 @@ class Sketch(Geometry):
 		for proformer_data in data.get('proformers', {}).values():
 			proformer = Proformer.deserialize(self, proformer_data)
 			self._proformers[proformer.uid] = proformer
-			proformer.resolve()
 			proformer.add_change_handler(self.on_proformer_changed)
 
 		if self.edge_naming_index == 0:

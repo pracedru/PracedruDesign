@@ -13,6 +13,9 @@ class Nurbs(object):
 	def controls(self):
 		return self._controls
 
+	def setControls(self, controls):
+		self.set_controls(controls)
+
 	def set_controls(self, controls):
 		self._controls = controls
 		self.create_knots(len(controls))
@@ -23,9 +26,10 @@ class Nurbs(object):
 		self._weights = None
 		self._knots.append(0.0)
 		self._knots.append(0.0)
-		for i in range(control_count - 1):
-			k = i / (control_count - 2)
-			self._knots.append(k)
+		if control_count>2:
+			for i in range(control_count - 1):
+				k = i / (control_count - 2)
+				self._knots.append(k)
 		self._knots.append(1)
 		self._knots.append(1)
 
@@ -59,7 +63,7 @@ class Nurbs(object):
 			if lu is not None:
 				return lu
 		if n == 0:
-			if self._knots[i] <= u < self._knots[i + 1]:
+			if self._knots[i] <= u <= self._knots[i + 1]:
 				return 1.0
 			elif u == self._knots[i + 1] and i + 2 == len(self._knots):
 				return 1.0
