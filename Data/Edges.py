@@ -9,8 +9,10 @@ from Data.Objects import IdObject
 from Data.Objects import NamedObservableObject
 from Data.Plane import Plane
 from Data.Vertex import Vertex
-import NurbSurfer as ns
-#import Data.Nurbs as ns
+try:
+	import NurbSurfer as ns
+except ImportError as e:
+	import Data.Nurbs as ns
 
 class EdgeType(Enum):
 	LineEdge = 1
