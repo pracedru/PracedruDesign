@@ -337,6 +337,9 @@ class Proformer(IdObject, Parameters, MetaDataObject):
 				new_edge.set_meta_data('r', r)
 				r_param = edge.get_meta_data_parameter('r')
 				new_edge.set_meta_data_parameter('r', r_param)
+			elif edge.type == EdgeType.NurbsEdge:
+				n = edge.get_meta_data('n', 2)
+				new_edge.set_meta_data('n', n)
 			new_edge.editable = False
 			self._result_edges[new_edge.uid] = new_edge
 			self._lookups_edges[i][edge.uid] = new_edge

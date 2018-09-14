@@ -4,12 +4,13 @@ import numpy as np
 
 from enum import Enum
 from Data.Events import ChangeEvent
-#from Data.Nurbs import Nurbs
+
 from Data.Objects import IdObject
 from Data.Objects import NamedObservableObject
 from Data.Plane import Plane
 from Data.Vertex import Vertex
 import NurbSurfer as ns
+#import Data.Nurbs as ns
 
 class EdgeType(Enum):
 	LineEdge = 1
@@ -472,22 +473,18 @@ class Edge(IdObject, NamedObservableObject):
 			else:
 				kps = self.get_keypoints()
 				nurbs = ns.Nurbs()
+				nurbs.set_degree(self.get_meta_data("n"))
 				controls = []
 				coords = []
 				for i in range(0, len(kps)):
 					kp = kps[i]
-					#controls.append(kp.get_instance_xyz(instance))
 					v = kp.get_instance_xyz(instance)
 					controls.append(ns.Vertex(v[0], v[1], v[2]))
 				if len(controls) > 2:
-					nurbs.setControls(controls)
+					nurbs.set_controls(controls)
 					divs = len(controls) * 20
-
 					for vert in nurbs.range(divs):
-
-						coords.append(Vertex.from_xyz(vert.xyz()))
-					p = controls[len(controls) - 1]
-					coords.append(Vertex.from_xyz(p.xyz()))
+						coords.append(Vertex.from_xyz(vert.get_xyz()))
 				else:
 					for kp in kps:
 						coords.append(Vertex.from_xyz(kp.get_instance_xyz(instance)))
@@ -618,6 +615,9 @@ class Edge(IdObject, NamedObservableObject):
 		self._geometry.document.add_late_init_object(self)
 		self._meta_data = data.get('meta_data')
 		self._meta_data_parameters = data.get('meta_data_parameters')
+		if self._type == EdgeType.NurbsEdge:
+			if "n" not in self._meta_data:
+				self._meta_data["n"] = 2
 		for parameter_uid in self._meta_data_parameters:
 			param = self._geometry.get_parameter_by_uid(parameter_uid)
 			if param is not None:

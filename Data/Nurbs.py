@@ -1,13 +1,16 @@
 import numpy as np
-
+from Data.Vertex import Vertex
 
 class Nurbs(object):
 	def __init__(self):
 		self._knots = [0.0, 0.0, 0.0, 1.0, 1.0, 1.0]
-		self._weights = None
+		self._weights = []
 		self._controls = []
 		self._degree = 2
 		self._ntable = []
+
+	def set_degree(self, value):
+		self._degree = value
 
 	@property
 	def controls(self):
@@ -16,22 +19,36 @@ class Nurbs(object):
 	def setControls(self, controls):
 		self.set_controls(controls)
 
-	def set_controls(self, controls):
+	def set_controls(self, controls, knots=None, weights=None):
 		self._controls = controls
-		self.create_knots(len(controls))
+		if knots:
+			self._knots = knots
+		else:
+			self.create_knots(len(controls))
+		if weights:
+			self._weights = weights
+		else:
+			self.create_weights(len(controls))
 		self._ntable = []
 
 	def create_knots(self, control_count):
 		self._knots.clear()
 		self._weights = None
-		self._knots.append(0.0)
-		self._knots.append(0.0)
-		if control_count>2:
-			for i in range(control_count - 1):
-				k = i / (control_count - 2)
+		for n in range(self._degree):
+			self._knots.append(0.0)
+
+		if control_count>self._degree:
+			for i in range(control_count + 1 - self._degree):
+				k = i / (control_count - self._degree)
 				self._knots.append(k)
-		self._knots.append(1)
-		self._knots.append(1)
+
+		for n in range(self._degree):
+			self._knots.append(1.0)
+
+	def create_weights(self, control_count):
+		self._weights = []
+		for i in range(control_count):
+			self._weights.append(1.0)
 
 	def g(self, i, n, u):
 		num = self._knots[i + n] - u
@@ -47,13 +64,13 @@ class Nurbs(object):
 			denom = 1.0e-30
 		return num / denom
 
-	def lookup(self, i, u):
+	def lookup(self, i, n):
 		if len(self._ntable) < i + 1:
 			self._ntable.append({})
 			return None
 		else:
-			if u in self._ntable[i]:
-				return self._ntable[i][u]
+			if n in self._ntable[i]:
+				return self._ntable[i][n]
 			else:
 				return None
 
@@ -63,7 +80,7 @@ class Nurbs(object):
 			if lu is not None:
 				return lu
 		if n == 0:
-			if self._knots[i] <= u <= self._knots[i + 1]:
+			if self._knots[i] <= u < self._knots[i + 1]:
 				return 1.0
 			elif u == self._knots[i + 1] and i + 2 == len(self._knots):
 				return 1.0
@@ -79,20 +96,32 @@ class Nurbs(object):
 		else:
 			num = self.N(i, n, u) * self._weights[i]
 			denom = 0.0
-			for j in range(self._controls):
-				denom += self.N(j, n, u) * self._weights[i]
+			for j in range(len(self._controls)):
+				denom += self.N(j, n, u) * self._weights[j]
+			if denom == 0.0:
+				denom = 1e-99
 			return num / denom
 
 	def C(self, u):
-		c = None
+		c = Vertex()
 		n = self._degree
+		if u == 1:
+			u = 0.999999999
 		for i in range(len(self._controls)):
 			P = self._controls[i]
-			if c is None:
-				c = self.R(i, n, u) * P
-			else:
-				c += self.R(i, n, u) * P
+			c += P * self.R(i, n, u)
 		return c
+
+	def range(self, divs):
+		verts = []
+
+		numerator = float(divs) - 1.0;
+		for i in range(divs):
+			c = i / numerator;
+			verts.append(self.C(c))
+
+		return verts;
+
 
 
 class NurbsSurface(object):

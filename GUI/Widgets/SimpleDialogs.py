@@ -447,6 +447,7 @@ class ParameterSelectWidget():
 		self._parameter_combobox = QComboBox()
 		self._parameter_combobox.setEditable(True)
 		self._parameter_combobox.currentIndexChanged.connect(self.on_parameter_combobox_changed)
+		self._parameter_combobox.currentTextChanged.connect(self.on_parameter_combobox_text_changed)
 		self._value_textbox = QLineEdit()
 		layout.addWidget(self._caption_label, row, 0)
 		layout.addWidget(self._parameter_combobox, row, 1)
@@ -459,6 +460,11 @@ class ParameterSelectWidget():
 	def on_parameter_combobox_changed(self):
 		param = self._parameters.get_parameter_by_name(self._parameter_combobox.currentText())
 		self._value_textbox.setText(QLocale().toString(param.value))
+		self._value_textbox.setEnabled(False)
+
+	def on_parameter_combobox_text_changed(self):
+		text = self._parameter_combobox.currentText()
+		self._value_textbox.setEnabled(True)
 
 	@property
 	def parameter(self):
@@ -517,7 +523,7 @@ class SketchPatternDialog(QDialog):
 		QDialog.__init__(self, parent)
 		self._sketch = sketch
 		self.setLayout(QVBoxLayout())
-
+		self.setWindowTitle("Make pattern")
 		contents_widget = QWidget(self)
 		contents_layout = QGridLayout()
 		contents_widget.setLayout(contents_layout)
@@ -663,3 +669,29 @@ class CompositeAreaDialog(QDialog):
 		dialog_buttons.accepted.connect(self.accept)
 		dialog_buttons.rejected.connect(self.reject)
 		self.layout().addWidget(dialog_buttons)
+
+
+class SketchFilletDialog(QDialog):
+	def __init__(self, parent, sketch):
+		QDialog.__init__(self, parent)
+		self._sketch = sketch
+		self.setLayout(QVBoxLayout())
+		self.setWindowTitle("Make fillet")
+		contents_widget = QWidget(self)
+		contents_layout = QGridLayout()
+		contents_widget.setLayout(contents_layout)
+
+		self._radius_widget = ParameterSelectWidget(self, self._sketch, contents_layout, 0, "Radius")
+
+		dialog_buttons = QDialogButtonBox(QDialogButtonBox.Cancel | QDialogButtonBox.Ok)
+		dialog_buttons.accepted.connect(self.accept)
+		dialog_buttons.rejected.connect(self.reject)
+		self.layout().addWidget(dialog_buttons)
+
+	@property
+	def dimensions(self):
+		dims = {
+			'param_1_name': self._radius_widget.parameter_name,
+			'param_1_value': self._radius_widget.value,
+		}
+		return dims

@@ -28,16 +28,23 @@ class Vertex(object):
 		return atan2(diff[0], diff[1]), atan2(diff[0], diff[2])
 
 	def __add__(self, other):
+		if issubclass(type(other), Vertex):
+			return Vertex.from_xyz(self.xyz + other.xyz)
+		elif hasattr(other, "__len__"):
+			if len(other) == 3:
+				return Vertex(self.x + other[0], self.y + other[1], self.z + other[2])
+			else:
+				raise TypeError("Other must have size 3: " + str(other))
 		return Vertex(self.x + other.x, self.y + other.y, self.z + other.z)
 
 	def __truediv__(self, other):
-		if type(other) is float:
+		if type(other) is float or type(other) is int:
 			return Vertex(self.x / other, self.y / other, self.z / other)
 		else:
 			raise TypeError("Vertex can not be diveded by: " + str(other))
 
 	def __mul__(self, other):
-		if type(other) is float:
+		if type(other) is float or type(other) is int:
 			return Vertex(self.x * other, self.y * other, self.z * other)
 		else:
 			raise TypeError("Vertex can not be multiplied by: " + str(other))
@@ -47,6 +54,9 @@ class Vertex(object):
 
 	def equals(self, other):
 		return self.x == other.x and self.y == other.y and self.z == other.z
+
+	def get_xyz(self):
+		return self.xyz
 
 	@property
 	def x(self):

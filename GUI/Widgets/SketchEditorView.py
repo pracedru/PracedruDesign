@@ -1,3 +1,4 @@
+import traceback
 from math import *
 
 from PyQt5.QtCore import QEvent, QPoint, Qt, QPointF
@@ -315,40 +316,42 @@ class SketchEditorViewWidget(QWidget):
 		qp = QPainter()
 		qp.begin(self)
 
+
+		p1 = QPoint(0, 0)
+		p2 = QPoint(self.width(), self.height())
+		p3 = QPoint(0, self.height())
+		gradient = QLinearGradient(p1, p3)
+
+		gradient.setColorAt(0, self._gradient_color_top)
+		gradient.setColorAt(1, self._gradient_color_bottom)
+
+		qp.fillRect(event.rect(), gradient)
+		qp.setRenderHint(QPainter.HighQualityAntialiasing)
+
+		cx = self._offset.x * self._scale + self.width() / 2
+		cy = -self._offset.y * self._scale + self.height() / 2
+
+		qp.setPen(self._axis_pen)
+		if self.width() > cx > 0:
+			qp.drawLine(QPointF(cx, 0), QPointF(cx, self.height()))
+		if self.height() > cy > 0:
+			qp.drawLine(QPointF(0, cy), QPointF(self.width(), cy))
+
+		qp.save()
+		qp.translate(self.width()/2, self.height()/2)
+		qp.scale(self._scale, self._scale)
+		qp.translate(self._offset.x, -self._offset.y)
+
 		try:
-			p1 = QPoint(0, 0)
-			p2 = QPoint(self.width(), self.height())
-			p3 = QPoint(0, self.height())
-			gradient = QLinearGradient(p1, p3)
-
-			gradient.setColorAt(0, self._gradient_color_top)
-			gradient.setColorAt(1, self._gradient_color_bottom)
-
-			qp.fillRect(event.rect(), gradient)
-			qp.setRenderHint(QPainter.HighQualityAntialiasing)
-
-			cx = self._offset.x * self._scale + self.width() / 2
-			cy = -self._offset.y * self._scale + self.height() / 2
-
-			qp.setPen(self._axis_pen)
-			if self.width() > cx > 0:
-				qp.drawLine(QPointF(cx, 0), QPointF(cx, self.height()))
-			if self.height() > cy > 0:
-				qp.drawLine(QPointF(0, cy), QPointF(self.width(), cy))
-
-			qp.save()
-			qp.translate(self.width()/2, self.height()/2)
-			qp.scale(self._scale, self._scale)
-			qp.translate(self._offset.x, -self._offset.y)
-
 			self.draw_instances(event, qp)
 			self.draw_areas(event, qp)
 			self.draw_edges(event, qp)
 			self.draw_texts(event, qp)
-
-			qp.restore()
 		except Exception as e:
 			print(str(e))
+			traceback.print_exc()
+
+		qp.restore()
 		qp.end()
 
 	def draw_texts(self, event, qp: QPainter):

@@ -259,6 +259,7 @@ class Sketch(Geometry):
 			nurbs_edge = Edge(self, EdgeType.NurbsEdge)
 			nurbs_edge.name = "Edge" + str(self.edge_naming_index)
 			nurbs_edge.add_key_point(kp)
+			nurbs_edge.set_meta_data("n", 2)
 			self.edge_naming_index += 1
 			self.changed(ChangeEvent(self, ChangeEvent.BeforeObjectAdded, nurbs_edge))
 			self._edges[nurbs_edge.uid] = nurbs_edge
