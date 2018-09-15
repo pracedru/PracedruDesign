@@ -5,7 +5,7 @@ from PyQt5.QtWidgets import QInputDialog, QDialog
 
 from Business.SketchActions import get_create_keypoint, create_line, add_sketch_instance_to_sketch, create_nurbs_edge, add_arc, \
 	create_circle, create_fillet, create_text, create_attribute
-from GUI.Widgets.SimpleDialogs import AddArcDialog
+from GUI.Widgets.SimpleDialogs import AddArcDialog, SingleParameterDialog, MultiParameterDialog
 from GUI.init import plugin_initializers
 
 from GUI.Ribbon.RibbonButton import RibbonButton
@@ -230,20 +230,22 @@ class SketchLineDraw():
 			view = self._sketch_editor_view
 			coincident_threshold = 5 / scale
 			sketch = view.sketch
-			add_arc_widget = AddArcDialog(self._main_window, sketch)
+			#add_arc_widget = AddArcDialog(self._main_window, sketch)
+			add_arc_widget = MultiParameterDialog(self._main_window, sketch, "Create Arc", ["Radius", "Start angle", "End angle"])
 			result = add_arc_widget.exec_()
 			doc = self._main_window.document
 			if result == QDialog.Accepted:
 				kp = get_create_keypoint(sketch, x, y, coincident_threshold)
-				radius_param = sketch.get_parameter_by_name(add_arc_widget.radius_param())
-				start_angle_param = sketch.get_parameter_by_name(add_arc_widget.start_angle_param())
-				end_angle_param = sketch.get_parameter_by_name(add_arc_widget.end_angle_param())
+				param_results = add_arc_widget.parameter_results
+				radius_param = sketch.get_parameter_by_name(param_results["Radius"]['name'])
+				start_angle_param = sketch.get_parameter_by_name(param_results["Start angle"]['name'])
+				end_angle_param = sketch.get_parameter_by_name(param_results["End angle"]['name'])
 				if radius_param is None:
-					radius_param = sketch.create_parameter(add_arc_widget.radius_param(), 1.0)
+					radius_param = sketch.create_parameter(param_results["Radius"]['name'], param_results["Radius"]['value'])
 				if start_angle_param is None:
-					start_angle_param = sketch.create_parameter(add_arc_widget.start_angle_param(), 0.0)
+					start_angle_param = sketch.create_parameter(param_results["Start angle"]['name'], param_results["Start angle"]['value'])
 				if end_angle_param is None:
-					end_angle_param = sketch.create_parameter(add_arc_widget.end_angle_param(), pi)
+					end_angle_param = sketch.create_parameter(param_results["End angle"]['name'], param_results["End angle"]['value'])
 				add_arc(doc, sketch, kp, radius_param, start_angle_param, end_angle_param)
 			view.on_escape()
 		#                                     ***        Circle       ***
@@ -257,13 +259,17 @@ class SketchLineDraw():
 			params.sort()
 			for param in sketch.get_all_parameters():
 				params.append(param.name)
-			value = QInputDialog.getItem(self._main_window, "Set radius parameter", "Parameter:", params, 0, True)
-			if value[1] == QDialog.Accepted:
-				radius_param = sketch.get_parameter_by_name(value[0])
+			#value = QInputDialog.getItem(self._main_window, "Set radius parameter", "Parameter:", params, 0, True)
+			spd = SingleParameterDialog(self._main_window, sketch, "Create Fillet")
+			dialog_result = spd.exec_()
+			if dialog_result == QDialog.Accepted:
+				param_name = spd.dimensions["param_1_name"]
+				param_value = spd.dimensions["param_1_value"]
+				radius_param = sketch.get_parameter_by_name(param_name)
 				if radius_param is None:
-					radius_param = sketch.create_parameter(value[0], 1.0)
+					radius_param = sketch.create_parameter(param_name, param_value)
 				create_circle(doc, sketch, kp, radius_param)
-			self.on_escape()
+			view.on_escape()
 
 		#                                     *** Add Sketch Instance ***
 		if self._states.add_sketch_instance:
@@ -306,11 +312,15 @@ class SketchLineDraw():
 					params.sort()
 					for param in sketch.get_all_parameters():
 						params.append(param.name)
-					value = QInputDialog.getItem(self._main_window, "Set radius parameter", "Parameter:", params, 0, True)
-					if value[1] == QDialog.Accepted:
-						radius_param = sketch.get_parameter_by_name(value[0])
+					spd = SingleParameterDialog(self._main_window, sketch, "Create Fillet")
+					#value = QInputDialog.getItem(self._main_window, "Set radius parameter", "Parameter:", params, 0, True)
+					dialog_result = spd.exec_()
+					if dialog_result == QDialog.Accepted:
+						param_name = spd.dimensions["param_1_name"]
+						param_value = spd.dimensions["param_1_value"]
+						radius_param = sketch.get_parameter_by_name(param_name)
 						if radius_param is None:
-							radius_param = sketch.create_parameter(value[0], 1.0)
+							radius_param = sketch.create_parameter(param_name, param_value)
 						for kp in view.selected_key_points:
 							create_fillet(doc, sketch, kp, radius_param)
 						view.on_escape()

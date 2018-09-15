@@ -12,6 +12,7 @@ from Data.Vertex import Vertex
 try:
 	import NurbSurfer as ns
 except ImportError as e:
+	print("Falling back to python Nurbs library.")
 	import Data.Nurbs as ns
 
 class EdgeType(Enum):

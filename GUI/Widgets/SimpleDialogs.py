@@ -12,7 +12,7 @@ from PyQt5.QtWidgets import QWidget
 from Data.Axis import Axis
 from Data.Proformer import ProformerType
 from GUI.Widgets.SketchViewWidget import SketchViewWidget
-from GUI.init import formula_from_locale
+from GUI.init import formula_from_locale, gui_scale
 
 
 class SketchDialog(QDialog):
@@ -444,11 +444,14 @@ class ParameterSelectWidget():
 		self._parameters = parameters
 
 		self._caption_label = QLabel(caption)
+		self._caption_label.setMinimumWidth(100*gui_scale())
 		self._parameter_combobox = QComboBox()
+		self._parameter_combobox.setMinimumWidth(100 * gui_scale())
 		self._parameter_combobox.setEditable(True)
 		self._parameter_combobox.currentIndexChanged.connect(self.on_parameter_combobox_changed)
 		self._parameter_combobox.currentTextChanged.connect(self.on_parameter_combobox_text_changed)
 		self._value_textbox = QLineEdit()
+		self._value_textbox.setMinimumWidth(100 * gui_scale())
 		layout.addWidget(self._caption_label, row, 0)
 		layout.addWidget(self._parameter_combobox, row, 1)
 		layout.addWidget(self._value_textbox, row, 2)
@@ -671,17 +674,17 @@ class CompositeAreaDialog(QDialog):
 		self.layout().addWidget(dialog_buttons)
 
 
-class SketchFilletDialog(QDialog):
-	def __init__(self, parent, sketch):
+class SingleParameterDialog(QDialog):
+	def __init__(self, parent, sketch, Title, parameter_caption="Radius"):
 		QDialog.__init__(self, parent)
 		self._sketch = sketch
 		self.setLayout(QVBoxLayout())
-		self.setWindowTitle("Make fillet")
+		self.setWindowTitle(Title)
 		contents_widget = QWidget(self)
 		contents_layout = QGridLayout()
 		contents_widget.setLayout(contents_layout)
-
-		self._radius_widget = ParameterSelectWidget(self, self._sketch, contents_layout, 0, "Radius")
+		self.layout().addWidget(contents_widget)
+		self._radius_widget = ParameterSelectWidget(self, self._sketch, contents_layout, 0, parameter_caption)
 
 		dialog_buttons = QDialogButtonBox(QDialogButtonBox.Cancel | QDialogButtonBox.Ok)
 		dialog_buttons.accepted.connect(self.accept)
@@ -694,4 +697,35 @@ class SketchFilletDialog(QDialog):
 			'param_1_name': self._radius_widget.parameter_name,
 			'param_1_value': self._radius_widget.value,
 		}
+		return dims
+
+class MultiParameterDialog(QDialog):
+	def __init__(self, parent, sketch, Title, parameter_captions=[]):
+		QDialog.__init__(self, parent)
+		self._parameter_widgets = []
+		self._sketch = sketch
+		self.setLayout(QVBoxLayout())
+		self.setWindowTitle(Title)
+		contents_widget = QWidget(self)
+		contents_layout = QGridLayout()
+		contents_widget.setLayout(contents_layout)
+		self.layout().addWidget(contents_widget)
+		i = 0
+		for param_caption in parameter_captions:
+			self._parameter_widgets.append(ParameterSelectWidget(self, self._sketch, contents_layout, i, param_caption))
+			i += 1
+
+		dialog_buttons = QDialogButtonBox(QDialogButtonBox.Cancel | QDialogButtonBox.Ok)
+		dialog_buttons.accepted.connect(self.accept)
+		dialog_buttons.rejected.connect(self.reject)
+		self.layout().addWidget(dialog_buttons)
+
+	@property
+	def parameter_results(self):
+		dims = {}
+		for parameter_widget in self._parameter_widgets:
+			dims[parameter_widget.caption] = {
+				'name': parameter_widget.parameter_name,
+				'value': parameter_widget.value,
+			}
 		return dims

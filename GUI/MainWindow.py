@@ -244,7 +244,7 @@ class MainWindow(QMainWindow):
 		pass
 
 	def on_about(self):
-		pass
+		QMessageBox.about(self, "Pracedru Design", "Conseptualized, designed and programmed by Magnus Jørgensen.\nCopyright © Magnus Jørgensen.\nThis program is licensed with BSD 3-claus license.")
 
 	def on_undo(self):
 		on_undo(self._document)

@@ -105,8 +105,7 @@ class SketchParametry():
 			sketch = view.sketch
 			key_points = sketch.get_keypoints()
 			self._similar_coords.clear()
-			for kp_tuple in key_points:
-				key_point = kp_tuple[1]
+			for key_point in key_points:
 				x1 = key_point.x
 				if abs(x1 - view.kp_hover.x) < self._similar_threshold:
 					self._similar_coords.add(key_point)

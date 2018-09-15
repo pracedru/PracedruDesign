@@ -210,11 +210,12 @@ class Proformer(IdObject, Parameters, MetaDataObject):
 				new_kp.set_instance_x(vertext_instance_tuple[0], coord[0])
 				new_kp.set_instance_y(vertext_instance_tuple[0], coord[1])
 		else:
-			instance = event.object['instance']
-			new_kp = self._lookups_kps[p_index][kp.uid]
-			coord = self.get_coordinate(kp.get_instance_x(instance), kp.get_instance_y(instance), p_index)
-			new_kp.set_instance_x(instance, coord[0])
-			new_kp.set_instance_y(instance, coord[1])
+			if 'instance' in event.object:
+				instance = event.object['instance']
+				new_kp = self._lookups_kps[p_index][kp.uid]
+				coord = self.get_coordinate(kp.get_instance_x(instance), kp.get_instance_y(instance), p_index)
+				new_kp.set_instance_x(instance, coord[0])
+				new_kp.set_instance_y(instance, coord[1])
 
 
 	def get_coordinate(self, x, y, p_index):
@@ -287,12 +288,14 @@ class Proformer(IdObject, Parameters, MetaDataObject):
 						new_area.delete()
 						self._sketch.changed(ChangeEvent(self._sketch, ChangeEvent.ObjectRemoved, new_area))
 				return
+		i = 0
 		for lookup_areas in self._lookups_areas:
 			if area.uid in lookup_areas:
 				new_area = lookup_areas[area.uid]
-				new_area.name = area.name + self._type.name
+				new_area.name = area.name + self._type.name + str(i)
 				new_area.brush_name = area.brush_name
 				new_area.brush_rotation = area.brush_rotation
+			i += 1
 
 	def generate_kp(self, kp):
 		if self._type == ProformerType.MirrorX or self._type == ProformerType.MirrorY:
@@ -306,7 +309,7 @@ class Proformer(IdObject, Parameters, MetaDataObject):
 			count = counts[0]*counts[1]
 		for i in range(count):
 			kp.add_change_handler(self.kp_changed)
-			new_kp = KeyPoint(self._sketch)
+			new_kp = KeyPoint(self._sketch, name=kp.name+self._type.name+str(i))
 			self._sketch.changed(ChangeEvent(self._sketch, ChangeEvent.BeforeObjectAdded, new_kp))
 			new_kp._uid = kp.uid + "-" + self._type.name + str(i)
 			new_kp.editable = False
@@ -326,13 +329,13 @@ class Proformer(IdObject, Parameters, MetaDataObject):
 			count = counts[0]*counts[1]
 		for i in range(count):
 			edge.add_change_handler(self.edge_changed)
-			new_edge = Edge(self._sketch, edge.type, edge.name+self._type.name)
+			new_edge = Edge(self._sketch, edge.type, edge.name+self._type.name + str(i))
 			self._sketch.changed(ChangeEvent(self._sketch, ChangeEvent.BeforeObjectAdded, new_edge))
 			new_edge._uid = edge.uid + "-" + self._type.name + str(i)
 			new_edge.style_name = edge.style_name
 			for kp in edge.get_keypoints():
 				new_edge.add_key_point(self._lookups_kps[i][kp.uid])
-			if edge.type == EdgeType.FilletLineEdge:
+			if edge.type == EdgeType.FilletLineEdge or edge.type == EdgeType.CircleEdge or edge.type == EdgeType.ArcEdge:
 				r = edge.get_meta_data('r', None)
 				new_edge.set_meta_data('r', r)
 				r_param = edge.get_meta_data_parameter('r')
@@ -340,6 +343,15 @@ class Proformer(IdObject, Parameters, MetaDataObject):
 			elif edge.type == EdgeType.NurbsEdge:
 				n = edge.get_meta_data('n', 2)
 				new_edge.set_meta_data('n', n)
+			if edge.type == EdgeType.ArcEdge:
+				sa = edge.get_meta_data('sa', None)
+				new_edge.set_meta_data('sa', sa)
+				sa_param = edge.get_meta_data_parameter('sa')
+				new_edge.set_meta_data_parameter('sa', sa_param)
+				ea = edge.get_meta_data('ea', None)
+				new_edge.set_meta_data('ea', ea)
+				ea_param = edge.get_meta_data_parameter('ea')
+				new_edge.set_meta_data_parameter('ea', ea_param)
 			new_edge.editable = False
 			self._result_edges[new_edge.uid] = new_edge
 			self._lookups_edges[i][edge.uid] = new_edge
@@ -367,7 +379,7 @@ class Proformer(IdObject, Parameters, MetaDataObject):
 					new_subtracted_area = self._lookups_areas[i][subtracted_area.uid]
 					new_area.add_subtract_area(new_subtracted_area)
 				new_area.brush_name = area.brush_name
-				new_area.name = area.name + self._type.name
+				new_area.name = area.name + self._type.name + str(i)
 				self._result_areas[new_area.uid] = new_area
 				self._lookups_areas[i][area.uid] = new_area
 			else:
@@ -378,7 +390,7 @@ class Proformer(IdObject, Parameters, MetaDataObject):
 				for edge in area.get_edges():
 					new_edge = self._lookups_edges[i][edge.uid]
 					new_area.add_edge(new_edge)
-				new_area.name = area.name + self._type.name
+				new_area.name = area.name + self._type.name + str(i)
 				self._result_areas[new_area.uid] = new_area
 				self._lookups_areas[i][area.uid] = new_area
 				new_area.brush_name = area.brush_name
