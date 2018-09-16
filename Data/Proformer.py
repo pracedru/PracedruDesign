@@ -346,12 +346,12 @@ class Proformer(IdObject, Parameters, MetaDataObject):
 			if edge.type == EdgeType.ArcEdge:
 				sa = edge.get_meta_data('sa', None)
 				new_edge.set_meta_data('sa', sa)
-				sa_param = edge.get_meta_data_parameter('sa')
-				new_edge.set_meta_data_parameter('sa', sa_param)
+				#sa_param = edge.get_meta_data_parameter('sa')
+				#new_edge.set_meta_data_parameter('sa', sa_param)
 				ea = edge.get_meta_data('ea', None)
 				new_edge.set_meta_data('ea', ea)
-				ea_param = edge.get_meta_data_parameter('ea')
-				new_edge.set_meta_data_parameter('ea', ea_param)
+				#ea_param = edge.get_meta_data_parameter('ea')
+				#new_edge.set_meta_data_parameter('ea', ea_param)
 			new_edge.editable = False
 			self._result_edges[new_edge.uid] = new_edge
 			self._lookups_edges[i][edge.uid] = new_edge

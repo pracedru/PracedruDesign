@@ -240,6 +240,12 @@ class Edge(IdObject, NamedObservableObject):
 			x = cos(self._meta_data['ea']) * self._meta_data['r']
 			y = sin(self._meta_data['ea']) * self._meta_data['r']
 			z = 0
+
+			if 'end_kp' not in self._meta_data:
+				self._meta_data['end_kp'] = self._geometry.create_keypoint(0,0,0).uid
+			if 'start_kp' not in self._meta_data:
+				self._meta_data['start_kp'] = self._geometry.create_keypoint(0,0,0).uid
+
 			end_kp = self._geometry.get_keypoint(self._meta_data['end_kp'])
 			pc1 = ckp.xyz + pm.dot(np.array([x, y, z]))
 			end_kp.x = pc1[0]
@@ -537,11 +543,11 @@ class Edge(IdObject, NamedObservableObject):
 			return abs(diff * r)
 		elif self.type == EdgeType.FilletLineEdge:
 			data = self.get_draw_data()
-			span = data['span']
-			r = data['r']
+			span = data.get('span', 1)
+			r = data.get('r', 1)
 			return r*span
 		elif self.type == EdgeType.CircleEdge:
-			r = self._meta_data['r']
+			r = self._meta_data.get('r', 1)
 			return 2*pi*r
 
 	def coincident(self, key_point, coin_thress=None):

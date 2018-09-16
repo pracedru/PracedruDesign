@@ -430,10 +430,10 @@ def create_pattern(sketch, pattern_type, kps, edges, areas, count, dimensions, c
 	if pattern_type == ProformerType.Circular:
 		proformer.name = "Circular Pattern"
 		count_param = sketch.get_parameter_by_name(count['param_1_name'])
-		count_value = int(float(count['param_1_value']))
+		count_value = count['param_1_value']
 
 		dim_param = sketch.get_parameter_by_name(dimensions['param_1_name'])
-		dim_value = float(dimensions['param_1_value'])
+		dim_value = dimensions['param_1_value']
 
 		if count_param is None:
 			count_param = sketch.create_parameter(count['param_1_name'], count_value)
@@ -441,6 +441,8 @@ def create_pattern(sketch, pattern_type, kps, edges, areas, count, dimensions, c
 		if dim_param is None:
 			dim_param = sketch.create_parameter(dimensions['param_1_name'], dim_value)
 
+		count_param.value = count_param.formula
+		dim_param.value = dim_param.formula
 		proformer.set_meta_data("count", count_value)
 		proformer.set_meta_data_parameter("count", count_param)
 		proformer.set_meta_data("dim", dim_value)

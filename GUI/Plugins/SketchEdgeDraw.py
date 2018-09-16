@@ -3,6 +3,7 @@ from math import pi
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QInputDialog, QDialog
 
+from Business.ParameterActions import get_create_parameters
 from Business.SketchActions import get_create_keypoint, create_line, add_sketch_instance_to_sketch, create_nurbs_edge, add_arc, \
 	create_circle, create_fillet, create_text, create_attribute
 from GUI.Widgets.SimpleDialogs import AddArcDialog, SingleParameterDialog, MultiParameterDialog
@@ -236,16 +237,10 @@ class SketchLineDraw():
 			doc = self._main_window.document
 			if result == QDialog.Accepted:
 				kp = get_create_keypoint(sketch, x, y, coincident_threshold)
-				param_results = add_arc_widget.parameter_results
-				radius_param = sketch.get_parameter_by_name(param_results["Radius"]['name'])
-				start_angle_param = sketch.get_parameter_by_name(param_results["Start angle"]['name'])
-				end_angle_param = sketch.get_parameter_by_name(param_results["End angle"]['name'])
-				if radius_param is None:
-					radius_param = sketch.create_parameter(param_results["Radius"]['name'], param_results["Radius"]['value'])
-				if start_angle_param is None:
-					start_angle_param = sketch.create_parameter(param_results["Start angle"]['name'], param_results["Start angle"]['value'])
-				if end_angle_param is None:
-					end_angle_param = sketch.create_parameter(param_results["End angle"]['name'], param_results["End angle"]['value'])
+				params = get_create_parameters(sketch, add_arc_widget.parameter_results)
+				radius_param = params["Radius"]
+				start_angle_param = params["Start angle"]
+				end_angle_param = params["End angle"]
 				add_arc(doc, sketch, kp, radius_param, start_angle_param, end_angle_param)
 			view.on_escape()
 		#                                     ***        Circle       ***

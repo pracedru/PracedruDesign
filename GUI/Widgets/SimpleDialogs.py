@@ -560,6 +560,13 @@ class SketchPatternDialog(QDialog):
 		self._dim_widget_2 = ParameterSelectWidget(self, self._sketch, contents_layout, 5)
 		self._dim_widget_3 = ParameterSelectWidget(self, self._sketch, contents_layout, 6)
 
+		self._parameter_widgets = []
+		self._parameter_widgets.append(self._count_widget_1)
+		self._parameter_widgets.append(self._count_widget_2)
+		self._parameter_widgets.append(self._dim_widget_1)
+		self._parameter_widgets.append(self._dim_widget_2)
+		self._parameter_widgets.append(self._dim_widget_3)
+
 		contents_layout.addWidget(self._pattern_type_combo_box, 0, 1)
 		contents_layout.addWidget(self._center_point_combo_box, 1, 1)
 
@@ -645,6 +652,10 @@ class SketchPatternDialog(QDialog):
 		return dims
 
 	@property
+	def parameter_results(self):
+		return parameter_results(self._parameter_widgets)
+
+	@property
 	def center_kp(self):
 		return self._sketch.get_keypoints()[self._center_point_combo_box.currentIndex()]
 
@@ -722,10 +733,16 @@ class MultiParameterDialog(QDialog):
 
 	@property
 	def parameter_results(self):
-		dims = {}
-		for parameter_widget in self._parameter_widgets:
-			dims[parameter_widget.caption] = {
-				'name': parameter_widget.parameter_name,
-				'value': parameter_widget.value,
-			}
-		return dims
+		return parameter_results(self._parameter_widgets)
+
+
+
+def parameter_results(parameter_widgets):
+	dims = []
+	for parameter_widget in parameter_widgets:
+		dims.append({
+			'caption': parameter_widget.caption,
+			'name': parameter_widget.parameter_name,
+			'value': parameter_widget.value
+		})
+	return dims

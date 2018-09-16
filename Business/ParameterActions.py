@@ -137,3 +137,14 @@ def delete_parameters(parent, parameters):
 		parent.document.undo_stack.append(DeleteParametersDoObject(parent, parameters, dependents))
 	except Exception as e:
 		parent.document.set_status(str(e))
+
+def get_create_parameters(parameters_object, parameters_data):
+	parameters = {}
+	for parameter_data in parameters_data:
+		param = parameters_object.get_parameter_by_name(parameter_data['name'])
+		if param is None and parameter_data['name'] != "":
+			param = parameters_object.create_parameter(parameter_data['name'], parameter_data['value'])
+		parameters[parameter_data['caption']] = param
+	for parameter in parameters.values():
+		parameter.value = parameter.formula
+	return parameters
