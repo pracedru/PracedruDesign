@@ -7,6 +7,7 @@ from PyQt5.QtWidgets import QWidget, QTableView, QVBoxLayout, QHBoxLayout, QPush
 
 import Business
 from Business.ParameterActions import add_parameter
+from GUI.Widgets.SimpleDialogs import StandardTypeDialog
 from GUI.init import gui_scale
 from GUI.Models.ParametersModel import ParametersModel
 
@@ -42,8 +43,8 @@ class ParametersWidget(QWidget):
 		self._type_combobox.setMinimumWidth(110*guiscale)
 		self._standards_combobox.currentTextChanged.connect(self.on_standard_changed)
 		self._type_combobox.currentTextChanged.connect(self.on_type_changed)
-		add_type_button = QPushButton("Add type")
-		add_type_button.clicked.connect(self.on_add_type)
+		add_type_button = QPushButton("Manage")
+		add_type_button.clicked.connect(self.on_manage)
 		predefined_standards_widget.layout().layout().addWidget(add_type_button)
 
 		layout.addWidget(predefined_standards_widget)
@@ -79,6 +80,11 @@ class ParametersWidget(QWidget):
 		self._parameters.add_change_handler(self.on_parameters_changed)
 		self.parameters_model.set_parameters(params)
 		self.parameters_table.resizeColumnsToContents()
+		self.update_standards_types(params)
+		self.update_hide_parameters()
+		self._ignore_type_standard_change = False
+
+	def update_standards_types(self, params):
 		self._standards_combobox.clear()
 		options = list(params.standards)
 		self._standards_combobox.addItems(options)
@@ -89,21 +95,22 @@ class ParametersWidget(QWidget):
 		self._type_combobox.addItems(options)
 		if params.type != "" and params.type in options:
 			self._type_combobox.setCurrentIndex(options.index(params.type))
-		self.update_hide_parameters()
-		self._ignore_type_standard_change = False
 
 	def on_parameters_changed(self, event):
 		if event.type == event.ObjectAdded or event.type == event.ObjectRemoved:
 			self.update_hide_parameters()
 
-	def on_add_type(self):
-		self._ignore_type_standard_change = True
-		self._parameters.make_type(self._parameters.standard, "New Type")
-		self._type_combobox.clear()
-		options = list(self._parameters.types)
-		self._type_combobox.addItems(options)
-		self._type_combobox.setCurrentIndex(options.index(self._parameters.type))
-		self._ignore_type_standard_change = False
+	def on_manage(self):
+		std = StandardTypeDialog(self, self._parameters)
+		std.exec_()
+		self.update_standards_types(self._parameters)
+		# self._ignore_type_standard_change = True
+		# self._parameters.make_type(self._parameters.standard, "New Type")
+		# self._type_combobox.clear()
+		# options = list(self._parameters.types)
+		# self._type_combobox.addItems(options)
+		# self._type_combobox.setCurrentIndex(options.index(self._parameters.type))
+		# self._ignore_type_standard_change = False
 
 	def on_type_changed(self, value):
 		if not self._ignore_type_standard_change:
@@ -112,7 +119,7 @@ class ParametersWidget(QWidget):
 
 	def on_standard_changed(self, value):
 		if not self._ignore_type_standard_change:
-			self._parameters = value
+			self._parameters.standard = value
 
 	def on_add_parameter(self):
 		# self.parent().parent().on_add_parameter()

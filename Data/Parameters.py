@@ -504,25 +504,26 @@ class Parameters(ParametersBase):
 
 	@type.setter
 	def type(self, type_name):
-		self._current_type = self._standards[self._current_standard_name][type_name]
-		self._current_type_name = type_name
-		if self._current_type is None:
-			return
-		for param_definition_tuple in self._current_type.items():
-			uid = param_definition_tuple[0]
-			val = param_definition_tuple[1]
-			if uid in self._params:
-				param = self._params[uid]
-				old_value = param.value
-				param.internal_formula = val['if']
-				param.internal_value = param.evaluate(None)
-				change_object = {
-					'new value': param.value,
-					'old value': old_value,
-					'instance': None
-				}
-				param.changed(ChangeEvent(param, ChangeEvent.ValueChanged, change_object))
-		self.changed(ChangeEvent(self, ChangeEvent.ObjectChanged, self))
+		if type_name in self._standards:
+			self._current_type = self._standards[self._current_standard_name][type_name]
+			self._current_type_name = type_name
+			if self._current_type is None:
+				return
+			for param_definition_tuple in self._current_type.items():
+				uid = param_definition_tuple[0]
+				val = param_definition_tuple[1]
+				if uid in self._params:
+					param = self._params[uid]
+					old_value = param.value
+					param.internal_formula = val['if']
+					param.internal_value = param.evaluate(None)
+					change_object = {
+						'new value': param.value,
+						'old value': old_value,
+						'instance': None
+					}
+					param.changed(ChangeEvent(param, ChangeEvent.ValueChanged, change_object))
+			self.changed(ChangeEvent(self, ChangeEvent.ObjectChanged, self))
 
 	def _add_parameter_object(self, param):
 		param.add_change_handler(self.on_parameter_changed)

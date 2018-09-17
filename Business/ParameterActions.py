@@ -148,3 +148,10 @@ def get_create_parameters(parameters_object, parameters_data):
 	for parameter in parameters.values():
 		parameter.value = parameter.formula
 	return parameters
+
+
+def create_new_standard(parameters_object: Parameters, standard_name):
+	parameters_object.make_standard(standard_name)
+
+def create_new_type(parameters_object: Parameters, standard_name, type_name):
+	parameters_object.make_type(standard_name, type_name)

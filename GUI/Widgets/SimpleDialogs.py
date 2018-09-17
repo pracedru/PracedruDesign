@@ -1,7 +1,7 @@
 from math import pi
 
 from PyQt5.QtCore import QLocale
-from PyQt5.QtWidgets import QComboBox, QLineEdit, QHBoxLayout
+from PyQt5.QtWidgets import QComboBox, QLineEdit, QHBoxLayout, QTableWidget, QPushButton, QTableWidgetItem, QInputDialog
 from PyQt5.QtWidgets import QDialog
 from PyQt5.QtWidgets import QDialogButtonBox
 from PyQt5.QtWidgets import QGridLayout
@@ -9,16 +9,18 @@ from PyQt5.QtWidgets import QLabel
 from PyQt5.QtWidgets import QVBoxLayout
 from PyQt5.QtWidgets import QWidget
 
+from Business.ParameterActions import create_new_standard, create_new_type
 from Data.Axis import Axis
+from Data.Parameters import Parameters
 from Data.Proformer import ProformerType
 from GUI.Widgets.SketchViewWidget import SketchViewWidget
-from GUI.init import formula_from_locale, gui_scale
+from GUI.init import formula_from_locale, gui_scale, tr
 
 
 class SketchDialog(QDialog):
 	def __init__(self, parent, document, part):
 		QDialog.__init__(self, parent)
-		self.setWindowTitle("Select sketch and plane")
+		self.setWindowTitle(tr("Select sketch and plane", 'dialogs'))
 		self._sketches = []
 		self._planes = []
 		self._doc = document
@@ -32,8 +34,8 @@ class SketchDialog(QDialog):
 		contents_widget = QWidget(self)
 		contents_layout = QGridLayout()
 		contents_widget.setLayout(contents_layout)
-		contents_layout.addWidget(QLabel("Sketch"), 0, 0)
-		contents_layout.addWidget(QLabel("Plane"), 1, 0)
+		contents_layout.addWidget(QLabel(tr("Sketch", 'dialogs')), 0, 0)
+		contents_layout.addWidget(QLabel(tr("Plane", 'dialogs')), 1, 0)
 		self._sketch_combo_box = QComboBox()
 		self._plane_combo_box = QComboBox()
 
@@ -72,7 +74,7 @@ class SketchDialog(QDialog):
 class ExtrudeDialog(QDialog):
 	def __init__(self, parent, document, part):
 		QDialog.__init__(self, parent)
-		self.setWindowTitle("Area extrude")
+		self.setWindowTitle(tr("Area extrude", 'dialogs'))
 		self._sketches = []
 		self._part = part
 		for sketch_feature in part.get_sketch_features():
@@ -82,18 +84,18 @@ class ExtrudeDialog(QDialog):
 		contents_widget = QWidget(self)
 		contents_layout = QGridLayout()
 		contents_widget.setLayout(contents_layout)
-		contents_layout.addWidget(QLabel("Sketch"), 0, 0)
-		contents_layout.addWidget(QLabel("Area"), 1, 0)
-		contents_layout.addWidget(QLabel("Extrude direction"), 2, 0)
-		contents_layout.addWidget(QLabel("Extrude length"), 3, 0)
-		contents_layout.addWidget(QLabel("Type"), 4, 0)
+		contents_layout.addWidget(QLabel(tr("Sketch", 'dialogs')), 0, 0)
+		contents_layout.addWidget(QLabel(tr("Area", 'dialogs')), 1, 0)
+		contents_layout.addWidget(QLabel(tr("Extrude direction", 'dialogs')), 2, 0)
+		contents_layout.addWidget(QLabel(tr("Extrude length", 'dialogs')), 3, 0)
+		contents_layout.addWidget(QLabel(tr("Type", 'dialogs')), 4, 0)
 
 		self._sketch_combo_box = QComboBox()
 		self._area_combo_box = QComboBox()
 		self._direction = QComboBox()
-		self._direction.addItems(['Forward', 'Backward', 'Both'])
+		self._direction.addItems([tr('Forward', 'dialogs'), tr('Backward', 'dialogs'), tr('Both', 'dialogs')])
 		self._type_combo_box = QComboBox()
-		self._type_combo_box.addItems(['Add', 'Cut'])
+		self._type_combo_box.addItems([tr('Add', 'dialogs'), tr('Cut', 'dialogs'), tr('Intersect', 'dialogs')])
 
 		self._sketch_combo_box.addItems(self._sketches)
 		self._sketch_combo_box.setEditable(False)
@@ -173,7 +175,7 @@ class RevolveDialog(QDialog):
 	def __init__(self, parent, document, part):
 		QDialog.__init__(self, parent)
 		self._doc = document
-		self.setWindowTitle("Area extrude")
+		self.setWindowTitle(tr("Area extrude", 'dialogs'))
 		self._sketches = []
 		self._part = part
 		for sketch_feature in part.get_sketch_features():
@@ -183,20 +185,20 @@ class RevolveDialog(QDialog):
 		contents_widget = QWidget(self)
 		contents_layout = QGridLayout()
 		contents_widget.setLayout(contents_layout)
-		contents_layout.addWidget(QLabel("Sketch"), 0, 0)
-		contents_layout.addWidget(QLabel("Area"), 1, 0)
-		contents_layout.addWidget(QLabel("Axis"), 2, 0)
-		contents_layout.addWidget(QLabel("Revolve direction"), 3, 0)
-		contents_layout.addWidget(QLabel("Revolve angle"), 4, 0)
-		contents_layout.addWidget(QLabel("Type"), 5, 0)
+		contents_layout.addWidget(QLabel(tr("Sketch", 'dialogs')), 0, 0)
+		contents_layout.addWidget(QLabel(tr("Area", 'dialogs')), 1, 0)
+		contents_layout.addWidget(QLabel(tr("Axis", 'dialogs')), 2, 0)
+		contents_layout.addWidget(QLabel(tr("Revolve direction", 'dialogs')), 3, 0)
+		contents_layout.addWidget(QLabel(tr("Revolve angle", 'dialogs')), 4, 0)
+		contents_layout.addWidget(QLabel(tr("Type", 'dialogs')), 5, 0)
 
 		self._sketch_combo_box = QComboBox()
 		self._area_combo_box = QComboBox()
 		self._axis_combo_box = QComboBox()
 		self._direction = QComboBox()
-		self._direction.addItems(['Forward', 'Backward', 'Both'])
+		self._direction.addItems([tr('Forward', 'dialogs'), tr('Backward', 'dialogs'), tr('Both', 'dialogs')])
 		self._type_combo_box = QComboBox()
-		self._type_combo_box.addItems(['Add', 'Cut'])
+		self._type_combo_box.addItems([tr('Add', 'dialogs'), tr('Cut', 'dialogs'), tr("Intersect", 'dialogs')])
 		self._sketch_combo_box.addItems(self._sketches)
 		self._length_edit = QLineEdit(QLocale().toString(360))
 
@@ -302,7 +304,7 @@ class AddArcDialog(QDialog):
 	def __init__(self, parent, sketch):
 		QDialog.__init__(self, parent)
 		self._sketch = sketch
-		self.setWindowTitle("Select parameters for arc.")
+		self.setWindowTitle(tr("Select parameters for arc.", 'dialogs'))
 		self._params = []
 		for param in self._sketch.get_all_parameters():
 			self._params.append(param.name)
@@ -311,9 +313,9 @@ class AddArcDialog(QDialog):
 		contents_widget = QWidget(self)
 		contents_layout = QGridLayout()
 		contents_widget.setLayout(contents_layout)
-		contents_layout.addWidget(QLabel("Radius"), 0, 0)
-		contents_layout.addWidget(QLabel("Start angle"), 1, 0)
-		contents_layout.addWidget(QLabel("End angle"), 2, 0)
+		contents_layout.addWidget(QLabel(tr("Radius", 'dialogs')), 0, 0)
+		contents_layout.addWidget(QLabel(tr("Start angle", 'dialogs')), 1, 0)
+		contents_layout.addWidget(QLabel(tr("End angle", 'dialogs')), 2, 0)
 		self._radius_combo_box = QComboBox()
 		self._sa_combo_box = QComboBox()
 		self._ea_combo_box = QComboBox()
@@ -356,15 +358,15 @@ class SketchMirrorDialog(QDialog):
 	def __init__(self, parent, sketch):
 		QDialog.__init__(self, parent)
 		self._sketch = sketch
-		self.setWindowTitle("Mirror")
+		self.setWindowTitle(tr("Mirror", 'dialogs'))
 		self.setLayout(QVBoxLayout())
 		contents_widget = QWidget(self)
 		contents_layout = QGridLayout()
 		contents_widget.setLayout(contents_layout)
 		self._mirror_type = ProformerType.Mirror
 
-		contents_layout.addWidget(QLabel("Mirror type"), 0, 0)
-		contents_layout.addWidget(QLabel("Mirror line"), 1, 0)
+		contents_layout.addWidget(QLabel(tr("Mirror type", 'dialogs')), 0, 0)
+		contents_layout.addWidget(QLabel(tr("Mirror line", 'dialogs')), 1, 0)
 
 		self._mirror_type_combo_box = QComboBox()
 		self._mirror_line_combo_box = QComboBox()
@@ -448,26 +450,26 @@ class ParameterSelectWidget():
 		self._parameter_combobox = QComboBox()
 		self._parameter_combobox.setMinimumWidth(100 * gui_scale())
 		self._parameter_combobox.setEditable(True)
-		self._parameter_combobox.currentIndexChanged.connect(self.on_parameter_combobox_changed)
+		#self._parameter_combobox.currentIndexChanged.connect(self.on_parameter_combobox_changed)
 		self._parameter_combobox.currentTextChanged.connect(self.on_parameter_combobox_text_changed)
 		self._value_textbox = QLineEdit()
 		self._value_textbox.setMinimumWidth(100 * gui_scale())
 		layout.addWidget(self._caption_label, row, 0)
 		layout.addWidget(self._parameter_combobox, row, 1)
 		layout.addWidget(self._value_textbox, row, 2)
-		params = []
+		self._params = []
 		for param in parameters.get_all_parameters():
-			params.append(param.name)
-		self._parameter_combobox.addItems(params)
-
-	def on_parameter_combobox_changed(self):
-		param = self._parameters.get_parameter_by_name(self._parameter_combobox.currentText())
-		self._value_textbox.setText(QLocale().toString(param.value))
-		self._value_textbox.setEnabled(False)
+			self._params.append(param.name)
+		self._parameter_combobox.addItems(self._params)
 
 	def on_parameter_combobox_text_changed(self):
 		text = self._parameter_combobox.currentText()
-		self._value_textbox.setEnabled(True)
+		if text in self._params:
+			param = self._parameters.get_parameter_by_name(text)
+			self._value_textbox.setText(QLocale().toString(param.value))
+			self._value_textbox.setEnabled(False)
+		else:
+			self._value_textbox.setEnabled(True)
 
 	@property
 	def parameter(self):
@@ -526,14 +528,14 @@ class SketchPatternDialog(QDialog):
 		QDialog.__init__(self, parent)
 		self._sketch = sketch
 		self.setLayout(QVBoxLayout())
-		self.setWindowTitle("Make pattern")
+		self.setWindowTitle(tr("Make pattern", 'dialogs'))
 		contents_widget = QWidget(self)
 		contents_layout = QGridLayout()
 		contents_widget.setLayout(contents_layout)
 		self._pattern_type = ProformerType.Circular
 
-		contents_layout.addWidget(QLabel("Pattern type"), 0, 0)
-		self._center_point_label = QLabel("Center point")
+		contents_layout.addWidget(QLabel(tr("Pattern type", 'dialogs')), 0, 0)
+		self._center_point_label = QLabel(tr("Center point", 'dialogs'))
 		contents_layout.addWidget(self._center_point_label, 1, 0)
 
 		self._pattern_type_combo_box = QComboBox()
@@ -553,10 +555,10 @@ class SketchPatternDialog(QDialog):
 
 		self._center_point_combo_box.setEditable(True)
 
-		self._count_widget_1 = ParameterSelectWidget(self, self._sketch, contents_layout, 2, "Count")
+		self._count_widget_1 = ParameterSelectWidget(self, self._sketch, contents_layout, 2, tr("Count", 'dialogs'))
 		self._count_widget_2 = ParameterSelectWidget(self, self._sketch, contents_layout, 3)
 
-		self._dim_widget_1 = ParameterSelectWidget(self, self._sketch, contents_layout, 4, "Dimension")
+		self._dim_widget_1 = ParameterSelectWidget(self, self._sketch, contents_layout, 4, tr("Dimension", 'dialogs'))
 		self._dim_widget_2 = ParameterSelectWidget(self, self._sketch, contents_layout, 5)
 		self._dim_widget_3 = ParameterSelectWidget(self, self._sketch, contents_layout, 6)
 
@@ -601,30 +603,30 @@ class SketchPatternDialog(QDialog):
 			self._center_point_label.setVisible(True)
 			self._count_widget_1.visible = True
 			self._dim_widget_1.visible = True
-			self._dim_widget_1.caption = "Pattern Angle"
+			self._dim_widget_1.caption = tr("Pattern Angle", 'dialogs')
 		elif self._pattern_type == ProformerType.Square:
 			self._count_widget_1.visible = True
 			self._count_widget_2.visible = True
 			self._dim_widget_1.visible = True
-			self._dim_widget_1.caption = "Pattern Length"
+			self._dim_widget_1.caption = tr("Pattern Length", 'dialogs')
 			self._dim_widget_2.visible = True
-			self._dim_widget_2.caption = "Pattern Angle"
+			self._dim_widget_2.caption = tr("Pattern Angle", 'dialogs')
 		elif self._pattern_type == ProformerType.Triangular:
 			self._count_widget_1.visible = True
 			self._count_widget_2.visible = True
 			self._dim_widget_1.visible = True
-			self._dim_widget_1.caption = "Pattern Length"
+			self._dim_widget_1.caption = tr("Pattern Length", 'dialogs')
 			self._dim_widget_2.visible = True
-			self._dim_widget_2.caption = "Pattern Angle"
+			self._dim_widget_2.caption = tr("Pattern Angle", 'dialogs')
 		elif self._pattern_type == ProformerType.Rectangular:
 			self._count_widget_1.visible = True
 			self._dim_widget_1.visible = True
-			self._dim_widget_1.caption = "Pattern Length"
+			self._dim_widget_1.caption = tr("Pattern Length", 'dialogs')
 			self._count_widget_2.visible = True
 			self._dim_widget_2.visible = True
 			self._dim_widget_2.caption = ""
 			self._dim_widget_3.visible = True
-			self._dim_widget_3.caption = "Pattern Angle"
+			self._dim_widget_3.caption = tr("Pattern Angle", 'dialogs')
 		elif self._pattern_type == ProformerType.Diamond:
 			self._count_widget_1.visible = True
 			self._dim_widget_1.visible = True
@@ -657,7 +659,7 @@ class SketchPatternDialog(QDialog):
 
 	@property
 	def center_kp(self):
-		return self._sketch.get_keypoints()[self._center_point_combo_box.currentIndex()]
+		return self._sketch_view.selected_kps[0]
 
 	@property
 	def count(self):
@@ -673,7 +675,7 @@ class CompositeAreaDialog(QDialog):
 	def __init__(self, parent, sketch):
 		QDialog.__init__(self, parent)
 		self._sketch = sketch
-		self.setWindowTitle("Create composite area")
+		self.setWindowTitle(tr("Create composite area", 'dialogs'))
 		self.setLayout(QVBoxLayout())
 		contents_widget = QWidget(self)
 		contents_layout = QGridLayout()
@@ -721,10 +723,14 @@ class MultiParameterDialog(QDialog):
 		contents_layout = QGridLayout()
 		contents_widget.setLayout(contents_layout)
 		self.layout().addWidget(contents_widget)
+		contents_layout.addWidget(QLabel(tr("Parameter", 'dialogs')), 0, 0)
+		contents_layout.addWidget(QLabel(tr("Name", 'dialogs')), 0, 1)
+		contents_layout.addWidget(QLabel(tr("Value", 'dialogs')), 0, 2)
 		i = 0
 		for param_caption in parameter_captions:
-			self._parameter_widgets.append(ParameterSelectWidget(self, self._sketch, contents_layout, i, param_caption))
 			i += 1
+			self._parameter_widgets.append(ParameterSelectWidget(self, self._sketch, contents_layout, i, param_caption))
+
 
 		dialog_buttons = QDialogButtonBox(QDialogButtonBox.Cancel | QDialogButtonBox.Ok)
 		dialog_buttons.accepted.connect(self.accept)
@@ -735,7 +741,22 @@ class MultiParameterDialog(QDialog):
 	def parameter_results(self):
 		return parameter_results(self._parameter_widgets)
 
+class ButtonBox(QWidget):
+	def __init__(self, parent, button_captions):
+		QWidget.__init__(self, parent)
+		self.setLayout(QHBoxLayout())
+		for button_caption in button_captions:
+			button = QPushButton(button_caption, self)
+			self.layout().addWidget(button)
+			button.clicked.connect(self.button_clicked)
+		self._button_click_handlers = []
 
+	def add_button_click_handler(self, handler):
+		self._button_click_handlers.append(handler)
+
+	def button_clicked(self):
+		for handler in self._button_click_handlers:
+			handler(self.sender().text())
 
 def parameter_results(parameter_widgets):
 	dims = []
@@ -746,3 +767,85 @@ def parameter_results(parameter_widgets):
 			'value': parameter_widget.value
 		})
 	return dims
+
+class StandardTypeDialog(QDialog):
+	def __init__(self, parent, parameters_object: Parameters):
+		QDialog.__init__(self, parent)
+		self.setWindowTitle(tr("Standard and type manager", 'dialogs'))
+		self._selected_standard = None
+		self._selected_type = None
+		self._params_obj = parameters_object
+		self.setLayout(QVBoxLayout())
+		contents_widget = QWidget(self)
+		contents_layout = QGridLayout()
+		contents_widget.setLayout(contents_layout)
+		self.layout().addWidget(contents_widget)
+
+		contents_layout.addWidget(QLabel(tr("Standards", "dialogs")), 0, 0)
+		contents_layout.addWidget(QLabel(tr("Types", "dialogs")), 0, 1)
+		self._standards_table = QTableWidget(self)
+		self._standards_table.setColumnCount(1)
+		self._standards_table.horizontalHeader().hide()
+		self._standards_table.verticalHeader().hide()
+		self._standards_table.itemSelectionChanged.connect(self.on_standard_selection_changed)
+		self._types_table = QTableWidget(self)
+		self._types_table.setColumnCount(1)
+		self._types_table.horizontalHeader().hide()
+		self._types_table.verticalHeader().hide()
+		self.update_standards_table()
+
+		contents_layout.addWidget(self._standards_table,1,0)
+		contents_layout.addWidget(self._types_table, 1, 1)
+		self._standard_button_box = ButtonBox(self, [tr("Add Standard", 'dialogs'), tr("Remove Standard", 'dialogs')])
+		self._standard_button_box.add_button_click_handler(self.on_standard_buttons_click)
+		self._type_button_box = ButtonBox(self, [tr("Add Type", 'dialogs'), tr("Remove Type", 'dialogs')])
+		self._type_button_box.add_button_click_handler(self.on_type_buttons_click)
+
+		contents_layout.addWidget(self._standard_button_box, 2, 0)
+		contents_layout.addWidget(self._type_button_box, 2, 1)
+
+		dialog_buttons = QDialogButtonBox(QDialogButtonBox.Ok)
+		dialog_buttons.accepted.connect(self.accept)
+		self.layout().addWidget(dialog_buttons)
+
+	def on_standard_selection_changed(self):
+		indexes = self._standards_table.selectedIndexes()
+		if len(indexes) > 0:
+			col = indexes[0].column()
+			row = indexes[0].row()
+		else:
+			col = None
+			row = None
+		print("on_standard_selection_changed col: " + str(col) + " row: " + str(row))
+
+
+	def update_standards_table(self):
+		self._standards_table.setRowCount(len(self._params_obj.standards))
+		row = 0
+		for standard in self._params_obj.standards:
+			table_widget_item = QTableWidgetItem(standard, 0)
+			self._standards_table.setItem(row, 0, table_widget_item)
+			row += 1
+		width = self._standards_table.width()
+		self._standards_table.setColumnWidth(0, width)
+
+	def on_standard_buttons_click(self, button_caption):
+		if button_caption == tr("Add Standard", 'dialogs'):
+			result = QInputDialog.getText(self, tr("New standard", "dialogs"), tr("Name", "dialogs"))
+			standard_name = result[0]
+			if result[1]:
+				create_new_standard(self._params_obj, standard_name)
+				self.update_standards_table()
+		else:
+			pass
+
+	def on_type_buttons_click(self, button_caption):
+		if button_caption == tr("Add Type", 'dialogs'):
+			result = QInputDialog.getText(self, tr("New type", "dialogs"), tr("Name", "dialogs"))
+			type_name = result[0]
+			if result[1]:
+				standard_name = self._selected_standard
+				create_new_type(self._params_obj, standard_name, type_name)
+				self.update_standards_table()
+		else:
+			pass
