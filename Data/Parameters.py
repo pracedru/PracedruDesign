@@ -466,7 +466,7 @@ class Parameters(ParametersBase):
 
 	@property
 	def standards(self):
-		return self._standards.keys()
+		return list(self._standards.keys())
 
 	@property
 	def standard(self):
@@ -485,7 +485,7 @@ class Parameters(ParametersBase):
 
 	def get_types_from_standard(self, standard):
 		if standard in self._standards:
-			return self._standards[standard].keys();
+			return list(self._standards[standard].keys())
 		return []
 
 	def make_type(self, standard_name, type_name):
@@ -504,7 +504,7 @@ class Parameters(ParametersBase):
 
 	@type.setter
 	def type(self, type_name):
-		if type_name in self._standards:
+		if type_name in self._standards[self._current_standard_name]:
 			self._current_type = self._standards[self._current_standard_name][type_name]
 			self._current_type_name = type_name
 			if self._current_type is None:

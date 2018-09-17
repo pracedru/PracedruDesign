@@ -1,5 +1,6 @@
 from math import pi
 
+from PyQt5 import QtGui
 from PyQt5.QtCore import QLocale
 from PyQt5.QtWidgets import QComboBox, QLineEdit, QHBoxLayout, QTableWidget, QPushButton, QTableWidgetItem, QInputDialog
 from PyQt5.QtWidgets import QDialog
@@ -745,10 +746,12 @@ class ButtonBox(QWidget):
 	def __init__(self, parent, button_captions):
 		QWidget.__init__(self, parent)
 		self.setLayout(QHBoxLayout())
+		self._buttons = {}
 		for button_caption in button_captions:
 			button = QPushButton(button_caption, self)
 			self.layout().addWidget(button)
 			button.clicked.connect(self.button_clicked)
+			self._buttons[button_caption] = button
 		self._button_click_handlers = []
 
 	def add_button_click_handler(self, handler):
@@ -757,6 +760,9 @@ class ButtonBox(QWidget):
 	def button_clicked(self):
 		for handler in self._button_click_handlers:
 			handler(self.sender().text())
+
+	def get_button(self, button_caption):
+		return self._buttons[button_caption]
 
 def parameter_results(parameter_widgets):
 	dims = []
@@ -779,7 +785,7 @@ class StandardTypeDialog(QDialog):
 		contents_widget = QWidget(self)
 		contents_layout = QGridLayout()
 		contents_widget.setLayout(contents_layout)
-		self.layout().addWidget(contents_widget)
+
 
 		contents_layout.addWidget(QLabel(tr("Standards", "dialogs")), 0, 0)
 		contents_layout.addWidget(QLabel(tr("Types", "dialogs")), 0, 1)
@@ -788,10 +794,13 @@ class StandardTypeDialog(QDialog):
 		self._standards_table.horizontalHeader().hide()
 		self._standards_table.verticalHeader().hide()
 		self._standards_table.itemSelectionChanged.connect(self.on_standard_selection_changed)
+
 		self._types_table = QTableWidget(self)
 		self._types_table.setColumnCount(1)
 		self._types_table.horizontalHeader().hide()
 		self._types_table.verticalHeader().hide()
+		self._types_table.itemSelectionChanged.connect(self.on_type_selection_changed)
+
 		self.update_standards_table()
 
 		contents_layout.addWidget(self._standards_table,1,0)
@@ -801,23 +810,38 @@ class StandardTypeDialog(QDialog):
 		self._type_button_box = ButtonBox(self, [tr("Add Type", 'dialogs'), tr("Remove Type", 'dialogs')])
 		self._type_button_box.add_button_click_handler(self.on_type_buttons_click)
 
+		self._standard_button_box.get_button(tr("Remove Standard", 'dialogs')).setEnabled(False)
+		self._type_button_box.get_button(tr("Remove Type", 'dialogs')).setEnabled(False)
+
 		contents_layout.addWidget(self._standard_button_box, 2, 0)
 		contents_layout.addWidget(self._type_button_box, 2, 1)
 
 		dialog_buttons = QDialogButtonBox(QDialogButtonBox.Ok)
 		dialog_buttons.accepted.connect(self.accept)
+		self._standards_table.setColumnWidth(0, 250)
+		self._types_table.setColumnWidth(0, 250)
+		self.layout().addWidget(contents_widget)
 		self.layout().addWidget(dialog_buttons)
+
 
 	def on_standard_selection_changed(self):
 		indexes = self._standards_table.selectedIndexes()
 		if len(indexes) > 0:
 			col = indexes[0].column()
 			row = indexes[0].row()
-		else:
-			col = None
-			row = None
-		print("on_standard_selection_changed col: " + str(col) + " row: " + str(row))
+			self._selected_standard = self._params_obj.standards[row]
+			self.update_types_table()
+			self._standard_button_box.get_button(tr("Remove Standard", 'dialogs')).setEnabled(True)
+			self._type_button_box.get_button(tr("Remove Type", 'dialogs')).setEnabled(False)
 
+	def on_type_selection_changed(self):
+		indexes = self._types_table.selectedIndexes()
+		if len(indexes) > 0:
+			col = indexes[0].column()
+			row = indexes[0].row()
+			self._selected_type = self._params_obj.get_types_from_standard(self._selected_standard)[row]
+
+			self._type_button_box.get_button(tr("Remove Type", 'dialogs')).setEnabled(True)
 
 	def update_standards_table(self):
 		self._standards_table.setRowCount(len(self._params_obj.standards))
@@ -826,8 +850,17 @@ class StandardTypeDialog(QDialog):
 			table_widget_item = QTableWidgetItem(standard, 0)
 			self._standards_table.setItem(row, 0, table_widget_item)
 			row += 1
-		width = self._standards_table.width()
-		self._standards_table.setColumnWidth(0, width)
+
+	def update_types_table(self):
+		if self._selected_standard != None:
+			types = self._params_obj.get_types_from_standard(self._selected_standard)
+			self._types_table.setRowCount(len(types))
+			row = 0
+			for type in types:
+				table_widget_item = QTableWidgetItem(type, 0)
+				self._types_table.setItem(row, 0, table_widget_item)
+				row += 1
+
 
 	def on_standard_buttons_click(self, button_caption):
 		if button_caption == tr("Add Standard", 'dialogs'):
@@ -837,7 +870,7 @@ class StandardTypeDialog(QDialog):
 				create_new_standard(self._params_obj, standard_name)
 				self.update_standards_table()
 		else:
-			pass
+			remove_standard(self._params_obj, self._selected_standard)
 
 	def on_type_buttons_click(self, button_caption):
 		if button_caption == tr("Add Type", 'dialogs'):
@@ -846,6 +879,7 @@ class StandardTypeDialog(QDialog):
 			if result[1]:
 				standard_name = self._selected_standard
 				create_new_type(self._params_obj, standard_name, type_name)
-				self.update_standards_table()
+				self.update_types_table()
+
 		else:
-			pass
+			remove_type(self._params_obj, self._selected_type)

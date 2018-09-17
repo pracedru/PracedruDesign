@@ -80,16 +80,20 @@ class ParametersWidget(QWidget):
 		self._parameters.add_change_handler(self.on_parameters_changed)
 		self.parameters_model.set_parameters(params)
 		self.parameters_table.resizeColumnsToContents()
-		self.update_standards_types(params)
+		self.update_standards(params)
+		self.update_types(params)
 		self.update_hide_parameters()
 		self._ignore_type_standard_change = False
 
-	def update_standards_types(self, params):
+	def update_standards(self, params):
 		self._standards_combobox.clear()
 		options = list(params.standards)
 		self._standards_combobox.addItems(options)
 		if params.standard in options:
 			self._standards_combobox.setCurrentIndex(options.index(params.standard))
+
+
+	def update_types(self, params):
 		self._type_combobox.clear()
 		options = list(params.get_types_from_standard(params.standard))
 		self._type_combobox.addItems(options)
@@ -103,7 +107,8 @@ class ParametersWidget(QWidget):
 	def on_manage(self):
 		std = StandardTypeDialog(self, self._parameters)
 		std.exec_()
-		self.update_standards_types(self._parameters)
+		self.update_standards(self._parameters)
+		self.update_types(self._parameters)
 		# self._ignore_type_standard_change = True
 		# self._parameters.make_type(self._parameters.standard, "New Type")
 		# self._type_combobox.clear()
@@ -120,6 +125,7 @@ class ParametersWidget(QWidget):
 	def on_standard_changed(self, value):
 		if not self._ignore_type_standard_change:
 			self._parameters.standard = value
+			self.update_types(self._parameters)
 
 	def on_add_parameter(self):
 		# self.parent().parent().on_add_parameter()

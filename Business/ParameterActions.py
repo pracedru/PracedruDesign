@@ -155,3 +155,9 @@ def create_new_standard(parameters_object: Parameters, standard_name):
 
 def create_new_type(parameters_object: Parameters, standard_name, type_name):
 	parameters_object.make_type(standard_name, type_name)
+
+def remove_standard(parameters_object: Parameters, standard_name):
+	parameters_object.remove_standard(standard_name)
+
+def remove_type(parameters_object: Parameters, standard_name, type_name):
+	parameters_object.remove_type(standard_name, type_name)
