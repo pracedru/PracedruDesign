@@ -427,8 +427,8 @@ def create_mirror(sketch, type, kps, edges, areas):
 def create_pattern(sketch, pattern_type, kps, edges, areas, count, dimensions, circular_kp=None):
 	proformer = None
 	if pattern_type == ProformerType.Circular:
-		count_param = get_create_parameter(count['param_1_name'], count['param_1_value'])
-		dim_param = get_create_parameter(dimensions['param_1_name'], dimensions['param_1_value'])
+		count_param = get_create_parameter(sketch, count['param_1_name'], count['param_1_value'])
+		dim_param = get_create_parameter(sketch, dimensions['param_1_name'], dimensions['param_1_value'])
 		if count_param is None or dim_param is None:
 			return None
 		proformer = sketch.create_proformer(pattern_type, "New Pattern")
@@ -443,19 +443,23 @@ def create_pattern(sketch, pattern_type, kps, edges, areas, count, dimensions, c
 		proformer.add_control_kp(circular_kp)
 		proformer.resolve()
 	elif pattern_type == ProformerType.Square:
-		count1_param = get_create_parameter(count['param_1_name'], count['param_1_value'])
-		count2_param = get_create_parameter(count['param_2_name'], count['param_2_value'])
-		length_param = get_create_parameter(dimensions['param_1_name'], dimensions['param_1_value'])
-		angle_param = get_create_parameter(dimensions['param_2_name'], dimensions['param_2_value'])
+		count1_param = get_create_parameter(sketch, count['param_1_name'], count['param_1_value'])
+		count2_param = get_create_parameter(sketch, count['param_2_name'], count['param_2_value'])
+		length_param = get_create_parameter(sketch, dimensions['param_1_name'], dimensions['param_1_value'])
+		angle_param = get_create_parameter(sketch, dimensions['param_2_name'], dimensions['param_2_value'])
 		proformer = sketch.create_proformer(pattern_type, "New Pattern")
 		proformer.name = "Square Pattern"
 		proformer.base_keypoints = kps
 		proformer.base_edges = edges
 		proformer.base_areas = areas
-		proformer.set_meta_data("count", count_param.value)
-		proformer.set_meta_data_parameter("count", count_param)
-		proformer.set_meta_data("dim", dim_param.value)
-		proformer.set_meta_data_parameter("dim", dim_param)
+		proformer.set_meta_data("count1", count1_param.value)
+		proformer.set_meta_data_parameter("count1", count1_param)
+		proformer.set_meta_data("count2", count2_param.value)
+		proformer.set_meta_data_parameter("count2", count2_param)
+		proformer.set_meta_data("length", length_param.value)
+		proformer.set_meta_data_parameter("length", length_param)
+		proformer.set_meta_data("angle", angle_param.value)
+		proformer.set_meta_data_parameter("angle", angle_param)
 		proformer.resolve()
 
 

@@ -1,5 +1,5 @@
 from enum import Enum
-from math import cos, sin, pi
+from math import cos, sin, pi, floor
 
 from Data import get_uids
 from Data.Areas import CompositeArea, EdgeLoopArea, AreaType, Edge
@@ -123,7 +123,7 @@ class Proformer(IdObject, Parameters, MetaDataObject):
 	def on_meta_param_changed(self, event: ChangeEvent):
 		if event.type == ChangeEvent.ValueChanged:
 			if 'param_change_event' in event.object:
-				if event.object['name'] == 'count':
+				if 'count' in event.object['name']:
 					self.resolve()
 				else:
 					if 'param_change_event' in event.object:
@@ -194,9 +194,12 @@ class Proformer(IdObject, Parameters, MetaDataObject):
 				for i in range(count):
 					self.update_kp_index(kp, event, i)
 
-			elif self._type == ProformerType.Rectangular:
-				counts = self._meta_data['count']
-				count = counts[0] * counts[1]
+			elif self._type == ProformerType.Square or self._type == ProformerType.Rectangular or self._type == ProformerType.Diamond or self._type == ProformerType.Triangular:
+				count1 = self._meta_data['count1']
+				count2 = self._meta_data['count2']
+				count = int(count1 * count2) - 1
+				for i in range(count):
+					self.update_kp_index(kp, event, i)
 
 
 	def update_kp_index(self, kp, event, p_index):
@@ -245,6 +248,18 @@ class Proformer(IdObject, Parameters, MetaDataObject):
 			new_angle = c_kp.angle2d(v) + angle
 			coord[0] = c_kp.x + cos(new_angle)*dist
 			coord[1] = c_kp.y + sin(new_angle)*dist
+		elif self._type == ProformerType.Rectangular or self._type == ProformerType.Square or self._type == ProformerType.Diamond or self._type == ProformerType.Triangular:
+			count1 = self._meta_data['count1']
+			count2 = self._meta_data['count2']
+			length = self._meta_data['length']
+			angle = self._meta_data['angle']
+			count = int(count1 * count2) - 1
+			index1 = (p_index + 1) % count1
+			index2 =  floor ((p_index+1)/count1)
+
+			if self._type == ProformerType.Square:
+				coord[0] = x + index1 * length * cos(angle) - index2 * length * sin(angle)
+				coord[1] = y + index1 * length * sin(angle) + index2 * length * cos(angle)
 		else:
 			# todo: line mirror needs implementation
 			coord[0] = x
@@ -304,9 +319,10 @@ class Proformer(IdObject, Parameters, MetaDataObject):
 			count = 3
 		elif self._type == ProformerType.Circular:
 			count = int(self._meta_data['count']-1)
-		else:
-			counts = self._meta_data['count']
-			count = counts[0]*counts[1]
+		elif self._type == ProformerType.Rectangular or self._type == ProformerType.Square or self._type == ProformerType.Diamond:
+			count1 = self._meta_data['count1']
+			count2 = self._meta_data['count2']
+			count = int(count1 * count2) - 1
 		for i in range(count):
 			kp.add_change_handler(self.kp_changed)
 			new_kp = KeyPoint(self._sketch, name=kp.name+self._type.name+str(i))
@@ -324,9 +340,10 @@ class Proformer(IdObject, Parameters, MetaDataObject):
 			count = 3
 		elif self._type == ProformerType.Circular:
 			count = int(self._meta_data['count']-1)
-		elif self._type == ProformerType.Rectangular :
-			counts = self._meta_data['count']
-			count = counts[0]*counts[1]
+		elif self._type == ProformerType.Rectangular or self._type == ProformerType.Square or self._type == ProformerType.Diamond:
+			count1 = self._meta_data['count1']
+			count2 = self._meta_data['count2']
+			count = int(count1 * count2) - 1
 		for i in range(count):
 			edge.add_change_handler(self.edge_changed)
 			new_edge = Edge(self._sketch, edge.type, edge.name+self._type.name + str(i))
@@ -364,10 +381,10 @@ class Proformer(IdObject, Parameters, MetaDataObject):
 			count = 3
 		elif self._type == ProformerType.Circular:
 			count = int(self._meta_data['count']-1)
-		elif self._type == ProformerType.Rectangular or self._type == ProformerType.Square:
+		elif self._type == ProformerType.Rectangular or self._type == ProformerType.Square or self._type == ProformerType.Diamond:
 			count1 = self._meta_data['count1']
 			count2 = self._meta_data['count2']
-			count = count1*count2
+			count = int(count1 * count2) - 1
 		for i in range(count):
 			if issubclass(type(area), CompositeArea):
 				area.add_change_handler(self.area_changed)
@@ -430,6 +447,14 @@ class Proformer(IdObject, Parameters, MetaDataObject):
 				self._lookups_areas.append({})
 		elif self._type == ProformerType.Circular:
 			count = int(self._meta_data['count'])
+			for i in range(count):
+				self._lookups_kps.append({})
+				self._lookups_edges.append({})
+				self._lookups_areas.append({})
+		elif self._type == ProformerType.Square or self._type == ProformerType.Rectangular or self._type == ProformerType.Diamond or self._type == ProformerType.Triangular:
+			count1 = self._meta_data['count1']
+			count2 = self._meta_data['count2']
+			count = int(count1 * count2)-1
 			for i in range(count):
 				self._lookups_kps.append({})
 				self._lookups_edges.append({})
