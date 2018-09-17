@@ -713,6 +713,10 @@ class ParametersInstance(IdObject, ParametersBase):
 	def standard(self):
 		return self._current_standard_name
 
+	@standard.setter
+	def standard(self, value):
+		self._current_standard_name = value
+
 	@property
 	def type(self):
 	    return self._current_type_name

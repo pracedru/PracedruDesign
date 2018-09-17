@@ -10,7 +10,7 @@ from PyQt5.QtWidgets import QLabel
 from PyQt5.QtWidgets import QVBoxLayout
 from PyQt5.QtWidgets import QWidget
 
-from Business.ParameterActions import create_new_standard, create_new_type
+from Business.ParameterActions import create_new_standard, create_new_type, remove_standard, remove_type
 from Data.Axis import Axis
 from Data.Parameters import Parameters
 from Data.Proformer import ProformerType
@@ -541,10 +541,10 @@ class SketchPatternDialog(QDialog):
 
 		self._pattern_type_combo_box = QComboBox()
 		self._center_point_combo_box = QComboBox()
-		kp_names = []
+
 		for kp in self._sketch.get_keypoints():
-			kp_names.append(kp.name)
-		self._center_point_combo_box.addItems(kp_names)
+			#kp_names.append(kp.name)
+			self._center_point_combo_box.addItem(kp.name, kp.uid)
 
 
 		self._pattern_type_combo_box.addItem(ProformerType.Circular.name, ProformerType.Circular.value)
@@ -585,10 +585,12 @@ class SketchPatternDialog(QDialog):
 		dialog_buttons = QDialogButtonBox(QDialogButtonBox.Cancel | QDialogButtonBox.Ok)
 		dialog_buttons.accepted.connect(self.accept)
 		dialog_buttons.rejected.connect(self.reject)
+		self._dialog_buttons = dialog_buttons
 		self.layout().addWidget(dialog_buttons)
 		self._pattern_type_combo_box.currentIndexChanged.connect(self.on_pattern_type_selection_changed)
 		self._center_point_combo_box.currentIndexChanged.connect(self.on_center_point_combo_box_changed)
 		self.on_pattern_type_selection_changed()
+		self.validate()
 
 	def on_pattern_type_selection_changed(self):
 		self._pattern_type = ProformerType(self._pattern_type_combo_box.currentData())
@@ -631,9 +633,12 @@ class SketchPatternDialog(QDialog):
 		elif self._pattern_type == ProformerType.Diamond:
 			self._count_widget_1.visible = True
 			self._dim_widget_1.visible = True
+			self._dim_widget_1.caption = "Pattern Length"
 			self._count_widget_2.visible = True
 			self._dim_widget_2.visible = True
-
+			self._dim_widget_2.caption = ""
+			self._dim_widget_3.visible = True
+			self._dim_widget_3.caption = "Pattern Angle"
 	@property
 	def pattern_type(self):
 		return self._pattern_type
@@ -642,7 +647,15 @@ class SketchPatternDialog(QDialog):
 		self._center_point_combo_box.setCurrentText(kp.name)
 
 	def on_center_point_combo_box_changed(self):
-		self._sketch_view.selected_kps = [self._sketch.get_keypoints()[self._center_point_combo_box.currentIndex()]]
+		self._sketch_view.selected_kps = [self._sketch.get_keypoint(self._center_point_combo_box.currentData())]
+
+	def validate(self):
+		validated = True
+		if len(self._sketch_view.selected_kps) > 0:
+			validated = False
+		if self._count_widget_1.parameter_name == "":
+			validated = False
+		self._dialog_buttons.buttons()[0].setEnabled(validated)
 
 	@property
 	def dimensions(self):
@@ -759,7 +772,7 @@ class ButtonBox(QWidget):
 
 	def button_clicked(self):
 		for handler in self._button_click_handlers:
-			handler(self.sender().text())
+			handler(self.sender().text().replace("&", ""))
 
 	def get_button(self, button_caption):
 		return self._buttons[button_caption]
@@ -882,4 +895,4 @@ class StandardTypeDialog(QDialog):
 				self.update_types_table()
 
 		else:
-			remove_type(self._params_obj, self._selected_type)
+			remove_type(self._params_obj, self._selected_type, self._selected_type)

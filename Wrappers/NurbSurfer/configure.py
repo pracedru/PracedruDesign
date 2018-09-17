@@ -4,8 +4,8 @@ import sipconfig
 
 home_dir = os.path.expanduser('~')
 sip_inc_dir = "/usr/share/sip/PyQt5"
-qt_inc_dir = "/usr/include/x86_64-linux-gnu/qt5"   # Ubuntu
-#qt_inc_dir = "/usr/include/qt5"  # OpenSuse
+#qt_inc_dir = "/usr/include/x86_64-linux-gnu/qt5"   # Ubuntu
+qt_inc_dir = "/usr/include/qt5"  # OpenSuse
 
 target_sip_file = "NurbSurfer.sip"
 target_lib_dir = home_dir + "/QtProjects/build-NurbSurfer-Desktop-Debug"
