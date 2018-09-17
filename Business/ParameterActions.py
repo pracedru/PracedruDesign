@@ -149,6 +149,12 @@ def get_create_parameters(parameters_object, parameters_data):
 		parameter.value = parameter.formula
 	return parameters
 
+def get_create_parameter(parameters_object, name, value):
+	param = parameters_object.get_parameter_by_name(name)
+	if param is None and name != "":
+		param = parameters_object.create_parameter(name, value)
+		param.value = param.formula
+	return param
 
 def create_new_standard(parameters_object: Parameters, standard_name):
 	parameters_object.make_standard(standard_name)

@@ -1,6 +1,7 @@
 import collections
 from math import pi
 
+from Business.ParameterActions import get_create_parameter
 from Business.Undo import DoObject
 from Data.Document import Document
 from Data.Proformer import ProformerType
@@ -422,33 +423,40 @@ def create_mirror(sketch, type, kps, edges, areas):
 	return proformer
 
 
+
 def create_pattern(sketch, pattern_type, kps, edges, areas, count, dimensions, circular_kp=None):
-	proformer = sketch.create_proformer(pattern_type, "New Pattern")
-	proformer.base_keypoints = kps
-	proformer.base_edges = edges
-	proformer.base_areas = areas
+	proformer = None
 	if pattern_type == ProformerType.Circular:
+		count_param = get_create_parameter(count['param_1_name'], count['param_1_value'])
+		dim_param = get_create_parameter(dimensions['param_1_name'], dimensions['param_1_value'])
+		if count_param is None or dim_param is None:
+			return None
+		proformer = sketch.create_proformer(pattern_type, "New Pattern")
 		proformer.name = "Circular Pattern"
-		count_param = sketch.get_parameter_by_name(count['param_1_name'])
-		count_value = count['param_1_value']
-
-		dim_param = sketch.get_parameter_by_name(dimensions['param_1_name'])
-		dim_value = dimensions['param_1_value']
-
-		if count_param is None:
-			count_param = sketch.create_parameter(count['param_1_name'], count_value)
-
-		if dim_param is None:
-			dim_param = sketch.create_parameter(dimensions['param_1_name'], dim_value)
-
-		count_param.value = count_param.formula
-		dim_param.value = dim_param.formula
-		proformer.set_meta_data("count", count_value)
+		proformer.base_keypoints = kps
+		proformer.base_edges = edges
+		proformer.base_areas = areas
+		proformer.set_meta_data("count", count_param.value)
 		proformer.set_meta_data_parameter("count", count_param)
-		proformer.set_meta_data("dim", dim_value)
+		proformer.set_meta_data("dim", dim_param.value)
 		proformer.set_meta_data_parameter("dim", dim_param)
 		proformer.add_control_kp(circular_kp)
+		proformer.resolve()
+	elif pattern_type == ProformerType.Square:
+		count1_param = get_create_parameter(count['param_1_name'], count['param_1_value'])
+		count2_param = get_create_parameter(count['param_2_name'], count['param_2_value'])
+		length_param = get_create_parameter(dimensions['param_1_name'], dimensions['param_1_value'])
+		angle_param = get_create_parameter(dimensions['param_2_name'], dimensions['param_2_value'])
+		proformer = sketch.create_proformer(pattern_type, "New Pattern")
+		proformer.name = "Square Pattern"
+		proformer.base_keypoints = kps
+		proformer.base_edges = edges
+		proformer.base_areas = areas
+		proformer.set_meta_data("count", count_param.value)
+		proformer.set_meta_data_parameter("count", count_param)
+		proformer.set_meta_data("dim", dim_param.value)
+		proformer.set_meta_data_parameter("dim", dim_param)
+		proformer.resolve()
 
 
-	proformer.resolve()
 	return proformer

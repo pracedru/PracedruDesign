@@ -534,18 +534,14 @@ class SketchPatternDialog(QDialog):
 		contents_layout = QGridLayout()
 		contents_widget.setLayout(contents_layout)
 		self._pattern_type = ProformerType.Circular
-
 		contents_layout.addWidget(QLabel(tr("Pattern type", 'dialogs')), 0, 0)
 		self._center_point_label = QLabel(tr("Center point", 'dialogs'))
 		contents_layout.addWidget(self._center_point_label, 1, 0)
-
 		self._pattern_type_combo_box = QComboBox()
 		self._center_point_combo_box = QComboBox()
 
 		for kp in self._sketch.get_keypoints():
-			#kp_names.append(kp.name)
 			self._center_point_combo_box.addItem(kp.name, kp.uid)
-
 
 		self._pattern_type_combo_box.addItem(ProformerType.Circular.name, ProformerType.Circular.value)
 		self._pattern_type_combo_box.addItem(ProformerType.Diamond.name, ProformerType.Diamond.value)
@@ -553,16 +549,12 @@ class SketchPatternDialog(QDialog):
 		self._pattern_type_combo_box.addItem(ProformerType.Square.name, ProformerType.Square.value)
 		self._pattern_type_combo_box.addItem(ProformerType.Rectangular.name, ProformerType.Rectangular.value)
 		self._pattern_type_combo_box.setEditable(True)
-
 		self._center_point_combo_box.setEditable(True)
-
 		self._count_widget_1 = ParameterSelectWidget(self, self._sketch, contents_layout, 2, tr("Count", 'dialogs'))
 		self._count_widget_2 = ParameterSelectWidget(self, self._sketch, contents_layout, 3)
-
 		self._dim_widget_1 = ParameterSelectWidget(self, self._sketch, contents_layout, 4, tr("Dimension", 'dialogs'))
 		self._dim_widget_2 = ParameterSelectWidget(self, self._sketch, contents_layout, 5)
 		self._dim_widget_3 = ParameterSelectWidget(self, self._sketch, contents_layout, 6)
-
 		self._parameter_widgets = []
 		self._parameter_widgets.append(self._count_widget_1)
 		self._parameter_widgets.append(self._count_widget_2)
@@ -574,12 +566,9 @@ class SketchPatternDialog(QDialog):
 		contents_layout.addWidget(self._center_point_combo_box, 1, 1)
 
 		self.layout().addWidget(contents_widget)
-
 		self._sketch_view = SketchViewWidget(self, sketch, sketch.document)
 		self._sketch_view.set_change_listener(self)
-
 		self._sketch_view.keypoints_selectable = True
-
 		self.layout().addWidget(self._sketch_view)
 
 		dialog_buttons = QDialogButtonBox(QDialogButtonBox.Cancel | QDialogButtonBox.Ok)
@@ -639,15 +628,19 @@ class SketchPatternDialog(QDialog):
 			self._dim_widget_2.caption = ""
 			self._dim_widget_3.visible = True
 			self._dim_widget_3.caption = "Pattern Angle"
+		self.validate()
+
 	@property
 	def pattern_type(self):
 		return self._pattern_type
 
 	def on_kp_selected(self, kp):
 		self._center_point_combo_box.setCurrentText(kp.name)
+		self.validate()
 
 	def on_center_point_combo_box_changed(self):
 		self._sketch_view.selected_kps = [self._sketch.get_keypoint(self._center_point_combo_box.currentData())]
+		self.validate()
 
 	def validate(self):
 		validated = True
@@ -655,15 +648,18 @@ class SketchPatternDialog(QDialog):
 			validated = False
 		if self._count_widget_1.parameter_name == "":
 			validated = False
-		self._dialog_buttons.buttons()[0].setEnabled(validated)
+
+		#self._dialog_buttons.buttons()[0].setEnabled(validated)
 
 	@property
 	def dimensions(self):
 		dims = {
 			'param_1_name': self._dim_widget_1.parameter_name,
 			'param_2_name': self._dim_widget_2.parameter_name,
+			'param_3_name': self._dim_widget_3.parameter_name,
 			'param_1_value': self._dim_widget_1.value,
-			'param_2_value': self._dim_widget_2.value
+			'param_2_value': self._dim_widget_2.value,
+			'param_3_value': self._dim_widget_3.value
 		}
 		return dims
 
@@ -673,7 +669,9 @@ class SketchPatternDialog(QDialog):
 
 	@property
 	def center_kp(self):
-		return self._sketch_view.selected_kps[0]
+		if len(self._sketch_view.selected_kps) > 0:
+			return self._sketch_view.selected_kps[0]
+		return None
 
 	@property
 	def count(self):

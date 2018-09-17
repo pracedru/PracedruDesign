@@ -364,9 +364,10 @@ class Proformer(IdObject, Parameters, MetaDataObject):
 			count = 3
 		elif self._type == ProformerType.Circular:
 			count = int(self._meta_data['count']-1)
-		elif self._type == ProformerType.Rectangular :
-			counts = self._meta_data['count']
-			count = counts[0]*counts[1]
+		elif self._type == ProformerType.Rectangular or self._type == ProformerType.Square:
+			count1 = self._meta_data['count1']
+			count2 = self._meta_data['count2']
+			count = count1*count2
 		for i in range(count):
 			if issubclass(type(area), CompositeArea):
 				area.add_change_handler(self.area_changed)

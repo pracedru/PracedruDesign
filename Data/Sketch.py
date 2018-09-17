@@ -47,6 +47,15 @@ class Sketch(Geometry):
 			limits[2] = max(pnt.x, limits[2])
 			limits[3] = max(pnt.y, limits[3])
 
+		for edge in self.get_edges():
+			if edge.type == EdgeType.CircleEdge:
+				ckp = edge.get_keypoints()[0]
+				r = edge.get_meta_data("r")
+				limits[0] = min(ckp.x-r, limits[0])
+				limits[1] = min(ckp.y-r, limits[1])
+				limits[2] = max(ckp.x+r, limits[2])
+				limits[3] = max(ckp.y+r, limits[3])
+
 		for instance in self._sketch_instances.values():
 			in_lim = instance.sketch.get_limits()
 			sc = instance.scale
