@@ -11,6 +11,7 @@ class GenericView():
 		self._show_area_names_action = None
 		self._show_kp_action = None
 		self._show_hidden_params_action = None
+		self._show_thickness_action = None
 
 		self._states = main_window.states
 		self._sketch_editor_view = main_window.sketch_editor_view
@@ -20,6 +21,7 @@ class GenericView():
 		self._states.show_key_points = False
 		self._states.show_area_names = True
 		self._states.show_params = False
+		self._states.show_thickness = True
 
 		self.init_ribbon()
 
@@ -50,6 +52,13 @@ class GenericView():
 																													self.on_show_params,
 																													checkable=True)
 
+		self._show_thickness_action = main_win.add_action("Show\nthickness",
+																													"showthickness",
+																													"Show hidden parameters",
+																													True,
+																													self.on_show_thick,
+																													checkable=True)
+
 		ribbon = self._main_window.ribbon
 		sketch_tab = ribbon.get_ribbon_tab("Sketch")
 		drawing_tab = ribbon.get_ribbon_tab("Drawing")
@@ -59,9 +68,11 @@ class GenericView():
 		sketch_view_pane.add_ribbon_widget(RibbonButton(sketch_view_pane, self._show_area_names_action, True))
 		sketch_view_pane.add_ribbon_widget(RibbonButton(sketch_view_pane, self._show_kp_action, True))
 		sketch_view_pane.add_ribbon_widget(RibbonButton(sketch_view_pane, self._show_hidden_params_action, True))
+		sketch_view_pane.add_ribbon_widget(RibbonButton(sketch_view_pane, self._show_thickness_action, True))
 
 		drawing_view_pane = drawing_tab.get_ribbon_pane("View")
 		drawing_view_pane.add_ribbon_widget(RibbonButton(drawing_view_pane, self._zoom_fit_action, True))
+		drawing_view_pane.add_ribbon_widget(RibbonButton(drawing_view_pane, self._show_thickness_action, True))
 
 		part_view_pane = part_tab.get_ribbon_pane("View")
 		part_view_pane.add_ribbon_widget(RibbonButton(drawing_view_pane, self._zoom_fit_action, True))
@@ -82,6 +93,9 @@ class GenericView():
 		self._states.show_params = not self._states.show_params
 		self._main_window.parameters_widget.update_hide_parameters()
 
+	def on_show_thick(self):
+		self._states.show_thickness = not self._states.show_thickness
+
 	def on_mouse_move(self, scale, x, y):
 		pass
 
@@ -95,6 +109,7 @@ class GenericView():
 		self._show_area_names_action.setChecked(self._states.show_area_names)
 		self._show_kp_action.setChecked(self._states.show_key_points)
 		self._show_hidden_params_action.setChecked(self._states.show_params)
+		self._show_thickness_action.setChecked(self._states.show_thickness)
 
 	@staticmethod
 	def initializer(main_window):

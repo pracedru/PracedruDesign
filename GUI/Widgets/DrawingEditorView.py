@@ -273,9 +273,13 @@ class DrawingEditorViewWidget(QWidget):
 
 	def draw_views(self, event, qp, center, pens):
 		sc = self._scale
+
 		for view in self._drawing.get_views():
+			edge_thickness = 1/view.scale
+			if not self._states.show_thickness:
+				edge_thickness = 0
 			scale = sc * view.scale
-			pens = create_pens(self._doc, 1/view.scale)
+			pens = create_pens(self._doc, edge_thickness)
 			offset = Vertex(self._offset.x / view.scale, self._offset.y / view.scale)
 			c = Vertex(center.x + view.offset.x * sc, center.y - view.offset.y * sc)
 			#draw_sketch(qp, view.sketch, scale, 0.0002 * sc, offset, c, 0, pens, {})

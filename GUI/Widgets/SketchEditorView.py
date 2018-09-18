@@ -380,10 +380,13 @@ class SketchEditorViewWidget(QWidget):
 				draw_attribute(text, qp, 1/self._scale)
 
 	def draw_edges(self, event, qp):
-		pens = create_pens(self._doc, 6000/self._scale)
-		pens_hover = create_pens(self._doc, 6000/self._scale, QColor(100, 100, 200), 2)
-		pens_select_high = create_pens(self._doc, 6000/self._scale, QColor(255, 0, 0), 3)
-		pens_select = create_pens(self._doc, 6000/self._scale, QColor(255, 255, 255))
+		edge_thickness = 6000/self._scale
+		if not self._states.show_thickness:
+			edge_thickness = 0
+		pens = create_pens(self._doc, edge_thickness)
+		pens_hover = create_pens(self._doc, edge_thickness, QColor(100, 100, 200), 2)
+		pens_select_high = create_pens(self._doc, edge_thickness, QColor(255, 0, 0), 3)
+		pens_select = create_pens(self._doc, edge_thickness, QColor(255, 255, 255))
 		if self._is_dark_theme:
 			kp_pen = QPen(QColor(0, 200, 200), 1/self._scale)
 			kp_pen_hl = QPen(QColor(190, 0, 0), 3/self._scale)

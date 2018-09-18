@@ -191,14 +191,13 @@ class ParametersModel(QAbstractTableModel):
 			if event.type == event.ObjectRemoved:
 				self.endRemoveRows()
 			if event.type == event.ValueChanged:
-				param = event.sender
+				param = event.object
 				row = self._parameters.get_index_of(param)
 				left = self.createIndex(row, 0)
 				right = self.createIndex(row, 3)
 				self.dataChanged.emit(left, right)
 			if event.type == event.HiddenChanged:
-				print("hidden changed")
-				param = event.sender
+				param = event.object
 				if type(param) is Parameter:
 					row = self._parameters.get_index_of(param)
 					left = self.createIndex(row, 3)
