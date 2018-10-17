@@ -27,7 +27,7 @@ def get_pen_from_style(style, scale, color_override, fat):
 	pen = None
 
 	if style.line_type == EdgeLineType.Continous:
-		pen = QPen(color, style.thickness * scale * fat, Qt.SolidLine, Qt.RoundCap)
+		pen = QPen(color, style.thickness * scale * fat, Qt.SolidLine)# , Qt.RoundCap)
 	elif style.line_type == EdgeLineType.DashDot:
 		pen = QPen(color, style.thickness * scale * fat)
 		pen.setDashPattern(scale_dash_pattern([10.0, 4.0, 1.0, 4.0], fat))
@@ -41,7 +41,7 @@ def get_pen_from_style(style, scale, color_override, fat):
 		pen = QPen(color, style.thickness * scale * fat, Qt.DotLine)
 		pen.setDashPattern(scale_dash_pattern([2.0, 4.0], fat))
 	else:
-		pen = QPen(color, style.thickness * scale * fat, Qt.SolidLine, Qt.RoundCap)
+		pen = QPen(color, style.thickness * scale * fat, Qt.SolidLine) #, Qt.RoundCap)
 
 	return pen
 
