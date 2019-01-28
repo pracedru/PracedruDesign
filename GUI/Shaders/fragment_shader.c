@@ -9,6 +9,7 @@ in highp vec3 eye_vector;
 
 
 uniform mediump vec4 color;
+uniform mediump vec4 gradient_color;
 uniform mediump float specular;
 uniform bool lighting;
 uniform bool gradient;
@@ -58,7 +59,7 @@ void main(void)
     }
     if (gradient){
         float grad = 0.18 * gl_FragCoord.y / resolution.y;
-        lcol = vec4(0.68+grad, 0.68+grad, 0.73+grad,1.0);
+        lcol = vec4(gradient_color.r+grad, gradient_color.g+grad, gradient_color.b+grad,1.0);
     }
     out_color = lcol;
 }

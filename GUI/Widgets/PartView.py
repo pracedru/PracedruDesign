@@ -8,6 +8,7 @@ from PyQt5.QtGui import QColor, QOpenGLShaderProgram, QOpenGLShader, QMatrix4x4,
 from Data import read_text_from_disk
 from Data.Edges import Edge, EdgeType
 from Data.Feature import FeatureType
+from GUI.init import is_dark_theme
 
 try:
 	from OpenGL import GL
@@ -37,6 +38,7 @@ class PartViewWidget(QOpenGLWidget):
 		super(PartViewWidget, self).__init__(parent)
 		self._document = document
 		self._part = None
+		self._is_dark_theme = is_dark_theme()
 		self._gen_lists_start = 0
 		self._drawables = []
 		self.xRot = 225 * 16
@@ -51,7 +53,10 @@ class PartViewWidget(QOpenGLWidget):
 		self.part_color_edge = QColor(50, 50, 50, 255)
 		self.plane_color = QColor(0, 150, 200, 25)
 		self.plane_color_edge = QColor(0, 150, 200, 180)
-		self.background_color = QColor(180, 180, 195, 25)
+		if self._is_dark_theme:
+			self.background_color = QColor(50, 50, 60, 25)
+		else:
+			self.background_color = QColor(180, 180, 195, 25)
 		self._gl = None
 		self._show_surfaces = True
 		self._show_lines = True
@@ -304,6 +309,7 @@ class PartViewWidget(QOpenGLWidget):
 		self._program.enableAttributeArray(self.PROGRAM_NORMALS_ATTRIBUTE)
 		self._program.setAttributeArray(self.PROGRAM_VERTEX_ATTRIBUTE, self._vertices)
 		self._program.setAttributeArray(self.PROGRAM_NORMALS_ATTRIBUTE, self._normals)
+		self._program.setUniformValue('gradient_color', self.background_color)
 
 	def paintGL(self):
 		gl = self._gl

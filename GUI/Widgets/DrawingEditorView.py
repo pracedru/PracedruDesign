@@ -42,10 +42,13 @@ class DrawingEditorViewWidget(QWidget):
 			self._kp_pen = QPen(QColor(0, 200, 200), 1)
 			self._kp_pen_hl = QPen(QColor(190, 0, 0), 3)
 			self._kp_pen_hover = QPen(QColor(0, 60, 150), 3)
+			self._paper_color = QColor(200, 200, 200)
+
 		else:
 			self._kp_pen = QPen(QColor(0, 100, 200), 1)
 			self._kp_pen_hl = QPen(QColor(180, 50, 0), 3)
 			self._kp_pen_hover = QPen(QColor(0, 120, 255), 3)
+			self._paper_color = QColor(255, 255, 255)
 		self.installEventFilter(self)
 
 	@property
@@ -266,7 +269,7 @@ class DrawingEditorViewWidget(QWidget):
 			cx = self._offset.x * sc + half_width
 			cy = -self._offset.y * sc + half_height
 			rect = QRectF(QPointF(cx, cy), QPointF(cx + self._drawing.size[0] * sc, cy - self._drawing.size[1] * sc))
-			qp.fillRect(rect, QColor(255, 255, 255))
+			qp.fillRect(rect, self._paper_color)
 			self.draw_border(event, qp, cx, cy, pens)
 			self.draw_header(event, qp, cx, cy, center, pens)
 			self.draw_views(event, qp, center, pens)
