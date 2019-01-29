@@ -80,10 +80,7 @@ class MainWindow(QMainWindow):
 		self._add_calc_sheet_analysis = self.add_action("Add Calc\nSheet", "addcalcsheet", "Add calculation sheet analysis to document", True,
 																										self.on_add_calc_sheet_analysis)
 		# self._create_sketch_action = self.add_action("Create\nSketch", "addsketch", "Create Sketch", True, self.on_create_sketch)
-		self._insert_part_action = self.add_action("Insert\npart", "addpartview", "Insert part in drawing", True,
-																							 self.on_insert_part_in_drawing)
-		self._insert_dim_annotation = self.add_action("Dim", "insertdimannotation", "Insert dimension annotation in drawing", True,
-																									self.on_insert_dim_ann_in_drawing)
+		self._insert_part_action = self.add_action("Insert\npart", "addpartview", "Insert part in drawing", True, self.on_insert_part_in_drawing)
 		self._add_revolve_action = self.add_action("Revolve\nArea", "addrevolve", "Revolve an area on this part", True, self.on_revolve_area)
 		self._add_extrude_action = self.add_action("Extrude\nArea", "addextrude", "Extrude an area on this part", True, self.on_extrude_area)
 		self._add_nurbs_surface_action = self.add_action("Create\nNurbs Srf.", "nurbssurf", "Create nurbs surface", True,
@@ -299,7 +296,7 @@ class MainWindow(QMainWindow):
 				self._viewWidget.sketch_view.selected_areas = [selection[0]]
 			if type(selection[0]) is Drawing:
 				self._viewWidget.set_drawing_view(selection[0])
-				self._ribbon_widget.setCurrentIndex(3)
+				self._ribbon_widget.setCurrentIndex(4)
 			if issubclass(type(selection[0]), ParametersBase):
 				self.parameters_widget.set_parameters(selection[0])
 			if type(selection[0]) is KeyPoint:
@@ -317,10 +314,8 @@ class MainWindow(QMainWindow):
 			self._properties_dock.set_item(selection[0])
 			if type(selection[0]) is CalcTableAnalysis:
 				self._viewWidget.set_calc_table_view(selection[0])
-				self._ribbon_widget.setCurrentIndex(4)
-			if type(selection[0]) is CalcSheetAnalysis:
-				self._viewWidget.set_calc_sheet_view(selection[0])
-				self._ribbon_widget.setCurrentIndex(4)
+				self._ribbon_widget.setCurrentIndex(5)
+
 
 	def on_area_selection_changed_in_table(self, selected_areas):
 		self._viewWidget.on_area_selection_changed_in_table(selected_areas)
@@ -447,7 +442,8 @@ class MainWindow(QMainWindow):
 		view_pane.add_ribbon_widget(RibbonButton(self, self._show_planes_action, True))
 
 	def init_assembly_tab(self):
-		pass
+		assembly_tab = self._ribbon_widget.add_ribbon_tab("Assembly")
+		insert_pane = assembly_tab.add_ribbon_pane("Insert")
 
 	def init_drawing_tab(self):
 		drawing_tab = self._ribbon_widget.add_ribbon_tab("Drawing")
@@ -455,7 +451,7 @@ class MainWindow(QMainWindow):
 		# insert_pane.add_ribbon_widget(RibbonButton(self, self._insert_sketch_in_drawing_action, True))
 		insert_pane.add_ribbon_widget(RibbonButton(self, self._insert_part_action, True))
 		annotation_pane = drawing_tab.add_ribbon_pane("Annotation")
-		annotation_pane.add_ribbon_widget(RibbonButton(self, self._insert_dim_annotation, True))
+
 		edit_pane = drawing_tab.add_ribbon_pane("Edit")
 		edit_pane.add_ribbon_widget(RibbonButton(self, self._undo_action, True))
 		edit_pane.add_ribbon_widget(RibbonButton(self, self._redo_action, True))

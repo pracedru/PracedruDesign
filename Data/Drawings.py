@@ -9,6 +9,19 @@ from Data.Sketch import Sketch
 from Data.Vertex import Vertex
 
 
+class ViewType(Enum):
+	SketchView = 0
+	PartView = 1
+
+
+class AnnotationType(Enum):
+	Dimension = 0
+	Surface = 1
+	Weld = 2
+	Baloon = 3
+	BirdCage = 4
+
+
 class Drawings(ObservableObject):
 	def __init__(self, document):
 		ObservableObject.__init__(self)
@@ -100,6 +113,7 @@ class Drawing(Paper, Parameters):
 		self._header_sketch = header
 		self._margins = [0.02, 0.02, 0.02, 0.02]
 		self._fields = {}
+		self._annotations = []
 		self.generate_border()
 		Paper.add_change_handler(self, self.on_paper_changed)
 
@@ -303,11 +317,6 @@ class Field(NamedObservableObject):
 		self._value = data['value']
 
 
-class ViewType(Enum):
-	SketchView = 0
-	PartView = 1
-
-
 class View(NamedObservableObject):
 	def __init__(self, drawing, name="New view", scale=1, offset=Vertex()):
 		NamedObservableObject.__init__(self, name)
@@ -491,3 +500,12 @@ class PartView(View):
 		self._part = doc.get_geometries().get_geometry(data['part'])
 		self._part.add_change_handler(self.on_part_changed)
 		self.update_sketch()
+
+
+class Annotation(ObservableObject):
+	def __init__(self, type = AnnotationType.Dimension):
+		ObservableObject.__init__(self)
+		self.type = type
+		self.view = None
+		self.kps = []
+		self.edges = []
