@@ -1,10 +1,9 @@
 #!/usr/bin/python3
 import sys
 
-import pgi
 
-pgi.require_version('Gtk', '3.0')
-pgi.install_as_gi()
+import gi
+gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk
 
 import Business
