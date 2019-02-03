@@ -1,0 +1,11 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Pracedru Design
+Path=~/PycharmProjects/PracedruDesign
+Icon=~/PycharmProjects/PracedruDesign/icons/icon.png
+Exec=~/PycharmProjects/PracedruDesign/main.py
+Comment=Engineer your design
+Categories=Development
+Terminal=false
+Name[da_DK]=Pracedru Design
