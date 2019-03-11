@@ -1,6 +1,8 @@
 # PracedruDesign
 Tool for doing numerical analysis and design.
 
+![PracedruDesign application](https://www.dropbox.com/s/aqd3exwxg75yl3x/PracedruDesign.png?raw=1)
+
 This is a tool for doing numerical analysis programmed primarily in Python.
 
 Getting started with development. The IDE used for this project is PyCharm. PyDesign relies on PyQt5, SciPy and NumPi.
